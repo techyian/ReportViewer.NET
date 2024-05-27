@@ -1,38 +1,40 @@
 ﻿using System.Collections.Generic;
 using System.Text;
+using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects
 {
-    internal abstract class ReportItem
+    public abstract class ReportItem
     {
-        internal abstract string Build();
+        public abstract string Build();
     }
 
-    internal class Tablix : ReportItem
+    public class Tablix : ReportItem
     {
-        internal string Name { get; set; }
-        internal string DataSetName { get; set; }
-        internal string Top { get; set; }
-        internal string Left { get; set; }
-        internal string Height { get; set; }
-        internal string Width { get; set; }
-        internal bool Hidden { get; set; }
-        internal string ToggleItem { get; set; }
-        internal Style Style { get; set; }
-        internal TablixBody TablixBody { get; set; }
+        public string Name { get; set; }
+        public string DataSetName { get; set; }
+        public DataSetReference DataSetReference { get; set; }
+        public string Top { get; set; }
+        public string Left { get; set; }
+        public string Height { get; set; }
+        public string Width { get; set; }
+        public bool Hidden { get; set; }
+        public string ToggleItem { get; set; }
+        public Style Style { get; set; }
+        public TablixBody TablixBody { get; set; }
 
-        internal override string Build()
+        public override string Build()
         {
             return this.TablixBody?.Build() ?? string.Empty;
         }
     }
 
-    internal class TablixBody
+    public class TablixBody
     {
-        internal List<TablixColumn> TablixColumns { get; set; }
-        internal List<TablixRow> TablixRows { get; set; }
+        public List<TablixColumn> TablixColumns { get; set; }
+        public List<TablixRow> TablixRows { get; set; }
 
-        internal string Build()
+        public string Build()
         {
             var sb = new StringBuilder();
 
@@ -61,22 +63,22 @@ namespace ReportViewer.NET.DataObjects
         }
     }
 
-    internal class TablixColumn
+    public class TablixColumn
     {
-        internal string Width { get; set; }
+        public string Width { get; set; }
 
-        internal string Build()
+        public string Build()
         {
             return @"<td width=""" + this.Width + @"""></td>";
         }
     }
 
-    internal class TablixRow
+    public class TablixRow
     {
-        internal string Height { get;set; }
-        internal List<TablixCell> TablixCells { get; set; }
+        public string Height { get;set; }
+        public List<TablixCell> TablixCells { get; set; }
 
-        internal string Build()
+        public string Build()
         {
             var sb = new StringBuilder();
 
@@ -100,29 +102,80 @@ namespace ReportViewer.NET.DataObjects
         }
     }
 
-    internal class TablixCell
+    public class TablixCell
     {                
-        internal List<TablixCellContent> TablixCellContent { get; set; }
+        public List<TablixCellContent> TablixCellContent { get; set; }
     }
 
-    internal class Style
+    public class Style
     {
-        internal string TextAlign { get; set; } = "Left";
-        internal Border Border { get; set; }
-        internal Border BorderBottom { get; set; }
-        internal string PaddingLeft { get; set; }
-        internal string PaddingRight { get; set; }
-        internal string PaddingTop { get; set; }
-        internal string PaddingBottom { get; set; }
-        internal string BackgroundColor { get; set; }
-        internal string VerticalAlign { get; set; }
-        internal string Top { get; set; }
-        internal string Left { get; set; }
-        internal string Height { get; set; }
-        internal string Width { get; set; }
-        internal string ZIndex { get; set; }
+        public string TextAlign { get; set; } = "Left";
+        public Border Border { get; set; }
+        public Border BorderBottom { get; set; }
+        public string PaddingLeft { get; set; }
+        public string PaddingRight { get; set; }
+        public string PaddingTop { get; set; }
+        public string PaddingBottom { get; set; }
+        public string BackgroundColor { get; set; }
+        public string VerticalAlign { get; set; }
+        public string Top { get; set; }
+        public string Left { get; set; }
+        public string Height { get; set; }
+        public string Width { get; set; }
+        public string ZIndex { get; set; }
+        public string FontFamily { get; set; }
+        public string FontWeight { get; set; }
+        public string Color { get; set; }
 
-        internal string Build()
+        public Style()
+        {
+
+        }
+
+        public Style(XElement style, XNamespace ns)
+        {
+            this.TextAlign = style?.Element(ns + "TextAlign")?.Value;
+
+            var border = style?.Element(ns + "Border");
+            var borderBottom = style?.Element(ns + "BorderBottom");
+
+            if (border != null)
+            {
+                this.Border = new Border
+                {
+                    Color = border.Element(ns + "Color")?.Value,
+                    Style = border.Element(ns + "Style")?.Value,
+                    Width = border.Element(ns + "Width")?.Value
+                };
+            }
+
+            if (borderBottom != null)
+            {
+                this.BorderBottom = new Border
+                {
+                    Color = borderBottom.Element(ns + "Color")?.Value,
+                    Style = borderBottom.Element(ns + "Style")?.Value,
+                    Width = borderBottom.Element(ns + "Width")?.Value
+                };
+            }
+
+            this.PaddingLeft = style?.Element(ns + "PaddingLeft")?.Value;
+            this.PaddingRight = style?.Element(ns + "PaddingRight")?.Value;
+            this.PaddingTop = style?.Element(ns + "PaddingTop")?.Value;
+            this.PaddingBottom = style?.Element(ns + "PaddingBottom")?.Value;
+            this.BackgroundColor = style?.Element(ns + "BackgroundColor")?.Value;
+            this.VerticalAlign = style?.Element(ns + "VerticalAlign")?.Value;
+            this.Top = style?.Element(ns + "Top")?.Value;
+            this.Left = style?.Element(ns + "Left")?.Value;
+            this.Height = style?.Element(ns + "Height")?.Value;
+            this.Width = style?.Element(ns + "Width")?.Value;
+            this.ZIndex = style?.Element(ns + "ZIndex")?.Value;
+            this.FontFamily = style?.Element(ns + "FontFamily")?.Value;
+            this.FontWeight = style?.Element(ns + "FontWeight")?.Value;
+            this.Color = style?.Element(ns + "Color")?.Value;
+        }
+
+        public string Build()
         {
             var sb = new StringBuilder();
 
@@ -150,6 +203,9 @@ namespace ReportViewer.NET.DataObjects
             sb.Append(!string.IsNullOrEmpty(this.Height) ? $"height: {this.Height};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {this.Width};" : "");
             sb.Append(!string.IsNullOrEmpty(this.ZIndex) ? $"z-index: {this.ZIndex};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.FontFamily) ? $"font-family: {this.FontFamily};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.FontWeight) ? $"font-weight: {this.FontWeight};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Color) ? $"color: {this.Color};" : "");
 
             sb.Append("\"");
 
@@ -157,12 +213,12 @@ namespace ReportViewer.NET.DataObjects
         }
     }
 
-    internal class Paragraph
+    public class Paragraph
     {
-        internal List<TextRun> TextRuns { get; set; }
-        internal Style Style { get; set; }
+        public List<TextRun> TextRuns { get; set; }
+        public Style Style { get; set; }
 
-        internal string Build()
+        public string Build()
         {
             var sb = new StringBuilder();
 
@@ -183,37 +239,37 @@ namespace ReportViewer.NET.DataObjects
         }
     }
 
-    internal class TextRun
+    public class TextRun
     {
-        internal string Value { get; set; }
-        internal Style Style { get; set; }
+        public string Value { get; set; }
+        public Style Style { get; set; }
 
-        internal string Build()
+        public string Build()
         {
             return $"<span {this.Style?.Build()}>{this.Value}</span>";
         }
     }
 
-    internal class Border
+    public class Border
     {
-        internal string Style { get; set; } = "None";
-        internal string Color { get; set; } = "transparent";
-        internal string Width { get; set; } = "0px";
+        public string Style { get; set; } = "None";
+        public string Color { get; set; } = "transparent";
+        public string Width { get; set; } = "0px";
     }
 
-    internal abstract class TablixCellContent : ReportItem
+    public abstract class TablixCellContent : ReportItem
     {        
     }
 
-    internal class Textbox : TablixCellContent
+    public class Textbox : TablixCellContent
     {
-        internal string Name { get; set; }
-        internal bool CanGrow { get; set; }
-        internal bool KeepTogether { get; set; }
-        internal List<Paragraph> Paragraphs { get; set; }        
-        internal Style Style { get; set; }
+        public string Name { get; set; }
+        public bool CanGrow { get; set; }
+        public bool KeepTogether { get; set; }
+        public List<Paragraph> Paragraphs { get; set; }        
+        public Style Style { get; set; }
 
-        internal override string Build()
+        public override string Build()
         {
             var sb = new StringBuilder();
 

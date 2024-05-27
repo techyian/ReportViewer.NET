@@ -89,10 +89,12 @@ namespace ReportViewer.NET
             var datasetElements = xml.Root.Descendants(_ns1 + "DataSets").SelectMany(e => e.Elements(_ns1 + "DataSet"));
             var dataSets = this.ProcessDataSets(xml.Root, datasetElements);
             var reportParameters = this.ProcessReportParameters(xml.Root, dataSets);
+            var reportItems = this.ProcessReportItems(xml.Root, dataSets);
 
             reportRdl.DataSources = _dataSources;
             reportRdl.DataSets = dataSets;
             reportRdl.ReportParameters = reportParameters;
+            reportRdl.ReportItems = reportItems;
 
             return reportRdl;
         }
@@ -252,9 +254,168 @@ namespace ReportViewer.NET
             return reportParamList;
         }
 
-        private List<ReportItem> ProcessReportItems()
+        private List<ReportItem> ProcessReportItems(XElement root, IEnumerable<DataSet> datasets)
         {
+            var reportItemList = new List<ReportItem>();
+            var reportItemElements = root.Descendants(_ns1 + "ReportItems");
 
+            if (reportItemElements != null)
+            {
+                foreach (var ri in reportItemElements)
+                {
+                    var tablixElements = ri.Elements(_ns1 + "Tablix");
+
+                    if (tablixElements != null)
+                    {
+                        foreach (var te in tablixElements)
+                        {
+                            reportItemList.Add(this.ProcessTablixElement(te));
+                        }
+                    }
+
+                    var textboxElements = ri.Elements(_ns1 + "Textbox");
+
+                    if (textboxElements != null)
+                    {
+                        foreach (var tb in textboxElements)
+                        {
+                            reportItemList.Add(this.ProcessTextbox(tb));
+                        }
+                    }
+                }
+            }
+
+            return reportItemList;
         }
+
+        private Tablix ProcessTablixElement(XElement tablix)
+        {
+            var tablixObj = new Tablix();
+            var tablixBody = new TablixBody();
+            var columns = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixColumns").Elements(_ns1 + "TablixColumn");
+            var rows = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixRows").Elements(_ns1 + "TablixRow");
+
+            if (columns != null)
+            {
+                tablixBody.TablixColumns = new List<TablixColumn>();
+
+                foreach (var c in columns)
+                {
+                    tablixBody.TablixColumns.Add(new TablixColumn
+                    {
+                        Width = c.Element(_ns1 + "Width")?.Value
+                    });
+                }
+            }
+
+            if (rows != null)
+            {
+                tablixBody.TablixRows = new List<TablixRow>();
+
+                foreach (var r in rows)
+                {
+                    var tablixRow = new TablixRow
+                    {
+                        Height = r.Element(_ns1 + "Height")?.Value
+                    };
+                    tablixRow.TablixCells = new List<TablixCell>();
+
+                    var cells = r.Elements(_ns1 + "TablixCells").Elements(_ns1 + "TablixCell");
+
+                    if (cells != null)
+                    {
+                        foreach (var c in cells)
+                        {
+                            tablixRow.TablixCells.Add(this.ProcessTablixCell(c));
+                        }
+                    }
+                }
+            }
+
+            tablixObj.TablixBody = tablixBody;
+
+            return tablixObj;
+        }
+
+        private TablixCell ProcessTablixCell(XElement cell)
+        {
+            var tablixCell = new TablixCell
+            {
+                TablixCellContent = new List<TablixCellContent>()
+            };            
+            var cellContents = cell.Elements(_ns1 + "CellContents");
+
+            if (cellContents != null)
+            {
+                foreach (var c in cellContents)
+                {
+                    var textboxes = c.Elements(_ns1 + "Textbox");
+
+                    if (textboxes != null)
+                    {
+                        foreach (var textbox in textboxes)
+                        {
+                            tablixCell.TablixCellContent.Add(this.ProcessTextbox(textbox));
+                        }                        
+                    }
+
+                    // Process other types.
+                }
+            }
+
+            return tablixCell;
+        }
+
+        private Textbox ProcessTextbox(XElement textbox)
+        {
+            var textboxObj = new Textbox
+            {
+                Name = textbox.Attribute("Name")?.Value,
+                CanGrow = textbox.Element(_ns1 + "CanGrow")?.Value == "true",
+                KeepTogether = textbox.Element(_ns1 + "KeepTogether")?.Value == "true"
+            };
+
+            var paragraphs = textbox.Elements(_ns1 + "Paragraphs").Elements(_ns1 + "Paragraph");
+            var style = textbox.Element(_ns1 + "Style");
+
+            if (paragraphs != null)
+            {
+                foreach (var p in paragraphs)
+                {
+                    var paragraphObj = new Paragraph();
+                    var textRuns = p.Elements(_ns1 + "TextRuns").Elements(_ns1 + "TextRun");
+
+                    if (textRuns != null)
+                    {
+                        paragraphObj.TextRuns = new List<TextRun>();
+
+                        foreach (var tr in textRuns)
+                        {
+                            paragraphObj.TextRuns.Add(new TextRun
+                            {
+                                Value = tr.Element(_ns1 + "Value")?.Value,
+                                Style = this.ProcessStyle(tr.Element(_ns1 + "Style"))
+                            });
+                        }
+                    }
+                }
+            }
+
+            textboxObj.Style = this.ProcessStyle(style);
+
+            return textboxObj;
+        }
+
+        private Style ProcessStyle(XElement style)
+        {
+            if (style == null)
+            {
+                return null;
+            }
+
+            return new Style(style, _ns1);
+        }
+
+        
     }
 }
