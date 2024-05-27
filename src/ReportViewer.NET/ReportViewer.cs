@@ -212,7 +212,8 @@ namespace ReportViewer.NET
                     DataType = rp.Element(_ns1 + "DataType")?.Value,
                     Nullable = rp.Element(_ns1 + "Nullable")?.Value == "true",
                     Prompt = rp.Element(_ns1 + "Prompt")?.Value,
-                    MultiValue = rp.Element(_ns1 + "MultiValue")?.Value == "true"
+                    MultiValue = rp.Element(_ns1 + "MultiValue")?.Value == "true",
+                    DefaultValue = rp.Element(_ns1 + "DefaultValue")?.Element(_ns1 + "Values")?.Element(_ns1 + "Value")?.Value
                 };
 
                 if (!string.IsNullOrEmpty(reportParamObj.DataType))

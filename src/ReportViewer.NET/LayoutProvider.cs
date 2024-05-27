@@ -8,10 +8,6 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Transactions;
-using System.Xml.Linq;
-using System.Data.Common;
-using System.Runtime.InteropServices.JavaScript;
 
 namespace ReportViewer.NET
 {
@@ -28,6 +24,7 @@ namespace ReportViewer.NET
         {            
             var reportParams = _report.ReportParameters;
             var sb = new StringBuilder();
+            var invalidParameter = false;
 
             sb.AppendLine("<div class=\"reportparameters-container\">");
 
@@ -35,7 +32,7 @@ namespace ReportViewer.NET
             {
                 if (reportParam.DataSetReference == null)
                 {
-                    sb.AppendLine(reportParam.Build());
+                    sb.AppendLine(reportParam.Build(userProvidedParameters.FirstOrDefault(p => p.Name == reportParam.Name)));
                 }
                 else
                 {
@@ -48,8 +45,7 @@ namespace ReportViewer.NET
                     IEnumerable<dynamic> results = null;
 
                     if (reportParam.DataSetReference.DataSet.Query.QueryParameters != null && reportParam.DataSetReference.DataSet.Query.QueryParameters.Count > 0)
-                    {
-                        var invalidParameter = false;
+                    {                        
                         var dynamicParams = new DynamicParameters();
 
                         foreach (var queryParam in reportParam.DataSetReference.DataSet.Query.QueryParameters)
@@ -62,9 +58,10 @@ namespace ReportViewer.NET
                                 break;
                             }
 
+                            var reportParamForDataset = reportParams.First(p => p.Name == queryParam.Name.TrimStart('@'));
                             var userParam = userProvidedParameters.First(p => p.Name == queryParam.Name.TrimStart('@'));
 
-                            this.HandleDynamicParameterInsert(dynamicParams, reportParam, userParam);
+                            this.HandleDynamicParameterInsert(dynamicParams, reportParamForDataset, userParam);
                         }
 
                         if (invalidParameter)
@@ -82,7 +79,7 @@ namespace ReportViewer.NET
                             {
                                 results = await conn.QueryAsync(dsQuery.CommandText, dynamicParams);
                             }
-                        }                        
+                        }
                     }
                     else
                     {
@@ -105,11 +102,27 @@ namespace ReportViewer.NET
 
                     reportParam.DataSetReference.DataSetResults = results.ToList();
 
-                    sb.AppendLine(reportParam.Build());
+                    sb.AppendLine(reportParam.Build(userProvidedParameters.FirstOrDefault(p => p.Name == reportParam.Name)));
+                }
+
+                if (!reportParam.Nullable && 
+                    string.IsNullOrEmpty(reportParam.DefaultValue) &&
+                    (userProvidedParameters == null || 
+                    !userProvidedParameters.Any(
+                        p => p.Name == reportParam.Name.TrimEnd('@') && ((reportParam.MultiValue && (p.Values?.Count > 0)) || (!reportParam.MultiValue && !string.IsNullOrEmpty(p.Value)))
+                        )
+                    )
+                   )
+                {
+                    invalidParameter = true;
                 }
             }
 
             // TODO: IF OK, CREATE RUN REPORT BUTTON.
+            if (!invalidParameter)
+            {
+                sb.AppendLine(@"<button type=""button"" id=""RunReportBtn"">Run report</button>");
+            }
 
             sb.AppendLine("</div>");
 
@@ -129,13 +142,13 @@ namespace ReportViewer.NET
                 switch (rdlParameter.DataType)
                 {
                     case "String":
-                        param.Add(rdlParameter.Name, userProvidedParameter.Value, DbType.String);
+                        param.Add($"@{rdlParameter.Name.TrimStart('@')}", userProvidedParameter.Value, DbType.String);
                         break;
                     case "DateTime":
-                        param.Add(rdlParameter.Name, userProvidedParameter.Value, DbType.DateTime);                        
+                        param.Add($"@{rdlParameter.Name.TrimStart('@')}", userProvidedParameter.Value, DbType.DateTime);                        
                         break;
                     case "Boolean":
-                        param.Add(rdlParameter.Name, userProvidedParameter.Value == "True", DbType.Boolean);                        
+                        param.Add($"@{rdlParameter.Name.TrimStart('@')}", userProvidedParameter.Value == "True", DbType.Boolean);                        
                         break;
                 }
             }                        
