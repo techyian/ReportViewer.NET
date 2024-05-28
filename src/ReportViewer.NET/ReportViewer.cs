@@ -2,6 +2,7 @@
 using ReportViewer.NET.DataObjects;
 using System;
 using System.Collections.Generic;
+
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -65,6 +66,20 @@ namespace ReportViewer.NET
             var layoutProvider = new LayoutProvider(rdl);
 
             return layoutProvider.PublishReportParameters(userProvidedParameters);
+        }
+
+        public Task<HtmlString> PublishReportOutput(string report, IEnumerable<ReportParameter> userProvidedParameters)
+        {
+            var rdl = _reportRdls.FirstOrDefault(r => r.Name == report);
+
+            if (rdl == null)
+            {
+                throw new NullReferenceException("Requested RDL not registered.");
+            }
+
+            var layoutProvider = new LayoutProvider(rdl);
+
+            return layoutProvider.PublishReportOutput(userProvidedParameters);
         }
 
         private ReportRDL ParseXml(XDocument xml)
@@ -269,7 +284,7 @@ namespace ReportViewer.NET
                     {
                         foreach (var te in tablixElements)
                         {
-                            reportItemList.Add(this.ProcessTablixElement(te));
+                            reportItemList.Add(this.ProcessTablixElement(te, datasets));
                         }
                     }
 
@@ -288,12 +303,32 @@ namespace ReportViewer.NET
             return reportItemList;
         }
 
-        private Tablix ProcessTablixElement(XElement tablix)
+        private Tablix ProcessTablixElement(XElement tablix, IEnumerable<DataSet> datasets)
         {
             var tablixObj = new Tablix();
             var tablixBody = new TablixBody();
+
             var columns = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixColumns").Elements(_ns1 + "TablixColumn");
             var rows = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixRows").Elements(_ns1 + "TablixRow");
+
+            tablixObj.DataSetName = tablix.Element(_ns1 + "DataSetName")?.Value;
+            tablixObj.Top = tablix.Element(_ns1 + "Top")?.Value;
+            tablixObj.Left = tablix.Element(_ns1 + "Left")?.Value;
+            tablixObj.Height = tablix.Element(_ns1 + "Height")?.Value;
+            tablixObj.Width = tablix.Element(_ns1 + "Width")?.Value;
+            tablixObj.Hidden = tablix.Element(_ns1 + "Visibility")?.Element(_ns1 + "Hidden")?.Value == "true";
+            tablixObj.ToggleItem = tablix.Element(_ns1 + "Visibility")?.Element(_ns1 + "ToggleItem")?.Value;
+            tablixObj.Style = this.ProcessStyle(tablix.Element(_ns1 + "Style"));
+
+            if (!string.IsNullOrEmpty(tablixObj.DataSetName))
+            {
+                tablixObj.DataSetReference = new DataSetReference()
+                {
+                    DataSetName = tablixObj.DataSetName
+                };
+
+                tablixObj.DataSetReference.DataSet = datasets.FirstOrDefault(ds => ds.Name == tablixObj.DataSetReference.DataSetName);
+            }
 
             if (columns != null)
             {
