@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Data.Common;
 using System.Linq.Expressions;
 using static System.Net.Mime.MediaTypeNames;
+using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET
 {
@@ -242,24 +243,31 @@ namespace ReportViewer.NET
             string currentString = tablixText;
             List<TablixExpression> expressions = new List<TablixExpression>();
 
+            var countRegex = new Regex("(?:\\(*?)(?:Count?)(\\((.*?)\\)\\)*)");
+            var fieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
+
+            // TODO: Parse built in expressions, e.g. Globals.
+
             while (!string.IsNullOrEmpty(currentString))
             {
                 var currentExpression = new TablixExpression();
                 var proposedString = string.Empty;
-                var proposedOperator = TablixOperator.None;
-
-                if (currentString.IndexOf("Count(") > -1 && 
-                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Count(") < currentExpression.Index)
+                                
+                if (countRegex.IsMatch(currentString) && 
+                    (currentExpression.Operator == TablixOperator.None || countRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var idx = currentString.IndexOf("Count(");
+                    var regMatch = countRegex.Match(currentString);
+                    var group = regMatch.Groups[0];
+                    var idx = group.Index;
                     currentExpression.Index = idx;
                     currentExpression.Operator = TablixOperator.Count;
-                    var endIndx = this.ParseCountExpression(currentString, idx, currentExpression, dataSetReference, dataSets);
 
-                    expressions.Add(currentExpression);
+                    var endIndx = idx + group.Value.Length;
 
-                    proposedString = tablixText.Substring(endIndx, tablixText.Length - endIndx - 1);
+                    this.ParseCountExpression(currentString, currentExpression, dataSetReference, dataSets);
+                                        
+                    proposedString = (endIndx == currentString.Length) ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
                 }
 
                 if (currentString.IndexOf("+") > -1 &&
@@ -270,8 +278,7 @@ namespace ReportViewer.NET
                     currentExpression.Index = idx;
                     currentExpression.Operator = TablixOperator.Add;
 
-                    expressions.Add(currentExpression);
-                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
                 }
 
                 if (currentString.IndexOf("-") > -1 &&
@@ -282,8 +289,7 @@ namespace ReportViewer.NET
                     currentExpression.Index = idx;
                     currentExpression.Operator = TablixOperator.Subtract;
 
-                    expressions.Add(currentExpression);
-                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
                 }
 
                 if (currentString.IndexOf("*") > -1 &&
@@ -294,8 +300,7 @@ namespace ReportViewer.NET
                     currentExpression.Index = idx;
                     currentExpression.Operator = TablixOperator.Multiply;
 
-                    expressions.Add(currentExpression);
-                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
                 }
 
                 if (currentString.IndexOf("/") > -1 &&
@@ -306,22 +311,25 @@ namespace ReportViewer.NET
                     currentExpression.Index = idx;
                     currentExpression.Operator = TablixOperator.Divide;
 
-                    expressions.Add(currentExpression);
-                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
                 }
 
-                if (currentString.IndexOf("Fields!") > -1 &&
-                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Fields!") < currentExpression.Index)
+                if (fieldRegex.IsMatch(currentString) &&
+                    (currentExpression.Operator == TablixOperator.None || fieldRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var idx = currentString.IndexOf("Fields!");
+                    var regMatch = fieldRegex.Match(currentString);
+                    var group = regMatch.Groups[0];
+                    var idx = group.Index;
+
                     currentExpression.Index = idx;
                     currentExpression.Operator = TablixOperator.Field;
-                    var endIndx = this.ParseFieldExpression(currentString, idx, currentExpression, dataSetReference, dataSets);
 
-                    expressions.Add(currentExpression);
+                    var endIndx = idx + group.Value.Length;
 
-                    proposedString = tablixText.Substring(endIndx, tablixText.Length - endIndx - 1);
+                    this.ParseFieldExpression(currentString, currentExpression, dataSetReference, dataSets);
+
+                    proposedString = (endIndx == currentString.Length) ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
                 }
 
                 if (currentExpression.Operator == TablixOperator.None)
@@ -329,6 +337,7 @@ namespace ReportViewer.NET
                     break;
                 }
 
+                expressions.Add(currentExpression);
                 currentString = proposedString;
             }
 
@@ -336,69 +345,78 @@ namespace ReportViewer.NET
         }
 
         private string ParseTablixExpression(IEnumerable<TablixExpression> expressions)
-        {            
-            var final = expressions.Aggregate((prev, next) =>
-            {
-                var newExpr = new TablixExpression();
-
-                switch (next.Operator)
-                {
-                    case TablixOperator.Add:
-                        newExpr.Value = (int)prev.Value + (int)next.Value;
-                        break;
-                    case TablixOperator.Subtract:
-                        newExpr.Value = (int)prev.Value - (int)next.Value;
-                        break;
-                    case TablixOperator.Multiply:
-                        newExpr.Value = (int)prev.Value * (int)next.Value;
-                        break;
-                    case TablixOperator.Divide:
-                        newExpr.Value = (int)prev.Value / (int)next.Value;
-                        break;
-                }
-
-                return newExpr;
-            });
-
-            return final.Value.ToString();
-        }
-
-        private int ParseCountExpression(string currentString, int index, TablixExpression expression, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
         {
-            // TODO: Handle other count expressions not using fields??
-            if (currentString.IndexOf("Fields!") > -1)
+            TablixOperator lastOperator;
+            
+            if (expressions.Count() > 0)
             {
-                var fieldsIdx = currentString.IndexOf("Fields!");
-                var fieldEnd = currentString.IndexOf(".", fieldsIdx);
-                var fieldName = currentString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                var final = expressions.Aggregate((prev, next) =>
+                {
+                    var newExpr = new TablixExpression();
 
-                expression.Index = index;
-                expression.Field = fieldName;
+                    switch (next.Operator)
+                    {
+                        case TablixOperator.Count:
+                            newExpr.Value = (int)prev.Value;
+                            break;
+                        case TablixOperator.Add:
+                            newExpr.Value = (int)prev.Value + (int)next.Value;
+                            break;
+                        case TablixOperator.Subtract:
+                            newExpr.Value = (int)prev.Value - (int)next.Value;
+                            break;
+                        case TablixOperator.Multiply:
+                            newExpr.Value = (int)prev.Value * (int)next.Value;
+                            break;
+                        case TablixOperator.Divide:
+                            newExpr.Value = (int)prev.Value / (int)next.Value;
+                            break;
+                    }
 
-                var dataSetStart = currentString.IndexOf('"', fieldEnd);
-                var dataSetEnd = currentString.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
-                var dataSetName = currentString.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
+                    return newExpr;
+                });
 
-                expression.DataSetName = dataSetName;
-                expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetReference, dataSets);
-                
-                return currentString.IndexOf(")", fieldEnd);
+                return final.Value.ToString();
             }
 
-            return -1;
+            return string.Empty;
         }
 
-        private int ParseFieldExpression(string currentString, int index, TablixExpression expression, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
+        private void ParseCountExpression(string currentString, TablixExpression expression, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
+        {
+            var fieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
+
+            // TODO: Handle other count expressions not using fields??
+            if (fieldRegex.IsMatch(currentString))
+            {
+                var match = fieldRegex.Match(currentString);
+                var matchString = match.Value;
+
+                var fieldsIdx = matchString.IndexOf("Fields!");
+                var fieldEnd = matchString.IndexOf(".", fieldsIdx);
+                var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+
+                expression.Index = match.Index;
+                expression.Field = fieldName;
+
+                var dataSetStart = matchString.IndexOf('"', fieldEnd);
+                var dataSetEnd = matchString.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
+                var dataSetName = matchString.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
+
+                expression.DataSetName = dataSetName;
+                expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetReference, dataSets);                                
+            }                        
+        }
+
+        private void ParseFieldExpression(string currentString, TablixExpression expression, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
         {
             var fieldsIdx = currentString.IndexOf("Fields!");
             var fieldEnd = currentString.IndexOf(".", fieldsIdx);
             var fieldName = currentString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
 
-            expression.Index = index;
+            expression.Index = fieldsIdx;
             expression.Field = fieldName;
             expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetReference, dataSets);
-
-            return currentString.IndexOf(")", fieldEnd);
         }
 
         private dynamic ExtractExpressionValue(string dataSetName, string fieldName, TablixOperator op, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
