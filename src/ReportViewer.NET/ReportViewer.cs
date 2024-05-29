@@ -311,14 +311,15 @@ namespace ReportViewer.NET
             var columns = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixColumns").Elements(_ns1 + "TablixColumn");
             var rows = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixRows").Elements(_ns1 + "TablixRow");
 
-            tablixObj.DataSetName = tablix.Element(_ns1 + "DataSetName")?.Value;
-            tablixObj.Top = tablix.Element(_ns1 + "Top")?.Value;
-            tablixObj.Left = tablix.Element(_ns1 + "Left")?.Value;
-            tablixObj.Height = tablix.Element(_ns1 + "Height")?.Value;
-            tablixObj.Width = tablix.Element(_ns1 + "Width")?.Value;
+            tablixObj.DataSetName = tablix.Element(_ns1 + "DataSetName")?.Value;            
             tablixObj.Hidden = tablix.Element(_ns1 + "Visibility")?.Element(_ns1 + "Hidden")?.Value == "true";
             tablixObj.ToggleItem = tablix.Element(_ns1 + "Visibility")?.Element(_ns1 + "ToggleItem")?.Value;
+
             tablixObj.Style = this.ProcessStyle(tablix.Element(_ns1 + "Style"));
+            tablixObj.Style.Top = tablix.Element(_ns1 + "Top")?.Value;
+            tablixObj.Style.Left = tablix.Element(_ns1 + "Left")?.Value;
+            tablixObj.Style.Height = tablix.Element(_ns1 + "Height")?.Value;
+            tablixObj.Style.Width = tablix.Element(_ns1 + "Width")?.Value;
 
             if (!string.IsNullOrEmpty(tablixObj.DataSetName))
             {
@@ -415,9 +416,12 @@ namespace ReportViewer.NET
 
             if (paragraphs != null)
             {
+                textboxObj.Paragraphs = new List<Paragraph>();
+
                 foreach (var p in paragraphs)
                 {
                     var paragraphObj = new Paragraph();
+
                     var textRuns = p.Elements(_ns1 + "TextRuns").Elements(_ns1 + "TextRun");
 
                     if (textRuns != null)
@@ -426,17 +430,26 @@ namespace ReportViewer.NET
 
                         foreach (var tr in textRuns)
                         {
-                            paragraphObj.TextRuns.Add(new TextRun
+                            var textRunObj = new TextRun
                             {
                                 Value = tr.Element(_ns1 + "Value")?.Value,
                                 Style = this.ProcessStyle(tr.Element(_ns1 + "Style"))
-                            });
-                        }
+                            };
+                                                        
+                            paragraphObj.TextRuns.Add(textRunObj);
+                        }                        
                     }
+
+                    textboxObj.Paragraphs.Add(paragraphObj);
                 }
             }
 
             textboxObj.Style = this.ProcessStyle(style);
+            textboxObj.Style.Top = textbox.Element(_ns1 + "Top")?.Value;
+            textboxObj.Style.Left = textbox.Element(_ns1 + "Left")?.Value;
+            textboxObj.Style.Height = textbox.Element(_ns1 + "Height")?.Value;
+            textboxObj.Style.Width = textbox.Element(_ns1 + "Width")?.Value;
+            textboxObj.Style.ZIndex = textbox.Element(_ns1 + "ZIndex")?.Value;
 
             return textboxObj;
         }
@@ -445,7 +458,7 @@ namespace ReportViewer.NET
         {
             if (style == null)
             {
-                return null;
+                return new Style();
             }
 
             return new Style(style, _ns1);

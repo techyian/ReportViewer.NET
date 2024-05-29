@@ -9,6 +9,7 @@ namespace ReportViewer.NET.DataObjects
         public string Name { get; set; }
         public DataSetQuery Query { get; set; }
         public List<DataSetField> Fields { get; set; }
+        public List<dynamic> DataSetResults { get; set; }
     }
 
     public class DataSetQuery

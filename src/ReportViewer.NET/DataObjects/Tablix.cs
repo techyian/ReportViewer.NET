@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Extensions.Primitives;
+using System.Collections.Generic;
 using System.Text;
 using System.Xml.Linq;
 
@@ -13,11 +14,7 @@ namespace ReportViewer.NET.DataObjects
     {
         public string Name { get; set; }
         public string DataSetName { get; set; }
-        public DataSetReference DataSetReference { get; set; }
-        public string Top { get; set; }
-        public string Left { get; set; }
-        public string Height { get; set; }
-        public string Width { get; set; }
+        public DataSetReference DataSetReference { get; set; }        
         public bool Hidden { get; set; }
         public string ToggleItem { get; set; }
         public Style Style { get; set; }
@@ -25,7 +22,13 @@ namespace ReportViewer.NET.DataObjects
 
         public override string Build()
         {
-            return this.TablixBody?.Build() ?? string.Empty;
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"<table {this.Style?.Build()} class=\"table reportviewer-table\">");
+            sb.AppendLine(this.TablixBody?.Build());
+            sb.AppendLine("</table>");
+
+            return sb.ToString();
         }
     }
 
@@ -37,8 +40,7 @@ namespace ReportViewer.NET.DataObjects
         public string Build()
         {
             var sb = new StringBuilder();
-
-            sb.AppendLine("<table class=\"table reportviewer-table\">");
+                        
             sb.AppendLine("<thead>");
             sb.AppendLine("<tr>");
             foreach (var column in this.TablixColumns)
@@ -56,9 +58,7 @@ namespace ReportViewer.NET.DataObjects
                 sb.AppendLine("</tr>");
             }
             sb.AppendLine("</tbody>");
-
-            sb.AppendLine("</table>");
-
+                        
             return sb.ToString();
         }
     }
@@ -180,7 +180,7 @@ namespace ReportViewer.NET.DataObjects
             var sb = new StringBuilder();
 
             sb.Append("style=\"");
-            sb.Append($"text-align: {this.TextAlign.ToLower()};");
+            sb.Append(!string.IsNullOrEmpty(this.TextAlign) ? $"text-align: {this.TextAlign.ToLower()};" : "");
 
             if (this.Border != null)
             {
@@ -206,6 +206,11 @@ namespace ReportViewer.NET.DataObjects
             sb.Append(!string.IsNullOrEmpty(this.FontFamily) ? $"font-family: {this.FontFamily};" : "");
             sb.Append(!string.IsNullOrEmpty(this.FontWeight) ? $"font-weight: {this.FontWeight};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Color) ? $"color: {this.Color};" : "");
+
+            if (!string.IsNullOrEmpty(this.Top) || !string.IsNullOrEmpty(this.Left))
+            {
+                sb.Append("position: absolute;");
+            }
 
             sb.Append("\"");
 
@@ -246,6 +251,11 @@ namespace ReportViewer.NET.DataObjects
 
         public string Build()
         {
+            if (this.Value.StartsWith('='))
+            {
+                return $"<span {this.Style?.Build()}>{{{{{this.Value}}}}}</span>";
+            }
+            
             return $"<span {this.Style?.Build()}>{this.Value}</span>";
         }
     }
@@ -287,5 +297,26 @@ namespace ReportViewer.NET.DataObjects
 
             return sb.ToString();
         }
+    }
+
+    public class TablixExpression
+    {
+        public int Index { get; set; } = -1;
+        public int EndIndex { get; set; }
+        public TablixOperator Operator { get; set; }
+        public string Field { get; set; }
+        public dynamic Value { get; set; }
+        public string DataSetName { get; set; }
+    }
+
+    public enum TablixOperator
+    {
+        None,
+        Count,
+        Field,
+        Add,
+        Subtract,
+        Multiply,
+        Divide
     }
 }

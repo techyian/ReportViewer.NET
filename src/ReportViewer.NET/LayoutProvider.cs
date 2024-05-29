@@ -9,6 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.Common;
+using System.Linq.Expressions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ReportViewer.NET
 {
@@ -42,7 +44,7 @@ namespace ReportViewer.NET
                     if (reportParam.DataSetReference.DataSet == null)
                         continue;
 
-                    reportParam.DataSetReference.DataSetResults = (await this.RunDataSetQuery(reportParam.DataSetReference, reportParams, userProvidedParameters)).ToList();
+                    reportParam.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(reportParam.DataSetReference, reportParams, userProvidedParameters)).ToList();
 
                     sb.AppendLine(reportParam.Build(userProvidedParameters?.FirstOrDefault(p => p.Name == reportParam.Name)));
                 }
@@ -60,7 +62,7 @@ namespace ReportViewer.NET
                 }
             }
 
-            // TODO: IF OK, CREATE RUN REPORT BUTTON.
+            // If OK, create run report button.
             if (!invalidParameter)
             {
                 sb.AppendLine(@"<button type=""button"" id=""RunReportBtn"">Run report</button>");
@@ -75,8 +77,7 @@ namespace ReportViewer.NET
         {
             var reportItems = _report.ReportItems;
             var sb = new StringBuilder();
-            var invalidParameter = false;
-
+            
             foreach (var reportItem in reportItems) 
             {
                 if (reportItem is Tablix)
@@ -89,18 +90,45 @@ namespace ReportViewer.NET
                     }
                     else
                     {
+                        if (tablix.DataSetReference.DataSet == null)
+                            continue;
+
                         // We potentially have calculated text which needs resolving from the Data Set.
                         var tablixText = tablix.Build();
-                        tablix.DataSetReference.DataSetResults = (await this.RunDataSetQuery(tablix.DataSetReference, _report.ReportParameters, userProvidedParameters)).ToList();
+                        tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(tablix.DataSetReference, _report.ReportParameters, userProvidedParameters)).ToList();
 
-                        while (tablixText.IndexOf("=Fields!") > -1)
+                        while (tablixText.IndexOf("{{") > -1)
                         {
+                            // Calculate expression.
+                            var substring = tablixText.Substring(tablixText.IndexOf("{{"), (tablixText.IndexOf("}}") + 2) - tablixText.IndexOf("{{"));
+                            var expression = tablixText.Substring(tablixText.IndexOf("{{") + 2, tablixText.IndexOf("}}") - tablixText.IndexOf("{{") - 2);
 
+                            expression = this.ParseTablixExpressionString(expression, tablix.DataSetReference, _report.DataSets);
+
+                            tablixText = tablixText.Replace(substring, expression);
                         }
 
-                        sb.AppendLine(tablix.Build());
+                        sb.AppendLine(tablixText);
                     }
-                }                
+                }   
+                
+                if (reportItem is Textbox)
+                {
+                    var textboxText = reportItem.Build();
+
+                    while (textboxText.IndexOf("{{") > -1)
+                    {
+                        // Calculate expression.
+                        var substring = textboxText.Substring(textboxText.IndexOf("{{"), (textboxText.IndexOf("}}") + 2) - textboxText.IndexOf("{{"));
+                        var expression = textboxText.Substring(textboxText.IndexOf("{{") + 2, textboxText.IndexOf("}}") - textboxText.IndexOf("{{") - 2);
+
+                        expression = this.ParseTablixExpressionString(expression, null, _report.DataSets);
+
+                        textboxText = textboxText.Replace(substring, expression);
+                    }
+
+                    sb.AppendLine(textboxText);
+                }
             }
 
             return new HtmlString(sb.ToString());
@@ -207,6 +235,225 @@ namespace ReportViewer.NET
             }
 
             return results;
+        }
+
+        private string ParseTablixExpressionString(string tablixText, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
+        {            
+            string currentString = tablixText;
+            List<TablixExpression> expressions = new List<TablixExpression>();
+
+            while (!string.IsNullOrEmpty(currentString))
+            {
+                var currentExpression = new TablixExpression();
+                var proposedString = string.Empty;
+                var proposedOperator = TablixOperator.None;
+
+                if (currentString.IndexOf("Count(") > -1 && 
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Count(") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("Count(");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Count;
+                    var endIndx = this.ParseCountExpression(currentString, idx, currentExpression, dataSetReference, dataSets);
+
+                    expressions.Add(currentExpression);
+
+                    proposedString = tablixText.Substring(endIndx, tablixText.Length - endIndx - 1);
+                }
+
+                if (currentString.IndexOf("+") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("+") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("+");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Add;
+
+                    expressions.Add(currentExpression);
+                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                }
+
+                if (currentString.IndexOf("-") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("-") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("-");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Subtract;
+
+                    expressions.Add(currentExpression);
+                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                }
+
+                if (currentString.IndexOf("*") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("*") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("*");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Multiply;
+
+                    expressions.Add(currentExpression);
+                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                }
+
+                if (currentString.IndexOf("/") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("/") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("/");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Divide;
+
+                    expressions.Add(currentExpression);
+                    proposedString = tablixText.Substring(idx, tablixText.Length - idx - 1);
+                }
+
+                if (currentString.IndexOf("Fields!") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Fields!") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("Fields!");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Field;
+                    var endIndx = this.ParseFieldExpression(currentString, idx, currentExpression, dataSetReference, dataSets);
+
+                    expressions.Add(currentExpression);
+
+                    proposedString = tablixText.Substring(endIndx, tablixText.Length - endIndx - 1);
+                }
+
+                if (currentExpression.Operator == TablixOperator.None)
+                {
+                    break;
+                }
+
+                currentString = proposedString;
+            }
+
+            return this.ParseTablixExpression(expressions);
+        }
+
+        private string ParseTablixExpression(IEnumerable<TablixExpression> expressions)
+        {            
+            var final = expressions.Aggregate((prev, next) =>
+            {
+                var newExpr = new TablixExpression();
+
+                switch (next.Operator)
+                {
+                    case TablixOperator.Add:
+                        newExpr.Value = (int)prev.Value + (int)next.Value;
+                        break;
+                    case TablixOperator.Subtract:
+                        newExpr.Value = (int)prev.Value - (int)next.Value;
+                        break;
+                    case TablixOperator.Multiply:
+                        newExpr.Value = (int)prev.Value * (int)next.Value;
+                        break;
+                    case TablixOperator.Divide:
+                        newExpr.Value = (int)prev.Value / (int)next.Value;
+                        break;
+                }
+
+                return newExpr;
+            });
+
+            return final.Value.ToString();
+        }
+
+        private int ParseCountExpression(string currentString, int index, TablixExpression expression, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
+        {
+            // TODO: Handle other count expressions not using fields??
+            if (currentString.IndexOf("Fields!") > -1)
+            {
+                var fieldsIdx = currentString.IndexOf("Fields!");
+                var fieldEnd = currentString.IndexOf(".", fieldsIdx);
+                var fieldName = currentString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+
+                expression.Index = index;
+                expression.Field = fieldName;
+
+                var dataSetStart = currentString.IndexOf('"', fieldEnd);
+                var dataSetEnd = currentString.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
+                var dataSetName = currentString.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
+
+                expression.DataSetName = dataSetName;
+                expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetReference, dataSets);
+                
+                return currentString.IndexOf(")", fieldEnd);
+            }
+
+            return -1;
+        }
+
+        private int ParseFieldExpression(string currentString, int index, TablixExpression expression, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
+        {
+            var fieldsIdx = currentString.IndexOf("Fields!");
+            var fieldEnd = currentString.IndexOf(".", fieldsIdx);
+            var fieldName = currentString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+
+            expression.Index = index;
+            expression.Field = fieldName;
+            expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetReference, dataSets);
+
+            return currentString.IndexOf(")", fieldEnd);
+        }
+
+        private dynamic ExtractExpressionValue(string dataSetName, string fieldName, TablixOperator op, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)
+        {
+            if (dataSetReference != null && dataSetReference.DataSetName == dataSetName)
+            {
+                var dataSetResults = dataSetReference.DataSet?.DataSetResults;
+
+                if (dataSetResults != null)
+                {
+                    switch (op)
+                    {
+                        case TablixOperator.Count:
+                            return dataSetResults.Count;                            
+                        case TablixOperator.Field:
+                            foreach (IDictionary<string, object> expando in dataSetResults)
+                            {
+                                if (expando.ContainsKey(fieldName))
+                                {
+                                    return expando[fieldName];
+                                }
+                            }
+                            break;
+                    }                                        
+                }
+            }
+            else
+            {
+                var dataSet = dataSets.FirstOrDefault(ds => ds.Name == dataSetName);
+
+                if (dataSet != null)
+                {
+                    var dataSetResults = dataSet.DataSetResults;
+
+                    if (dataSetResults != null)
+                    {
+                        switch (op)
+                        {
+                            case TablixOperator.Count:
+                                return dataSetResults.Count;
+                            case TablixOperator.Field:
+                                foreach (IDictionary<string, object> expando in dataSetResults)
+                                {
+                                    if (expando.ContainsKey(fieldName))
+                                    {
+                                        return expando[fieldName];
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -24,7 +24,7 @@ namespace ReportViewer.NET.DataObjects
             {
                 var nullable = this.Nullable ? "true" : "false";
 
-                if (this.DataSetReference != null && this.DataSetReference.DataSetResults != null)
+                if (this.DataSetReference != null && this.DataSetReference.DataSet.DataSetResults != null)
                 {
                     var idx = 0;
                     var multiValue = this.MultiValue ? "true" : "false";
@@ -33,7 +33,7 @@ namespace ReportViewer.NET.DataObjects
                     sb.AppendLine("<div class=\"reportparam reportparam-list\">");
                     sb.AppendLine("<label>" + this.Prompt + @"</label>");
                     
-                    foreach (IDictionary<string, object> res in this.DataSetReference.DataSetResults)
+                    foreach (IDictionary<string, object> res in this.DataSetReference.DataSet.DataSetResults)
                     {                        
                         //var name = this.MultiValue ? this.Name + "[]" : this.Name;
                         var elementId = $"{this.Name}-{idx}";
@@ -109,7 +109,5 @@ namespace ReportViewer.NET.DataObjects
         public string ValueField { get; set; }
         public string LabelField { get; set; }
         public DataSet? DataSet { get; set; }
-        public List<dynamic> DataSetResults { get; set; }
-
     }
 }
