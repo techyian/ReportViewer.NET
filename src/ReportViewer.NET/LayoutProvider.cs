@@ -8,15 +8,16 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Data.Common;
-using System.Linq.Expressions;
-using static System.Net.Mime.MediaTypeNames;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 namespace ReportViewer.NET
 {
     internal class LayoutProvider
     {
+        public static Regex CountRegex = new Regex("(?:\\(*?)(?:Count?)(\\((.*?)\\)\\)*)");
+        public static Regex FieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
+
         private ReportRDL _report;
 
         public LayoutProvider(ReportRDL report) 
@@ -95,8 +96,10 @@ namespace ReportViewer.NET
                             continue;
 
                         // We potentially have calculated text which needs resolving from the Data Set.
-                        var tablixText = tablix.Build();
                         tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(tablix.DataSetReference, _report.ReportParameters, userProvidedParameters)).ToList();
+
+                        var tablixText = tablix.Build();
+                        
 
                         while (tablixText.IndexOf("{{") > -1)
                         {
@@ -135,11 +138,16 @@ namespace ReportViewer.NET
             return new HtmlString(sb.ToString());
         }
 
-        private void HandleDynamicParameterInsert(DynamicParameters param, ReportParameter rdlParameter, ReportParameter userProvidedParameter)
+        private void HandleDynamicParameterInsert(DynamicParameters param, ReportParameter rdlParameter, ReportParameter userProvidedParameter, DataSetQuery dsQuery)
         {
             if (userProvidedParameter != null && rdlParameter.MultiValue && userProvidedParameter.Values != null && userProvidedParameter.Values.Count > 0)
             {
-                param.Add(rdlParameter.Name, string.Join(',', userProvidedParameter.Values), DbType.String);
+                if (dsQuery.CommandText.Contains($"(@{rdlParameter.Name.TrimStart('@')})"))                
+                {
+                    dsQuery.CommandText = dsQuery.CommandText.Replace($"(@{rdlParameter.Name.TrimStart('@')})", $"@{rdlParameter.Name.TrimStart('@')}");
+                }
+
+                param.Add(rdlParameter.Name, userProvidedParameter.Values);
                 return;
             }
             else if (userProvidedParameter != null && !string.IsNullOrEmpty(userProvidedParameter.Value))
@@ -197,7 +205,7 @@ namespace ReportViewer.NET
 
                     var userParam = userProvidedParameters?.FirstOrDefault(p => p.Name == queryParam.Name.TrimStart('@'));
 
-                    this.HandleDynamicParameterInsert(dynamicParams, reportParamForDataset, userParam);
+                    this.HandleDynamicParameterInsert(dynamicParams, reportParamForDataset, userParam, dsQuery);
                 }
 
                 if (invalidParameter)
@@ -243,9 +251,6 @@ namespace ReportViewer.NET
             string currentString = tablixText;
             List<TablixExpression> expressions = new List<TablixExpression>();
 
-            var countRegex = new Regex("(?:\\(*?)(?:Count?)(\\((.*?)\\)\\)*)");
-            var fieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
-
             // TODO: Parse built in expressions, e.g. Globals.
 
             while (!string.IsNullOrEmpty(currentString))
@@ -253,11 +258,11 @@ namespace ReportViewer.NET
                 var currentExpression = new TablixExpression();
                 var proposedString = string.Empty;
                                 
-                if (countRegex.IsMatch(currentString) && 
-                    (currentExpression.Operator == TablixOperator.None || countRegex.Match(currentString).Index < currentExpression.Index)
+                if (CountRegex.IsMatch(currentString) && 
+                    (currentExpression.Operator == TablixOperator.None || CountRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var regMatch = countRegex.Match(currentString);
+                    var regMatch = CountRegex.Match(currentString);
                     var group = regMatch.Groups[0];
                     var idx = group.Index;
                     currentExpression.Index = idx;
@@ -314,11 +319,11 @@ namespace ReportViewer.NET
                     proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
                 }
 
-                if (fieldRegex.IsMatch(currentString) &&
-                    (currentExpression.Operator == TablixOperator.None || fieldRegex.Match(currentString).Index < currentExpression.Index)
+                if (FieldRegex.IsMatch(currentString) &&
+                    (currentExpression.Operator == TablixOperator.None || FieldRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var regMatch = fieldRegex.Match(currentString);
+                    var regMatch = FieldRegex.Match(currentString);
                     var group = regMatch.Groups[0];
                     var idx = group.Index;
 

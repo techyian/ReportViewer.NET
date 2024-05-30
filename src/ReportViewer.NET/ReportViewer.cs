@@ -284,7 +284,7 @@ namespace ReportViewer.NET
                     {
                         foreach (var te in tablixElements)
                         {
-                            reportItemList.Add(this.ProcessTablixElement(te, datasets));
+                            reportItemList.Add(new Tablix(te, datasets));
                         }
                     }
 
@@ -294,7 +294,7 @@ namespace ReportViewer.NET
                     {
                         foreach (var tb in textboxElements)
                         {
-                            reportItemList.Add(this.ProcessTextbox(tb));
+                            reportItemList.Add(new Textbox(tb));
                         }
                     }
                 }
@@ -302,168 +302,5 @@ namespace ReportViewer.NET
 
             return reportItemList;
         }
-
-        private Tablix ProcessTablixElement(XElement tablix, IEnumerable<DataSet> datasets)
-        {
-            var tablixObj = new Tablix();
-            var tablixBody = new TablixBody();
-
-            var columns = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixColumns").Elements(_ns1 + "TablixColumn");
-            var rows = tablix.Element(_ns1 + "TablixBody").Elements(_ns1 + "TablixRows").Elements(_ns1 + "TablixRow");
-
-            tablixObj.DataSetName = tablix.Element(_ns1 + "DataSetName")?.Value;            
-            tablixObj.Hidden = tablix.Element(_ns1 + "Visibility")?.Element(_ns1 + "Hidden")?.Value == "true";
-            tablixObj.ToggleItem = tablix.Element(_ns1 + "Visibility")?.Element(_ns1 + "ToggleItem")?.Value;
-
-            tablixObj.Style = this.ProcessStyle(tablix.Element(_ns1 + "Style"));
-            tablixObj.Style.Top = tablix.Element(_ns1 + "Top")?.Value;
-            tablixObj.Style.Left = tablix.Element(_ns1 + "Left")?.Value;
-            tablixObj.Style.Height = tablix.Element(_ns1 + "Height")?.Value;
-            tablixObj.Style.Width = tablix.Element(_ns1 + "Width")?.Value;
-
-            if (!string.IsNullOrEmpty(tablixObj.DataSetName))
-            {
-                tablixObj.DataSetReference = new DataSetReference()
-                {
-                    DataSetName = tablixObj.DataSetName
-                };
-
-                tablixObj.DataSetReference.DataSet = datasets.FirstOrDefault(ds => ds.Name == tablixObj.DataSetReference.DataSetName);
-            }
-
-            if (columns != null)
-            {
-                tablixBody.TablixColumns = new List<TablixColumn>();
-
-                foreach (var c in columns)
-                {
-                    tablixBody.TablixColumns.Add(new TablixColumn
-                    {
-                        Width = c.Element(_ns1 + "Width")?.Value
-                    });
-                }
-            }
-
-            if (rows != null)
-            {
-                tablixBody.TablixRows = new List<TablixRow>();
-
-                foreach (var r in rows)
-                {
-                    var tablixRow = new TablixRow
-                    {
-                        Height = r.Element(_ns1 + "Height")?.Value
-                    };
-                    tablixRow.TablixCells = new List<TablixCell>();
-
-                    var cells = r.Elements(_ns1 + "TablixCells").Elements(_ns1 + "TablixCell");
-
-                    if (cells != null)
-                    {
-                        foreach (var c in cells)
-                        {
-                            tablixRow.TablixCells.Add(this.ProcessTablixCell(c));
-                        }
-                    }
-                }
-            }
-
-            tablixObj.TablixBody = tablixBody;
-
-            return tablixObj;
-        }
-
-        private TablixCell ProcessTablixCell(XElement cell)
-        {
-            var tablixCell = new TablixCell
-            {
-                TablixCellContent = new List<TablixCellContent>()
-            };            
-            var cellContents = cell.Elements(_ns1 + "CellContents");
-
-            if (cellContents != null)
-            {
-                foreach (var c in cellContents)
-                {
-                    var textboxes = c.Elements(_ns1 + "Textbox");
-
-                    if (textboxes != null)
-                    {
-                        foreach (var textbox in textboxes)
-                        {
-                            tablixCell.TablixCellContent.Add(this.ProcessTextbox(textbox));
-                        }                        
-                    }
-
-                    // Process other types.
-                }
-            }
-
-            return tablixCell;
-        }
-
-        private Textbox ProcessTextbox(XElement textbox)
-        {
-            var textboxObj = new Textbox
-            {
-                Name = textbox.Attribute("Name")?.Value,
-                CanGrow = textbox.Element(_ns1 + "CanGrow")?.Value == "true",
-                KeepTogether = textbox.Element(_ns1 + "KeepTogether")?.Value == "true"
-            };
-
-            var paragraphs = textbox.Elements(_ns1 + "Paragraphs").Elements(_ns1 + "Paragraph");
-            var style = textbox.Element(_ns1 + "Style");
-
-            if (paragraphs != null)
-            {
-                textboxObj.Paragraphs = new List<Paragraph>();
-
-                foreach (var p in paragraphs)
-                {
-                    var paragraphObj = new Paragraph();
-
-                    var textRuns = p.Elements(_ns1 + "TextRuns").Elements(_ns1 + "TextRun");
-
-                    if (textRuns != null)
-                    {
-                        paragraphObj.TextRuns = new List<TextRun>();
-
-                        foreach (var tr in textRuns)
-                        {
-                            var textRunObj = new TextRun
-                            {
-                                Value = tr.Element(_ns1 + "Value")?.Value,
-                                Style = this.ProcessStyle(tr.Element(_ns1 + "Style"))
-                            };
-                                                        
-                            paragraphObj.TextRuns.Add(textRunObj);
-                        }                        
-                    }
-
-                    textboxObj.Paragraphs.Add(paragraphObj);
-                }
-            }
-
-            textboxObj.Style = this.ProcessStyle(style);
-            textboxObj.Style.Top = textbox.Element(_ns1 + "Top")?.Value;
-            textboxObj.Style.Left = textbox.Element(_ns1 + "Left")?.Value;
-            textboxObj.Style.Height = textbox.Element(_ns1 + "Height")?.Value;
-            textboxObj.Style.Width = textbox.Element(_ns1 + "Width")?.Value;
-            textboxObj.Style.ZIndex = textbox.Element(_ns1 + "ZIndex")?.Value;
-
-            return textboxObj;
-        }
-
-        private Style ProcessStyle(XElement style)
-        {
-            if (style == null)
-            {
-                return new Style();
-            }
-
-            return new Style(style, _ns1);
-        }
-
-        
     }
 }
