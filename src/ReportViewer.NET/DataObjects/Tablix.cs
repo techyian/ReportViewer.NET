@@ -1,14 +1,16 @@
-﻿using Microsoft.Extensions.Primitives;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects
 {
     public abstract class ReportItem
     {
+        public double Top { get; set; }
+        public double Left { get; set; }
+
         public abstract string Build();
     }
 
@@ -22,16 +24,28 @@ namespace ReportViewer.NET.DataObjects
         public bool Hidden { get; set; }
         public string ToggleItem { get; set; }
         public Style Style { get; set; }
+        public IEnumerable<DataSet> DataSets { get; set; }
         
         private TablixBody TablixBodyObj { get; set; }
 
         public Tablix(XElement tablix, IEnumerable<DataSet> datasets)
         {
+            this.DataSets = datasets;
             this.TablixBodyObj = new TablixBody(this, tablix.Element(Namespace + "TablixBody"));
 
             this.DataSetName = tablix.Element(Namespace + "DataSetName")?.Value;
             this.Hidden = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "Hidden")?.Value == "true";
             this.ToggleItem = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "ToggleItem")?.Value;
+
+            if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Top")?.Value) && double.TryParse(tablix.Element(Namespace + "Top").Value.TrimEnd('m'), out var top))
+            {
+                this.Top = top;
+            }
+
+            if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Left")?.Value) && double.TryParse(tablix.Element(Namespace + "Left").Value.TrimEnd('m'), out var left))
+            {
+                this.Left = left;
+            }
 
             this.Style = new Style(tablix.Element(Namespace + "Style"));
             this.Style.Top = tablix.Element(Namespace + "Top")?.Value;
@@ -113,20 +127,25 @@ namespace ReportViewer.NET.DataObjects
             {
                 var row = this.TablixRows[i];
 
-                sb.AppendLine("<tr>");
-
-                if (this.TablixColumns.Count == 0 || i == 0)
+                if (row.ContainsRepeatExpression && row.Body.Tablix.DataSetReference != null && row.Body.Tablix.DataSetReference.DataSet.DataSetResults != null)
                 {
-                    row.Build();
+                    foreach (var result in row.Body.Tablix.DataSetReference.DataSet.DataSetResults)
+                    {
+                        row.Values = result;
+
+                        sb.AppendLine("<tr>");
+                        sb.AppendLine(row.Build());
+                        sb.AppendLine("</tr>");
+                    }
                 }
-
-                sb.AppendLine("</tr>");
+                else
+                {
+                    sb.AppendLine("<tr>");
+                    sb.AppendLine(row.Build());
+                    sb.AppendLine("</tr>");
+                }
             }
 
-            foreach (var row in this.TablixRows)
-            {
-
-            }
             sb.AppendLine("</tbody>");
 
             return sb.ToString();
@@ -155,7 +174,8 @@ namespace ReportViewer.NET.DataObjects
         public string Height { get; set; }
         public List<TablixCell> TablixCells { get; set; }
         public TablixBody Body { get; set; }
-        public bool ContainsUserExpression { get; set; }
+        public bool ContainsRepeatExpression { get; set; }
+        public dynamic Values { get; set; }
 
         internal TablixRow(TablixBody body, XElement row)
         {
@@ -171,9 +191,9 @@ namespace ReportViewer.NET.DataObjects
                 {
                     this.TablixCells.Add(new TablixCell(this, c));
 
-                    if (!this.ContainsUserExpression && !string.IsNullOrEmpty(c.Value))
+                    if (!this.ContainsRepeatExpression && !string.IsNullOrEmpty(c.Value))
                     {
-                        this.ContainsUserExpression = LayoutProvider.CountRegex.IsMatch(c.Value) || LayoutProvider.FieldRegex.IsMatch(c.Value);
+                        this.ContainsRepeatExpression = !LayoutProvider.CountRegex.IsMatch(c.Value) && LayoutProvider.FieldRegex.IsMatch(c.Value);
                     }
                 }
             }
@@ -182,13 +202,14 @@ namespace ReportViewer.NET.DataObjects
         public string Build()
         {
             var sb = new StringBuilder();
-
-            sb.AppendLine(@"<td height=""" + this.Height + @"""></td>");
-
+                        
+            sb.AppendLine(@"<tr height=""" + this.Height + @""">");
+                        
             if (this.TablixCells != null)
             {
                 foreach (var cell in this.TablixCells)
                 {
+                    sb.AppendLine("<td>");
                     if (cell.TablixCellContent != null)
                     {
                         for (var i = 0; i < cell.TablixCellContent.Count; i++)
@@ -198,8 +219,11 @@ namespace ReportViewer.NET.DataObjects
                             sb.AppendLine(content.Build());
                         }
                     }
+                    sb.AppendLine("</td>");
                 }
             }
+
+            sb.AppendLine("</tr>");
 
             return sb.ToString();
         }
@@ -208,7 +232,7 @@ namespace ReportViewer.NET.DataObjects
     public class TablixCell
     {
         public List<ReportItem> TablixCellContent { get; set; }
-        protected TablixRow Row { get; set; }
+        public TablixRow Row { get; set; }
 
         internal TablixCell(TablixRow row, XElement cell)
         {
@@ -227,7 +251,7 @@ namespace ReportViewer.NET.DataObjects
                     {
                         foreach (var textbox in textboxes)
                         {                            
-                            this.TablixCellContent.Add(new Textbox(this, textbox));
+                            this.TablixCellContent.Add(new Textbox(this, textbox, this.Row.Body.Tablix.DataSets));
                         }
                     }
 
@@ -328,7 +352,7 @@ namespace ReportViewer.NET.DataObjects
             sb.Append(!string.IsNullOrEmpty(this.PaddingBottom) ? $"padding-bottom: {this.PaddingBottom};" : "");
             sb.Append(!string.IsNullOrEmpty(this.BackgroundColor) ? $"background-color: {this.BackgroundColor};" : "");
             sb.Append(!string.IsNullOrEmpty(this.VerticalAlign) ? $"vertical-align: {this.VerticalAlign};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {this.Top};" : "");
+            //sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {this.Top};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Left) ? $"left: {this.Left};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Height) ? $"height: {this.Height};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {this.Width};" : "");
@@ -337,10 +361,10 @@ namespace ReportViewer.NET.DataObjects
             sb.Append(!string.IsNullOrEmpty(this.FontWeight) ? $"font-weight: {this.FontWeight};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Color) ? $"color: {this.Color};" : "");
 
-            if (!string.IsNullOrEmpty(this.Top) || !string.IsNullOrEmpty(this.Left))
-            {
-                sb.Append("position: absolute;");
-            }
+            //if (!string.IsNullOrEmpty(this.Top) || !string.IsNullOrEmpty(this.Left))
+            //{
+            //    sb.Append("position: absolute;");
+            //}
 
             sb.Append("\"");
 
@@ -363,17 +387,19 @@ namespace ReportViewer.NET.DataObjects
         public List<Paragraph> Paragraphs { get; set; }
         public Style Style { get; set; }
         public TablixCell Cell { get; set; }
+        public IEnumerable<DataSet> DataSets { get; set; }
 
-        public Textbox(TablixCell cell, XElement textbox) 
-            : this(textbox)
+        public Textbox(TablixCell cell, XElement textbox, IEnumerable<DataSet> dataSets) 
+            : this(textbox, dataSets)
         {
             this.Cell = cell;            
         }
 
-        public Textbox(XElement textbox)
+        public Textbox(XElement textbox, IEnumerable<DataSet> dataSets)
         {
+            this.DataSets = dataSets;
             this.Paragraphs = new List<Paragraph>();
-
+            
             this.Name = textbox.Attribute("Name")?.Value;
             this.CanGrow = textbox.Element(Tablix.Namespace + "CanGrow")?.Value == "true";
             this.KeepTogether = textbox.Element(Tablix.Namespace + "KeepTogether")?.Value == "true";
@@ -381,7 +407,21 @@ namespace ReportViewer.NET.DataObjects
             var paragraphs = textbox.Elements(Tablix.Namespace + "Paragraphs").Elements(Tablix.Namespace + "Paragraph");
             var style = textbox.Element(Tablix.Namespace + "Style");
 
+            if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Top")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Top").Value.TrimEnd('m'), out var top))
+            {
+                this.Top = top;
+            }
+
+            if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Left")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Left").Value.TrimEnd('m'), out var left))
+            {
+                this.Left = left;
+            }
+
             this.Style = new Style(style);
+            this.Style.Top = textbox.Element(Tablix.Namespace + "Top")?.Value;
+            this.Style.Left = textbox.Element(Tablix.Namespace + "Left")?.Value;
+            this.Style.Height = textbox.Element(Tablix.Namespace + "Height")?.Value;
+            this.Style.Width = textbox.Element(Tablix.Namespace + "Width")?.Value;
 
             if (paragraphs != null)
             {
@@ -457,11 +497,14 @@ namespace ReportViewer.NET.DataObjects
 
     public class TextRun
     {
+        public static Regex CountRegex = new Regex("(?:\\(*?)(?:Count?)(\\((.*?)\\)\\)*)");
+        public static Regex FieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
+
         public string Value { get; set; }
         public Style Style { get; set; }
         public bool ContainsDataSetExpression { get; set; }
         public Paragraph Paragraph { get; set; }
-
+             
         public TextRun(Paragraph paragraph, XElement textRun)
         {
             this.Paragraph = paragraph;
@@ -473,10 +516,285 @@ namespace ReportViewer.NET.DataObjects
         {
             if (this.Value.StartsWith('='))
             {
-                return $"<span {this.Style?.Build()}>{{{{{this.Value}}}}}</span>";
+                var cell = this.Paragraph.Textbox.Cell;
+
+                if (cell != null)
+                {
+                    // We've come from a tablix cell.
+                    if (cell.Row.Values != null)
+                    {
+                        var parsedValue = this.ParseTablixExpressionString(this.Value, cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Row.Values, null);
+                        return $"<span {this.Style?.Build()}>{parsedValue}</span>";
+                    }
+                }
+                else
+                {
+                    // We've come from a standalone textbox. Try to find dataset for this field.
+                    var parsedValue = this.ParseTablixExpressionString(this.Value, null, null, this.Paragraph.Textbox.DataSets);
+
+                    return $"<span {this.Style?.Build()}>{parsedValue}</span>";
+                }
             }
 
             return $"<span {this.Style?.Build()}>{this.Value}</span>";
+        }
+
+        private string ParseTablixExpressionString(
+            string tablixText, 
+            IEnumerable<dynamic> dataSetResults,
+            dynamic values, 
+            IEnumerable<DataObjects.DataSet> dataSets
+        )
+        {
+            string currentString = tablixText;
+            List<TablixExpression> expressions = new List<TablixExpression>();
+
+            // TODO: Parse built in expressions, e.g. Globals.
+
+            while (!string.IsNullOrEmpty(currentString))
+            {
+                var currentExpression = new TablixExpression();
+                var proposedString = string.Empty;
+
+                if (CountRegex.IsMatch(currentString) &&
+                    (currentExpression.Operator == TablixOperator.None || CountRegex.Match(currentString).Index < currentExpression.Index)
+                )
+                {
+                    var regMatch = CountRegex.Match(currentString);
+                    var group = regMatch.Groups[0];
+                    var idx = group.Index;
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Count;
+
+                    var endIndx = idx + group.Value.Length;
+
+                    this.ParseCountExpression(currentString, currentExpression, dataSetResults, values, dataSets);
+
+                    proposedString = (endIndx == currentString.Length) ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
+                }
+
+                if (currentString.IndexOf("+") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("+") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("+");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Add;
+
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
+                }
+
+                if (currentString.IndexOf("-") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("-") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("-");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Subtract;
+
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
+                }
+
+                if (currentString.IndexOf("*") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("*") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("*");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Multiply;
+
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
+                }
+
+                if (currentString.IndexOf("/") > -1 &&
+                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("/") < currentExpression.Index)
+                )
+                {
+                    var idx = currentString.IndexOf("/");
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Divide;
+
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
+                }
+
+                if (FieldRegex.IsMatch(currentString) &&
+                    (currentExpression.Operator == TablixOperator.None || FieldRegex.Match(currentString).Index < currentExpression.Index)
+                )
+                {
+                    var regMatch = FieldRegex.Match(currentString);
+                    var group = regMatch.Groups[0];
+                    var idx = group.Index;
+
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = TablixOperator.Field;
+
+                    var endIndx = idx + group.Value.Length;
+
+                    this.ParseFieldExpression(currentString, currentExpression, dataSetResults, values, dataSets);
+
+                    proposedString = (endIndx == currentString.Length) ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
+                }
+
+                if (currentExpression.Operator == TablixOperator.None)
+                {
+                    break;
+                }
+
+                expressions.Add(currentExpression);
+                currentString = proposedString;
+            }
+
+            return this.ParseTablixExpression(expressions);
+        }
+
+        private string ParseTablixExpression(IEnumerable<TablixExpression> expressions)
+        {
+            TablixOperator lastOperator;
+
+            if (expressions.Count() > 0)
+            {
+                var final = expressions.Aggregate((prev, next) =>
+                {
+                    var newExpr = new TablixExpression();
+
+                    switch (next.Operator)
+                    {
+                        case TablixOperator.Count:
+                            newExpr.Value = (int)prev.Value;
+                            break;
+                        case TablixOperator.Add:
+                            newExpr.Value = (int)prev.Value + (int)next.Value;
+                            break;
+                        case TablixOperator.Subtract:
+                            newExpr.Value = (int)prev.Value - (int)next.Value;
+                            break;
+                        case TablixOperator.Multiply:
+                            newExpr.Value = (int)prev.Value * (int)next.Value;
+                            break;
+                        case TablixOperator.Divide:
+                            newExpr.Value = (int)prev.Value / (int)next.Value;
+                            break;
+                    }
+
+                    return newExpr;
+                });
+
+                if (final.Value == null)
+                {
+                    return string.Empty;
+                }
+
+                return final.Value.ToString();
+            }
+
+            return string.Empty;
+        }
+
+        private void ParseCountExpression(
+            string currentString, 
+            TablixExpression expression, 
+            IEnumerable<dynamic> dataSetResults,
+            dynamic values, 
+            IEnumerable<DataObjects.DataSet> dataSets
+        )
+        {
+            var fieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
+
+            // TODO: Handle other count expressions not using fields??
+            if (fieldRegex.IsMatch(currentString))
+            {
+                var match = fieldRegex.Match(currentString);
+                var matchString = match.Value;
+
+                var fieldsIdx = matchString.IndexOf("Fields!");
+                var fieldEnd = matchString.IndexOf(".", fieldsIdx);
+                var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+
+                expression.Index = match.Index;
+                expression.Field = fieldName;
+
+                var dataSetStart = matchString.IndexOf('"', fieldEnd);
+
+                if (dataSetStart > -1)
+                {
+                    var dataSetEnd = matchString.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
+                    var dataSetName = matchString.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
+
+                    expression.DataSetName = dataSetName;
+                }
+                                                   
+                expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetResults, values, dataSets);
+            }
+        }
+
+        private void ParseFieldExpression(
+            string currentString, 
+            TablixExpression expression, 
+            IEnumerable<dynamic> dataSetResults,
+            dynamic values, 
+            IEnumerable<DataObjects.DataSet> dataSets
+        )
+        {
+            var fieldsIdx = currentString.IndexOf("Fields!");
+            var fieldEnd = currentString.IndexOf(".", fieldsIdx);
+            var fieldName = currentString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+
+            expression.Index = fieldsIdx;
+            expression.Field = fieldName;
+            expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetResults, values, dataSets);
+        }
+
+        private dynamic ExtractExpressionValue(
+            string dataSetName, 
+            string fieldName, 
+            TablixOperator op, 
+            IEnumerable<dynamic> dataSetResults, 
+            dynamic values, 
+            IEnumerable<DataObjects.DataSet> dataSets
+        )
+        {
+            if (dataSetResults != null)
+            {                
+                switch (op)
+                {
+                    case TablixOperator.Count:
+                        return dataSetResults.Count();
+                    case TablixOperator.Field:
+                        var expando = (IDictionary<string, object>)values;
+                        if (expando.ContainsKey(fieldName))
+                        {
+                            return expando[fieldName];
+                        }                            
+                        break;
+                }                
+            }
+            else
+            {
+                var dataSet = dataSets.FirstOrDefault(ds => ds.Name == dataSetName);
+
+                if (dataSet != null)
+                {                    
+                    if (dataSet.DataSetResults != null)
+                    {
+                        switch (op)
+                        {
+                            case TablixOperator.Count:
+                                return dataSet.DataSetResults.Count();
+                            case TablixOperator.Field:
+                                foreach (IDictionary<string, object> expando in dataSet.DataSetResults)
+                                {
+                                    if (expando.ContainsKey(fieldName))
+                                    {
+                                        return expando[fieldName];
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
     }
 

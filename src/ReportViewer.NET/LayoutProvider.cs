@@ -79,60 +79,26 @@ namespace ReportViewer.NET
         {
             var reportItems = _report.ReportItems;
             var sb = new StringBuilder();
-            
-            foreach (var reportItem in reportItems) 
+
+            reportItems = reportItems.OrderBy(ri => ri.Top).ThenBy(ri => ri.Left).ToList();
+
+            foreach (var reportItem in reportItems)
             {
                 if (reportItem is Tablix)
                 {
                     var tablix = (Tablix)reportItem;
 
-                    if (tablix.DataSetReference == null)
+                    if (tablix.DataSetReference != null)
                     {
-                        sb.AppendLine(tablix.Build());
-                    }
-                    else
-                    {
-                        if (tablix.DataSetReference.DataSet == null)
-                            continue;
-
                         // We potentially have calculated text which needs resolving from the Data Set.
                         tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(tablix.DataSetReference, _report.ReportParameters, userProvidedParameters)).ToList();
-
-                        var tablixText = tablix.Build();
-                        
-
-                        while (tablixText.IndexOf("{{") > -1)
-                        {
-                            // Calculate expression.
-                            var substring = tablixText.Substring(tablixText.IndexOf("{{"), (tablixText.IndexOf("}}") + 2) - tablixText.IndexOf("{{"));
-                            var expression = tablixText.Substring(tablixText.IndexOf("{{") + 2, tablixText.IndexOf("}}") - tablixText.IndexOf("{{") - 2);
-
-                            expression = this.ParseTablixExpressionString(expression, tablix.DataSetReference, _report.DataSets);
-
-                            tablixText = tablixText.Replace(substring, expression);
-                        }
-
-                        sb.AppendLine(tablixText);
                     }
-                }   
-                
-                if (reportItem is Textbox)
-                {
-                    var textboxText = reportItem.Build();
-
-                    while (textboxText.IndexOf("{{") > -1)
-                    {
-                        // Calculate expression.
-                        var substring = textboxText.Substring(textboxText.IndexOf("{{"), (textboxText.IndexOf("}}") + 2) - textboxText.IndexOf("{{"));
-                        var expression = textboxText.Substring(textboxText.IndexOf("{{") + 2, textboxText.IndexOf("}}") - textboxText.IndexOf("{{") - 2);
-
-                        expression = this.ParseTablixExpressionString(expression, null, _report.DataSets);
-
-                        textboxText = textboxText.Replace(substring, expression);
-                    }
-
-                    sb.AppendLine(textboxText);
                 }
+            }
+
+            foreach (var reportItem in reportItems) 
+            {
+                sb.AppendLine(reportItem.Build());
             }
 
             return new HtmlString(sb.ToString());

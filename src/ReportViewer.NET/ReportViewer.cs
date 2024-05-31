@@ -294,7 +294,7 @@ namespace ReportViewer.NET
                     {
                         foreach (var tb in textboxElements)
                         {
-                            reportItemList.Add(new Textbox(tb));
+                            reportItemList.Add(new Textbox(tb, datasets));
                         }
                     }
                 }
