@@ -6,12 +6,65 @@ using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects
 {
+    public class ReportItemComparer : IComparer<ReportItem>
+    {
+        public int Compare(ReportItem? x, ReportItem? y)
+        {
+            if (x?.Top == y?.Top && x?.Left < y?.Left)
+            {
+                return -1;
+            }
+
+            if (x?.Top == y?.Top && x?.Left > y?.Left)
+            {
+                return 1;
+            }
+
+            if (x?.Top == y?.Top)
+            {
+                return 0;
+            }
+
+            if (x?.Top > y?.Top)
+            {
+                if (x?.Top > y?.Top + y?.Height)
+                {
+                    // New row.
+                    return 1;
+                }
+                else
+                {
+                    // Same row.
+                    if (x?.Left > y?.Left)
+                    {
+                        return 1;
+                    }
+
+                    return -1;
+                }
+            }
+            
+            return -1;
+        }
+    }
+
     public abstract class ReportItem
     {
         public double Top { get; set; }
         public double Left { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
 
-        public abstract string Build();
+        public abstract string Build();                
+    }
+
+    public class ReportRow
+    {
+        public double MaxTop { get; set; }
+        public double MaxHeight { get; set; }
+        public double MaxLeft { get; set; }
+        public double MaxWidth { get; set; }
+        public List<ReportItem> RowItems { get; set; } = new List<ReportItem>();
     }
 
     public class Tablix : ReportItem
@@ -45,6 +98,16 @@ namespace ReportViewer.NET.DataObjects
             if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Left")?.Value) && double.TryParse(tablix.Element(Namespace + "Left").Value.TrimEnd('m'), out var left))
             {
                 this.Left = left;
+            }
+
+            if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Width")?.Value) && double.TryParse(tablix.Element(Namespace + "Width").Value.TrimEnd('m'), out var width))
+            {
+                this.Width = width;
+            }
+
+            if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Height")?.Value) && double.TryParse(tablix.Element(Namespace + "Height").Value.TrimEnd('m'), out var height))
+            {
+                this.Height = height;
             }
 
             this.Style = new Style(tablix.Element(Namespace + "Style"));
@@ -352,7 +415,7 @@ namespace ReportViewer.NET.DataObjects
             sb.Append(!string.IsNullOrEmpty(this.PaddingBottom) ? $"padding-bottom: {this.PaddingBottom};" : "");
             sb.Append(!string.IsNullOrEmpty(this.BackgroundColor) ? $"background-color: {this.BackgroundColor};" : "");
             sb.Append(!string.IsNullOrEmpty(this.VerticalAlign) ? $"vertical-align: {this.VerticalAlign};" : "");
-            //sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {this.Top};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {this.Top};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Left) ? $"left: {this.Left};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Height) ? $"height: {this.Height};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {this.Width};" : "");
@@ -415,6 +478,16 @@ namespace ReportViewer.NET.DataObjects
             if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Left")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Left").Value.TrimEnd('m'), out var left))
             {
                 this.Left = left;
+            }
+
+            if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Width")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Width").Value.TrimEnd('m'), out var width))
+            {
+                this.Width = width;
+            }
+
+            if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Height")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Height").Value.TrimEnd('m'), out var height))
+            {
+                this.Height = height;
             }
 
             this.Style = new Style(style);

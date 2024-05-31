@@ -79,11 +79,50 @@ namespace ReportViewer.NET
         {
             var reportItems = _report.ReportItems;
             var sb = new StringBuilder();
+            var reportRows = new List<ReportRow>()
+            {
+                new ReportRow()
+            };
 
-            reportItems = reportItems.OrderBy(ri => ri.Top).ThenBy(ri => ri.Left).ToList();
+            reportItems = reportItems.Order(new ReportItemComparer()).ToList();
 
             foreach (var reportItem in reportItems)
             {
+                var currentRow = reportRows.Last();
+
+                if (currentRow.MaxTop == 0)
+                {
+                    currentRow.RowItems.Add(reportItem);
+                    currentRow.MaxTop = reportItem.Top;
+                    currentRow.MaxHeight = reportItem.Height;
+                    currentRow.MaxLeft = reportItem.Left;
+                    currentRow.MaxWidth = reportItem.Width;
+                }
+                else
+                {
+                    if (reportItem.Top > currentRow.MaxTop + currentRow.MaxHeight)
+                    {
+                        var newRow = new ReportRow()
+                        {
+                            MaxTop = reportItem.Top,
+                            MaxHeight = reportItem.Height,
+                            MaxLeft = reportItem.Left,
+                            MaxWidth = reportItem.Width
+                        };
+
+                        newRow.RowItems.Add(reportItem);
+                        reportRows.Add(newRow);
+                    }
+                    else
+                    {
+                        currentRow.MaxTop = reportItem.Top > currentRow.MaxTop ? reportItem.Top : currentRow.MaxTop;
+                        currentRow.MaxWidth = reportItem.Width > currentRow.MaxWidth ? reportItem.Width : currentRow.MaxWidth;
+                        currentRow.MaxLeft = reportItem.Left > currentRow.MaxLeft ? reportItem.Left : currentRow.MaxLeft;
+                        currentRow.MaxHeight = reportItem.Height > currentRow.MaxHeight ? reportItem.Height : currentRow.MaxHeight;
+                        currentRow.RowItems.Add(reportItem);
+                    }                    
+                }
+                                
                 if (reportItem is Tablix)
                 {
                     var tablix = (Tablix)reportItem;
@@ -95,10 +134,17 @@ namespace ReportViewer.NET
                     }
                 }
             }
-
-            foreach (var reportItem in reportItems) 
+                        
+            foreach (var reportRow in reportRows) 
             {
-                sb.AppendLine(reportItem.Build());
+                sb.AppendLine(@"<div class=""report-row"">");
+                                
+                foreach (var reportItem in reportRow.RowItems)
+                {
+                    sb.AppendLine(reportItem.Build());
+                }
+                
+                sb.AppendLine("</div>");
             }
 
             return new HtmlString(sb.ToString());
