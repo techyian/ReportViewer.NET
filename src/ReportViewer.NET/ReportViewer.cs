@@ -105,9 +105,10 @@ namespace ReportViewer.NET
             var datasetElements = xml.Root.Descendants(_ns1 + "DataSets").SelectMany(e => e.Elements(_ns1 + "DataSet"));
             var dataSets = this.ProcessDataSets(xml.Root, datasetElements);
             var reportParameters = this.ProcessReportParameters(xml.Root, dataSets);
-            var reportItems = this.ProcessReportItems(xml.Root, dataSets);
             var embeddedImages = this.ProcessEmbeddedImages(xml.Root);
 
+            var reportItems = this.ProcessReportItems(xml.Root, dataSets, embeddedImages);
+            
             reportRdl.DataSources = _dataSources;
             reportRdl.DataSets = dataSets;
             reportRdl.ReportParameters = reportParameters;
@@ -272,7 +273,7 @@ namespace ReportViewer.NET
             return reportParamList;
         }
 
-        private List<ReportItem> ProcessReportItems(XElement root, IEnumerable<DataSet> datasets)
+        private List<ReportItem> ProcessReportItems(XElement root, IEnumerable<DataSet> datasets, IEnumerable<EmbeddedImage> embeddedImages)
         {
             var reportItemList = new List<ReportItem>();
             var reportItemElements = root.Descendants(_ns1 + "ReportItems");
@@ -300,6 +301,16 @@ namespace ReportViewer.NET
                             reportItemList.Add(new Textbox(tb, datasets));
                         }
                     }
+
+                    var imageElements = ri.Elements(_ns1 + "Image");
+
+                    if (imageElements != null)
+                    {
+                        foreach (var img in imageElements)
+                        {
+                            reportItemList.Add(new Image(img, embeddedImages));
+                        }
+                    }
                 }
             }
 
@@ -318,8 +329,8 @@ namespace ReportViewer.NET
                     embeddedImages.Add(new EmbeddedImage
                     {
                         Name = ei.Attribute("Name")?.Value,
-                        MimeType = ei.Attribute("MIMEType")?.Value,
-                        ImageData = ei.Attribute("ImageData")?.Value
+                        MimeType = ei.Element(_ns1 + "MIMEType")?.Value,
+                        ImageData = ei.Element(_ns1 + "ImageData")?.Value
                     });                    
                 }
             }
