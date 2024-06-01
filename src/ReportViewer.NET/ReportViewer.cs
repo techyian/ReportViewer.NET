@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Html;
 using ReportViewer.NET.DataObjects;
+using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 
@@ -105,11 +106,13 @@ namespace ReportViewer.NET
             var dataSets = this.ProcessDataSets(xml.Root, datasetElements);
             var reportParameters = this.ProcessReportParameters(xml.Root, dataSets);
             var reportItems = this.ProcessReportItems(xml.Root, dataSets);
+            var embeddedImages = this.ProcessEmbeddedImages(xml.Root);
 
             reportRdl.DataSources = _dataSources;
             reportRdl.DataSets = dataSets;
             reportRdl.ReportParameters = reportParameters;
             reportRdl.ReportItems = reportItems;
+            reportRdl.EmbeddedImages = embeddedImages;
 
             return reportRdl;
         }
@@ -301,6 +304,27 @@ namespace ReportViewer.NET
             }
 
             return reportItemList;
+        }
+
+        private List<EmbeddedImage> ProcessEmbeddedImages(XElement root)
+        {
+            var embeddedImages = new List<EmbeddedImage>();
+            var reportEmbeddedImages = root.Descendants(_ns1 + "EmbeddedImages").Elements(_ns1 + "EmbeddedImage");
+
+            if (reportEmbeddedImages != null)
+            {
+                foreach (var ei in reportEmbeddedImages)
+                {
+                    embeddedImages.Add(new EmbeddedImage
+                    {
+                        Name = ei.Attribute("Name")?.Value,
+                        MimeType = ei.Attribute("MIMEType")?.Value,
+                        ImageData = ei.Attribute("ImageData")?.Value
+                    });                    
+                }
+            }
+
+            return embeddedImages;
         }
     }
 }

@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using ReportViewer.NET.DataObjects.ReportItems;
 
 namespace ReportViewer.NET
 {

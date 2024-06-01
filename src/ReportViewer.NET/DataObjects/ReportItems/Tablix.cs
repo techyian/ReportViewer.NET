@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
-namespace ReportViewer.NET.DataObjects
+namespace ReportViewer.NET.DataObjects.ReportItems
 {
     public class ReportItemComparer : IComparer<ReportItem>
     {
@@ -70,7 +71,7 @@ namespace ReportViewer.NET.DataObjects
         public double Width { get; set; }
         public double Height { get; set; }
 
-        public abstract string Build();                
+        public abstract string Build();
     }
 
     public class ReportRow
@@ -88,57 +89,57 @@ namespace ReportViewer.NET.DataObjects
 
         public string Name { get; set; }
         public string DataSetName { get; set; }
-        public DataSetReference DataSetReference { get; set; }        
+        public DataSetReference DataSetReference { get; set; }
         public bool Hidden { get; set; }
         public string ToggleItem { get; set; }
         public Style Style { get; set; }
         public IEnumerable<DataSet> DataSets { get; set; }
-        
+
         private TablixBody TablixBodyObj { get; set; }
 
         public Tablix(XElement tablix, IEnumerable<DataSet> datasets)
         {
-            this.DataSets = datasets;
-            this.TablixBodyObj = new TablixBody(this, tablix.Element(Namespace + "TablixBody"));
+            DataSets = datasets;
+            TablixBodyObj = new TablixBody(this, tablix.Element(Namespace + "TablixBody"));
 
-            this.DataSetName = tablix.Element(Namespace + "DataSetName")?.Value;
-            this.Hidden = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "Hidden")?.Value == "true";
-            this.ToggleItem = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "ToggleItem")?.Value;
+            DataSetName = tablix.Element(Namespace + "DataSetName")?.Value;
+            Hidden = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "Hidden")?.Value == "true";
+            ToggleItem = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "ToggleItem")?.Value;
 
             if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Top")?.Value) && double.TryParse(tablix.Element(Namespace + "Top").Value.TrimEnd('m'), out var top))
             {
-                this.Top = top;
+                Top = top;
             }
 
             if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Left")?.Value) && double.TryParse(tablix.Element(Namespace + "Left").Value.TrimEnd('m'), out var left))
             {
-                this.Left = left;
+                Left = left;
             }
 
             if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Width")?.Value) && double.TryParse(tablix.Element(Namespace + "Width").Value.TrimEnd('m'), out var width))
             {
-                this.Width = width;
+                Width = width;
             }
 
             if (!string.IsNullOrEmpty(tablix.Element(Namespace + "Height")?.Value) && double.TryParse(tablix.Element(Namespace + "Height").Value.TrimEnd('m'), out var height))
             {
-                this.Height = height;
+                Height = height;
             }
 
-            this.Style = new Style(tablix.Element(Namespace + "Style"));
-            this.Style.Top = tablix.Element(Namespace + "Top")?.Value;
-            this.Style.Left = tablix.Element(Namespace + "Left")?.Value;
-            this.Style.Height = tablix.Element(Namespace + "Height")?.Value;
-            this.Style.Width = tablix.Element(Namespace + "Width")?.Value;
+            Style = new Style(tablix.Element(Namespace + "Style"));
+            Style.Top = tablix.Element(Namespace + "Top")?.Value;
+            Style.Left = tablix.Element(Namespace + "Left")?.Value;
+            Style.Height = tablix.Element(Namespace + "Height")?.Value;
+            Style.Width = tablix.Element(Namespace + "Width")?.Value;
 
-            if (!string.IsNullOrEmpty(this.DataSetName))
+            if (!string.IsNullOrEmpty(DataSetName))
             {
-                this.DataSetReference = new DataSetReference()
+                DataSetReference = new DataSetReference()
                 {
-                    DataSetName = this.DataSetName
+                    DataSetName = DataSetName
                 };
 
-                this.DataSetReference.DataSet = datasets.FirstOrDefault(ds => ds.Name == this.DataSetReference.DataSetName);
+                DataSetReference.DataSet = datasets.FirstOrDefault(ds => ds.Name == DataSetReference.DataSetName);
             }
         }
 
@@ -146,12 +147,12 @@ namespace ReportViewer.NET.DataObjects
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<table {this.Style?.Build()} class=\"table reportviewer-table\">");
-            sb.AppendLine(this.TablixBodyObj?.Build());
+            sb.AppendLine($"<table {Style?.Build()} class=\"table reportviewer-table\">");
+            sb.AppendLine(TablixBodyObj?.Build());
             sb.AppendLine("</table>");
 
             return sb.ToString();
-        }                
+        }
     }
 
     public class TablixBody
@@ -162,9 +163,9 @@ namespace ReportViewer.NET.DataObjects
 
         internal TablixBody(Tablix tablix, XElement tablixBody)
         {
-            this.Tablix = tablix;
-            this.TablixColumns = new List<TablixColumn>();
-            this.TablixRows = new List<TablixRow>();
+            Tablix = tablix;
+            TablixColumns = new List<TablixColumn>();
+            TablixRows = new List<TablixRow>();
 
             var columns = tablixBody.Elements(Tablix.Namespace + "TablixColumns").Elements(Tablix.Namespace + "TablixColumn");
             var rows = tablixBody.Elements(Tablix.Namespace + "TablixRows").Elements(Tablix.Namespace + "TablixRow");
@@ -173,7 +174,7 @@ namespace ReportViewer.NET.DataObjects
             {
                 foreach (var c in columns)
                 {
-                    this.TablixColumns.Add(new TablixColumn(this, c));
+                    TablixColumns.Add(new TablixColumn(this, c));
                 }
             }
 
@@ -181,7 +182,7 @@ namespace ReportViewer.NET.DataObjects
             {
                 foreach (var r in rows)
                 {
-                    this.TablixRows.Add(new TablixRow(this, r));
+                    TablixRows.Add(new TablixRow(this, r));
                 }
             }
         }
@@ -192,7 +193,7 @@ namespace ReportViewer.NET.DataObjects
 
             sb.AppendLine("<thead>");
             sb.AppendLine("<tr>");
-            foreach (var column in this.TablixColumns)
+            foreach (var column in TablixColumns)
             {
                 sb.AppendLine(column.Build());
             }
@@ -201,9 +202,9 @@ namespace ReportViewer.NET.DataObjects
 
             sb.AppendLine("<tbody>");
 
-            for (var i = 0; i < this.TablixRows.Count; i++)
+            for (var i = 0; i < TablixRows.Count; i++)
             {
-                var row = this.TablixRows[i];
+                var row = TablixRows[i];
 
                 if (row.ContainsRepeatExpression && row.Body.Tablix.DataSetReference != null && row.Body.Tablix.DataSetReference.DataSet.DataSetResults != null)
                 {
@@ -237,13 +238,13 @@ namespace ReportViewer.NET.DataObjects
 
         internal TablixColumn(TablixBody body, XElement column)
         {
-            this.Body = body;
-            this.Width = column.Element(Tablix.Namespace + "Width")?.Value;
+            Body = body;
+            Width = column.Element(Tablix.Namespace + "Width")?.Value;
         }
 
         public string Build()
         {
-            return @"<td width=""" + this.Width + @"""></td>";
+            return @"<td width=""" + Width + @"""></td>";
         }
     }
 
@@ -257,9 +258,9 @@ namespace ReportViewer.NET.DataObjects
 
         internal TablixRow(TablixBody body, XElement row)
         {
-            this.Body = body;
-            this.Height = row.Element(Tablix.Namespace + "Height")?.Value;
-            this.TablixCells = new List<TablixCell>();
+            Body = body;
+            Height = row.Element(Tablix.Namespace + "Height")?.Value;
+            TablixCells = new List<TablixCell>();
 
             var cells = row.Elements(Tablix.Namespace + "TablixCells").Elements(Tablix.Namespace + "TablixCell");
 
@@ -267,11 +268,11 @@ namespace ReportViewer.NET.DataObjects
             {
                 foreach (var c in cells)
                 {
-                    this.TablixCells.Add(new TablixCell(this, c));
+                    TablixCells.Add(new TablixCell(this, c));
 
-                    if (!this.ContainsRepeatExpression && !string.IsNullOrEmpty(c.Value))
+                    if (!ContainsRepeatExpression && !string.IsNullOrEmpty(c.Value))
                     {
-                        this.ContainsRepeatExpression = !LayoutProvider.CountRegex.IsMatch(c.Value) && LayoutProvider.FieldRegex.IsMatch(c.Value);
+                        ContainsRepeatExpression = !LayoutProvider.CountRegex.IsMatch(c.Value) && LayoutProvider.FieldRegex.IsMatch(c.Value);
                     }
                 }
             }
@@ -280,12 +281,12 @@ namespace ReportViewer.NET.DataObjects
         public string Build()
         {
             var sb = new StringBuilder();
-                        
-            sb.AppendLine(@"<tr height=""" + this.Height + @""">");
-                        
-            if (this.TablixCells != null)
+
+            sb.AppendLine(@"<tr height=""" + Height + @""">");
+
+            if (TablixCells != null)
             {
-                foreach (var cell in this.TablixCells)
+                foreach (var cell in TablixCells)
                 {
                     sb.AppendLine("<td>");
                     if (cell.TablixCellContent != null)
@@ -314,22 +315,22 @@ namespace ReportViewer.NET.DataObjects
 
         internal TablixCell(TablixRow row, XElement cell)
         {
-            this.Row = row;
-            this.TablixCellContent = new List<ReportItem>();
+            Row = row;
+            TablixCellContent = new List<ReportItem>();
 
             var cellContents = cell.Elements(Tablix.Namespace + "CellContents");
 
             if (cellContents != null)
             {
                 foreach (var c in cellContents)
-                {                    
+                {
                     var textboxes = c.Elements(Tablix.Namespace + "Textbox");
 
                     if (textboxes != null)
                     {
                         foreach (var textbox in textboxes)
-                        {                            
-                            this.TablixCellContent.Add(new Textbox(this, textbox, this.Row.Body.Tablix.DataSets));
+                        {
+                            TablixCellContent.Add(new Textbox(this, textbox, Row.Body.Tablix.DataSets));
                         }
                     }
 
@@ -366,14 +367,14 @@ namespace ReportViewer.NET.DataObjects
 
         public Style(XElement style)
         {
-            this.TextAlign = style?.Element(Tablix.Namespace + "TextAlign")?.Value;
+            TextAlign = style?.Element(Tablix.Namespace + "TextAlign")?.Value;
 
             var border = style?.Element(Tablix.Namespace + "Border");
             var borderBottom = style?.Element(Tablix.Namespace + "BorderBottom");
 
             if (border != null)
             {
-                this.Border = new Border
+                Border = new Border
                 {
                     Color = border.Element(Tablix.Namespace + "Color")?.Value,
                     Style = border.Element(Tablix.Namespace + "Style")?.Value,
@@ -383,7 +384,7 @@ namespace ReportViewer.NET.DataObjects
 
             if (borderBottom != null)
             {
-                this.BorderBottom = new Border
+                BorderBottom = new Border
                 {
                     Color = borderBottom.Element(Tablix.Namespace + "Color")?.Value,
                     Style = borderBottom.Element(Tablix.Namespace + "Style")?.Value,
@@ -391,20 +392,20 @@ namespace ReportViewer.NET.DataObjects
                 };
             }
 
-            this.PaddingLeft = style?.Element(Tablix.Namespace + "PaddingLeft")?.Value;
-            this.PaddingRight = style?.Element(Tablix.Namespace + "PaddingRight")?.Value;
-            this.PaddingTop = style?.Element(Tablix.Namespace + "PaddingTop")?.Value;
-            this.PaddingBottom = style?.Element(Tablix.Namespace + "PaddingBottom")?.Value;
-            this.BackgroundColor = style?.Element(Tablix.Namespace + "BackgroundColor")?.Value;
-            this.VerticalAlign = style?.Element(Tablix.Namespace + "VerticalAlign")?.Value;
-            this.Top = style?.Element(Tablix.Namespace + "Top")?.Value;
-            this.Left = style?.Element(Tablix.Namespace + "Left")?.Value;
-            this.Height = style?.Element(Tablix.Namespace + "Height")?.Value;
-            this.Width = style?.Element(Tablix.Namespace + "Width")?.Value;
-            this.ZIndex = style?.Element(Tablix.Namespace + "ZIndex")?.Value;
-            this.FontFamily = style?.Element(Tablix.Namespace + "FontFamily")?.Value;
-            this.FontWeight = style?.Element(Tablix.Namespace + "FontWeight")?.Value;
-            this.Color = style?.Element(Tablix.Namespace + "Color")?.Value;
+            PaddingLeft = style?.Element(Tablix.Namespace + "PaddingLeft")?.Value;
+            PaddingRight = style?.Element(Tablix.Namespace + "PaddingRight")?.Value;
+            PaddingTop = style?.Element(Tablix.Namespace + "PaddingTop")?.Value;
+            PaddingBottom = style?.Element(Tablix.Namespace + "PaddingBottom")?.Value;
+            BackgroundColor = style?.Element(Tablix.Namespace + "BackgroundColor")?.Value;
+            VerticalAlign = style?.Element(Tablix.Namespace + "VerticalAlign")?.Value;
+            Top = style?.Element(Tablix.Namespace + "Top")?.Value;
+            Left = style?.Element(Tablix.Namespace + "Left")?.Value;
+            Height = style?.Element(Tablix.Namespace + "Height")?.Value;
+            Width = style?.Element(Tablix.Namespace + "Width")?.Value;
+            ZIndex = style?.Element(Tablix.Namespace + "ZIndex")?.Value;
+            FontFamily = style?.Element(Tablix.Namespace + "FontFamily")?.Value;
+            FontWeight = style?.Element(Tablix.Namespace + "FontWeight")?.Value;
+            Color = style?.Element(Tablix.Namespace + "Color")?.Value;
         }
 
         public string Build()
@@ -412,32 +413,32 @@ namespace ReportViewer.NET.DataObjects
             var sb = new StringBuilder();
 
             sb.Append("style=\"");
-            sb.Append(!string.IsNullOrEmpty(this.TextAlign) ? $"text-align: {this.TextAlign.ToLower()};" : "");
+            sb.Append(!string.IsNullOrEmpty(TextAlign) ? $"text-align: {TextAlign.ToLower()};" : "");
 
-            if (this.Border != null)
+            if (Border != null)
             {
-                sb.Append(this.Border.Style == "None" ? "border: none;" : $"border: {this.Border.Width} solid {this.Border.Color};");
+                sb.Append(Border.Style == "None" ? "border: none;" : $"border: {Border.Width} solid {Border.Color};");
             }
 
-            if (this.BorderBottom != null)
+            if (BorderBottom != null)
             {
-                sb.Append(this.BorderBottom.Style == "None" ? "border: none;" : $"border-bottom: {this.BorderBottom.Width} solid {this.BorderBottom.Color};");
+                sb.Append(BorderBottom.Style == "None" ? "border: none;" : $"border-bottom: {BorderBottom.Width} solid {BorderBottom.Color};");
             }
 
-            sb.Append(!string.IsNullOrEmpty(this.PaddingLeft) ? $"padding-left: {this.PaddingLeft};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.PaddingRight) ? $"padding-right: {this.PaddingRight};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.PaddingTop) ? $"padding-top: {this.PaddingTop};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.PaddingBottom) ? $"padding-bottom: {this.PaddingBottom};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.BackgroundColor) ? $"background-color: {this.BackgroundColor};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.VerticalAlign) ? $"vertical-align: {this.VerticalAlign};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {this.Top};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Left) ? $"left: {this.Left};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Height) ? $"height: {this.Height};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {this.Width};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.ZIndex) ? $"z-index: {this.ZIndex};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.FontFamily) ? $"font-family: {this.FontFamily};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.FontWeight) ? $"font-weight: {this.FontWeight};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Color) ? $"color: {this.Color};" : "");
+            sb.Append(!string.IsNullOrEmpty(PaddingLeft) ? $"padding-left: {PaddingLeft};" : "");
+            sb.Append(!string.IsNullOrEmpty(PaddingRight) ? $"padding-right: {PaddingRight};" : "");
+            sb.Append(!string.IsNullOrEmpty(PaddingTop) ? $"padding-top: {PaddingTop};" : "");
+            sb.Append(!string.IsNullOrEmpty(PaddingBottom) ? $"padding-bottom: {PaddingBottom};" : "");
+            sb.Append(!string.IsNullOrEmpty(BackgroundColor) ? $"background-color: {BackgroundColor};" : "");
+            sb.Append(!string.IsNullOrEmpty(VerticalAlign) ? $"vertical-align: {VerticalAlign};" : "");
+            sb.Append(!string.IsNullOrEmpty(Top) ? $"top: {Top};" : "");
+            sb.Append(!string.IsNullOrEmpty(Left) ? $"left: {Left};" : "");
+            sb.Append(!string.IsNullOrEmpty(Height) ? $"height: {Height};" : "");
+            sb.Append(!string.IsNullOrEmpty(Width) ? $"width: {Width};" : "");
+            sb.Append(!string.IsNullOrEmpty(ZIndex) ? $"z-index: {ZIndex};" : "");
+            sb.Append(!string.IsNullOrEmpty(FontFamily) ? $"font-family: {FontFamily};" : "");
+            sb.Append(!string.IsNullOrEmpty(FontWeight) ? $"font-weight: {FontWeight};" : "");
+            sb.Append(!string.IsNullOrEmpty(Color) ? $"color: {Color};" : "");
 
             //if (!string.IsNullOrEmpty(this.Top) || !string.IsNullOrEmpty(this.Left))
             //{
@@ -449,7 +450,7 @@ namespace ReportViewer.NET.DataObjects
             return sb.ToString();
         }
     }
-    
+
     public class Border
     {
         public string Style { get; set; } = "None";
@@ -467,55 +468,55 @@ namespace ReportViewer.NET.DataObjects
         public TablixCell Cell { get; set; }
         public IEnumerable<DataSet> DataSets { get; set; }
 
-        public Textbox(TablixCell cell, XElement textbox, IEnumerable<DataSet> dataSets) 
+        public Textbox(TablixCell cell, XElement textbox, IEnumerable<DataSet> dataSets)
             : this(textbox, dataSets)
         {
-            this.Cell = cell;            
+            Cell = cell;
         }
 
         public Textbox(XElement textbox, IEnumerable<DataSet> dataSets)
         {
-            this.DataSets = dataSets;
-            this.Paragraphs = new List<Paragraph>();
-            
-            this.Name = textbox.Attribute("Name")?.Value;
-            this.CanGrow = textbox.Element(Tablix.Namespace + "CanGrow")?.Value == "true";
-            this.KeepTogether = textbox.Element(Tablix.Namespace + "KeepTogether")?.Value == "true";
+            DataSets = dataSets;
+            Paragraphs = new List<Paragraph>();
+
+            Name = textbox.Attribute("Name")?.Value;
+            CanGrow = textbox.Element(Tablix.Namespace + "CanGrow")?.Value == "true";
+            KeepTogether = textbox.Element(Tablix.Namespace + "KeepTogether")?.Value == "true";
 
             var paragraphs = textbox.Elements(Tablix.Namespace + "Paragraphs").Elements(Tablix.Namespace + "Paragraph");
             var style = textbox.Element(Tablix.Namespace + "Style");
 
             if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Top")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Top").Value.TrimEnd('m'), out var top))
             {
-                this.Top = top;
+                Top = top;
             }
 
             if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Left")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Left").Value.TrimEnd('m'), out var left))
             {
-                this.Left = left;
+                Left = left;
             }
 
             if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Width")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Width").Value.TrimEnd('m'), out var width))
             {
-                this.Width = width;
+                Width = width;
             }
 
             if (!string.IsNullOrEmpty(textbox.Element(Tablix.Namespace + "Height")?.Value) && double.TryParse(textbox.Element(Tablix.Namespace + "Height").Value.TrimEnd('m'), out var height))
             {
-                this.Height = height;
+                Height = height;
             }
 
-            this.Style = new Style(style);
-            this.Style.Top = textbox.Element(Tablix.Namespace + "Top")?.Value;
-            this.Style.Left = textbox.Element(Tablix.Namespace + "Left")?.Value;
-            this.Style.Height = textbox.Element(Tablix.Namespace + "Height")?.Value;
-            this.Style.Width = textbox.Element(Tablix.Namespace + "Width")?.Value;
+            Style = new Style(style);
+            Style.Top = textbox.Element(Tablix.Namespace + "Top")?.Value;
+            Style.Left = textbox.Element(Tablix.Namespace + "Left")?.Value;
+            Style.Height = textbox.Element(Tablix.Namespace + "Height")?.Value;
+            Style.Width = textbox.Element(Tablix.Namespace + "Width")?.Value;
 
             if (paragraphs != null)
             {
                 foreach (var p in paragraphs)
                 {
-                    this.Paragraphs.Add(new Paragraph(this, p));                                        
+                    Paragraphs.Add(new Paragraph(this, p));
                 }
             }
         }
@@ -524,11 +525,11 @@ namespace ReportViewer.NET.DataObjects
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<div {this.Style?.Build()}>");
-            
-            if (this.Paragraphs != null)
+            sb.AppendLine($"<div {Style?.Build()}>");
+
+            if (Paragraphs != null)
             {
-                foreach (var p in this.Paragraphs)
+                foreach (var p in Paragraphs)
                 {
                     sb.AppendLine(p.Build());
                 }
@@ -548,16 +549,16 @@ namespace ReportViewer.NET.DataObjects
 
         public Paragraph(Textbox textbox, XElement paragraph)
         {
-            this.Textbox = textbox;
-            this.TextRuns = new List<TextRun>();
+            Textbox = textbox;
+            TextRuns = new List<TextRun>();
 
             var textRuns = paragraph.Elements(Tablix.Namespace + "TextRuns").Elements(Tablix.Namespace + "TextRun");
 
             if (textRuns != null)
-            {                
+            {
                 foreach (var tr in textRuns)
-                {                    
-                    this.TextRuns.Add(new TextRun(this, tr));
+                {
+                    TextRuns.Add(new TextRun(this, tr));
                 }
             }
         }
@@ -566,11 +567,11 @@ namespace ReportViewer.NET.DataObjects
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<p {this.Style?.Build()}>");
+            sb.AppendLine($"<p {Style?.Build()}>");
 
-            if (this.TextRuns != null)
+            if (TextRuns != null)
             {
-                foreach (var tr in this.TextRuns)
+                foreach (var tr in TextRuns)
                 {
                     sb.AppendLine(tr.Build());
                     sb.AppendLine("<span> </span>");
@@ -592,46 +593,52 @@ namespace ReportViewer.NET.DataObjects
         public Style Style { get; set; }
         public bool ContainsDataSetExpression { get; set; }
         public Paragraph Paragraph { get; set; }
-             
+        public string Format { get; set; }
+
         public TextRun(Paragraph paragraph, XElement textRun)
         {
-            this.Paragraph = paragraph;
-            this.Value = textRun.Element(Tablix.Namespace + "Value")?.Value;
-            this.Style = new Style(textRun.Element(Tablix.Namespace + "Style"));
+            Paragraph = paragraph;
+            Value = textRun.Element(Tablix.Namespace + "Value")?.Value;
+            Style = new Style(textRun.Element(Tablix.Namespace + "Style"));
+            Format = textRun.Element(Tablix.Namespace + "Style").Element(Tablix.Namespace + "Format")?.Value;
         }
 
         public string Build()
         {
-            if (this.Value.StartsWith('='))
+            if (Value.StartsWith('='))
             {
-                var cell = this.Paragraph.Textbox.Cell;
+                TablixCell cell = Paragraph.Textbox.Cell;
 
                 if (cell != null)
                 {
                     // We've come from a tablix cell.
                     if (cell.Row.Values != null)
                     {
-                        var parsedValue = this.ParseTablixExpressionString(this.Value, cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Row.Values, null);
-                        return $"<span {this.Style?.Build()}>{parsedValue}</span>";
+                        var parsedValue = ParseTablixExpressionString(Value, cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Row.Values, null, Format);
+
+                        return $"<span {Style?.Build()}>{parsedValue}</span>";
                     }
                 }
                 else
                 {
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    var parsedValue = this.ParseTablixExpressionString(this.Value, null, null, this.Paragraph.Textbox.DataSets);
+                    var parsedValue = ParseTablixExpressionString(Value, null, null, Paragraph.Textbox.DataSets, Format);
 
-                    return $"<span {this.Style?.Build()}>{parsedValue}</span>";
+                    return $"<span {Style?.Build()}>{parsedValue}</span>";
                 }
             }
 
-            return $"<span {this.Style?.Build()}>{this.Value}</span>";
+            return $"<span {Style?.Build()}>{Value}</span>";
         }
 
+        // TODO: Extract this into parser class.
+
         private string ParseTablixExpressionString(
-            string tablixText, 
+            string tablixText,
             IEnumerable<dynamic> dataSetResults,
-            dynamic values, 
-            IEnumerable<DataObjects.DataSet> dataSets
+            dynamic values,
+            IEnumerable<DataSet> dataSets,
+            string requestedFormat
         )
         {
             string currentString = tablixText;
@@ -656,9 +663,9 @@ namespace ReportViewer.NET.DataObjects
 
                     var endIndx = idx + group.Value.Length;
 
-                    this.ParseCountExpression(currentString, currentExpression, dataSetResults, values, dataSets);
+                    ParseCountExpression(currentString, currentExpression, dataSetResults, values, dataSets);
 
-                    proposedString = (endIndx == currentString.Length) ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
+                    proposedString = endIndx == currentString.Length ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
                 }
 
                 if (currentString.IndexOf("+") > -1 &&
@@ -718,9 +725,9 @@ namespace ReportViewer.NET.DataObjects
 
                     var endIndx = idx + group.Value.Length;
 
-                    this.ParseFieldExpression(currentString, currentExpression, dataSetResults, values, dataSets);
+                    ParseFieldExpression(currentString, currentExpression, dataSetResults, values, dataSets);
 
-                    proposedString = (endIndx == currentString.Length) ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
+                    proposedString = endIndx == currentString.Length ? "" : currentString.Substring(endIndx, currentString.Length - endIndx);
                 }
 
                 if (currentExpression.Operator == TablixOperator.None)
@@ -732,10 +739,10 @@ namespace ReportViewer.NET.DataObjects
                 currentString = proposedString;
             }
 
-            return this.ParseTablixExpression(expressions);
+            return ParseTablixExpression(expressions, requestedFormat);
         }
 
-        private string ParseTablixExpression(IEnumerable<TablixExpression> expressions)
+        private string ParseTablixExpression(IEnumerable<TablixExpression> expressions, string requestedFormat)
         {
             TablixOperator lastOperator;
 
@@ -744,6 +751,8 @@ namespace ReportViewer.NET.DataObjects
                 var final = expressions.Aggregate((prev, next) =>
                 {
                     var newExpr = new TablixExpression();
+
+                    newExpr.ResolvedType = prev.ResolvedType;
 
                     switch (next.Operator)
                     {
@@ -767,23 +776,32 @@ namespace ReportViewer.NET.DataObjects
                     return newExpr;
                 });
 
-                if (final.Value == null)
-                {
-                    return string.Empty;
-                }
-
-                return final.Value.ToString();
+                return EvaluateRequestedFormat(final.Value, final.ResolvedType, requestedFormat);
             }
 
-            return string.Empty;
+            return null;
+        }
+
+        private string EvaluateRequestedFormat(object value, Type resolvedType, string requestedFormat)
+        {
+            if (string.IsNullOrEmpty(requestedFormat))
+                return value?.ToString() ?? string.Empty;
+
+            switch (Type.GetTypeCode(resolvedType))
+            {
+                case TypeCode.DateTime:
+                    return ((DateTime)value).ToString(requestedFormat);
+            }
+
+            return value.ToString() ?? string.Empty;
         }
 
         private void ParseCountExpression(
-            string currentString, 
-            TablixExpression expression, 
+            string currentString,
+            TablixExpression expression,
             IEnumerable<dynamic> dataSetResults,
-            dynamic values, 
-            IEnumerable<DataObjects.DataSet> dataSets
+            dynamic values,
+            IEnumerable<DataSet> dataSets
         )
         {
             var fieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
@@ -810,17 +828,20 @@ namespace ReportViewer.NET.DataObjects
 
                     expression.DataSetName = dataSetName;
                 }
-                                                   
-                expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetResults, values, dataSets);
+
+                (Type, object) extractedValue = ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetResults, values, dataSets);
+
+                expression.ResolvedType = extractedValue.Item1;
+                expression.Value = extractedValue.Item2;
             }
         }
 
         private void ParseFieldExpression(
-            string currentString, 
-            TablixExpression expression, 
+            string currentString,
+            TablixExpression expression,
             IEnumerable<dynamic> dataSetResults,
-            dynamic values, 
-            IEnumerable<DataObjects.DataSet> dataSets
+            dynamic values,
+            IEnumerable<DataSet> dataSets
         )
         {
             var fieldsIdx = currentString.IndexOf("Fields!");
@@ -829,51 +850,65 @@ namespace ReportViewer.NET.DataObjects
 
             expression.Index = fieldsIdx;
             expression.Field = fieldName;
-            expression.Value = this.ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetResults, values, dataSets);
+
+            (Type, object) extractedValue = ExtractExpressionValue(expression.DataSetName, fieldName, expression.Operator, dataSetResults, values, dataSets);
+
+            expression.ResolvedType = extractedValue.Item1;
+            expression.Value = extractedValue.Item2;
         }
 
-        private dynamic ExtractExpressionValue(
-            string dataSetName, 
-            string fieldName, 
-            TablixOperator op, 
-            IEnumerable<dynamic> dataSetResults, 
-            dynamic values, 
-            IEnumerable<DataObjects.DataSet> dataSets
+        private (Type, object) ExtractExpressionValue(
+            string dataSetName,
+            string fieldName,
+            TablixOperator op,
+            IEnumerable<dynamic> dataSetResults,
+            dynamic values,
+            IEnumerable<DataSet> dataSets
         )
         {
             if (dataSetResults != null)
-            {                
+            {
                 switch (op)
                 {
                     case TablixOperator.Count:
-                        return dataSetResults.Count();
+                        return (typeof(int), dataSetResults.Count());
                     case TablixOperator.Field:
                         var expando = (IDictionary<string, object>)values;
                         if (expando.ContainsKey(fieldName))
                         {
-                            return expando[fieldName];
-                        }                            
+                            if (expando[fieldName] == null)
+                            {
+                                return (typeof(object), null);
+                            }
+
+                            return (expando[fieldName].GetType(), expando[fieldName]);
+                        }
                         break;
-                }                
+                }
             }
             else
             {
                 var dataSet = dataSets.FirstOrDefault(ds => ds.Name == dataSetName);
 
                 if (dataSet != null)
-                {                    
+                {
                     if (dataSet.DataSetResults != null)
                     {
                         switch (op)
                         {
                             case TablixOperator.Count:
-                                return dataSet.DataSetResults.Count();
+                                return (typeof(int), dataSet.DataSetResults.Count());
                             case TablixOperator.Field:
                                 foreach (IDictionary<string, object> expando in dataSet.DataSetResults)
                                 {
                                     if (expando.ContainsKey(fieldName))
                                     {
-                                        return expando[fieldName];
+                                        if (expando[fieldName] == null)
+                                        {
+                                            return (typeof(object), null);
+                                        }
+
+                                        return (expando[fieldName].GetType(), expando[fieldName]);
                                     }
                                 }
                                 break;
@@ -882,7 +917,7 @@ namespace ReportViewer.NET.DataObjects
                 }
             }
 
-            return null;
+            return (typeof(object), null);
         }
     }
 
@@ -892,7 +927,8 @@ namespace ReportViewer.NET.DataObjects
         public int EndIndex { get; set; }
         public TablixOperator Operator { get; set; }
         public string Field { get; set; }
-        public dynamic Value { get; set; }
+        public Type ResolvedType { get; set; }
+        public object Value { get; set; }
         public string DataSetName { get; set; }
     }
 
