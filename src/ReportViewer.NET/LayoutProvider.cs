@@ -72,73 +72,39 @@ namespace ReportViewer.NET
             }
 
             sb.AppendLine("</div>");
-            sb.AppendLine("<div class=\"reportoutput-container\"></div>");
+            sb.AppendLine($"<div class=\"reportoutput-container\"></div>");
             return new HtmlString(sb.ToString());
         }
                 
         public async Task<HtmlString> PublishReportOutput(IEnumerable<ReportParameter> userProvidedParameters)
         {
-            var reportItems = _report.ReportItems;
+            var reportBodyItems = _report.ReportBodyItems;
+            var reportFooterItems = _report.ReportFooterItems;
             var sb = new StringBuilder();
             var reportRows = new List<ReportRow>()
             {
                 new ReportRow()
             };
 
-            reportItems = reportItems.Order(new ReportItemComparer()).ToList();
+            reportBodyItems = reportBodyItems.Order(new ReportItemComparer()).ToList();
+            reportFooterItems = reportFooterItems.Order(new ReportItemComparer()).ToList();
 
-            foreach (var reportItem in reportItems)
+            // Build rows for body items.
+            foreach (var reportItem in reportBodyItems)
             {
-                var currentRow = reportRows.Last();
+                await this.BuildReportRows(reportRows, reportItem, userProvidedParameters);
+            }
 
-                if (currentRow.MaxTop == 0)
-                {
-                    currentRow.RowItems.Add(reportItem);
-                    currentRow.MaxTop = reportItem.Top;
-                    currentRow.MaxHeight = reportItem.Height;
-                    currentRow.MaxLeft = reportItem.Left;
-                    currentRow.MaxWidth = reportItem.Width;
-                }
-                else
-                {
-                    if (reportItem.Top > currentRow.MaxTop + currentRow.MaxHeight)
-                    {
-                        var newRow = new ReportRow()
-                        {
-                            MaxTop = reportItem.Top,
-                            MaxHeight = reportItem.Height,
-                            MaxLeft = reportItem.Left,
-                            MaxWidth = reportItem.Width
-                        };
-
-                        newRow.RowItems.Add(reportItem);
-                        reportRows.Add(newRow);
-                    }
-                    else
-                    {
-                        currentRow.MaxTop = reportItem.Top > currentRow.MaxTop ? reportItem.Top : currentRow.MaxTop;
-                        currentRow.MaxWidth = reportItem.Width > currentRow.MaxWidth ? reportItem.Width : currentRow.MaxWidth;
-                        currentRow.MaxLeft = reportItem.Left > currentRow.MaxLeft ? reportItem.Left : currentRow.MaxLeft;
-                        currentRow.MaxHeight = reportItem.Height > currentRow.MaxHeight ? reportItem.Height : currentRow.MaxHeight;
-                        currentRow.RowItems.Add(reportItem);
-                    }                    
-                }
-                                
-                if (reportItem is Tablix)
-                {
-                    var tablix = (Tablix)reportItem;
-
-                    if (tablix.DataSetReference != null)
-                    {
-                        // We potentially have calculated text which needs resolving from the Data Set.
-                        tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(tablix.DataSetReference, _report.ReportParameters, userProvidedParameters)).ToList();
-                    }
-                }
+            // Build rows for footer items.
+            foreach (var reportItem in reportFooterItems)
+            {
+                await this.BuildReportRows(reportRows, reportItem, userProvidedParameters);
             }
                         
+            // Process rows into HTML.
             foreach (var reportRow in reportRows) 
             {
-                sb.AppendLine(@"<div class=""report-row"">");
+                sb.AppendLine("<div class=\"report-row\">");
                                 
                 foreach (var reportItem in reportRow.RowItems)
                 {
@@ -149,6 +115,61 @@ namespace ReportViewer.NET
             }
 
             return new HtmlString(sb.ToString());
+        }
+
+        private async Task BuildReportRows(List<ReportRow> reportRows, ReportItem reportItem, IEnumerable<ReportParameter> userProvidedParameters)
+        {
+            var currentRow = reportRows.Last();
+
+            if (currentRow.MaxTop == 0)
+            {
+                currentRow.RowItems.Add(reportItem);
+                currentRow.MaxTop = reportItem.Top;
+                currentRow.MaxHeight = reportItem.Height;
+                currentRow.MaxLeft = reportItem.Left;
+                currentRow.MaxWidth = reportItem.Width;
+                currentRow.TotalHeight = reportItem.Height;
+                currentRow.TotalWidth = reportItem.Width;
+            }
+            else
+            {
+                if (reportItem.Top > currentRow.MaxTop + currentRow.MaxHeight)
+                {
+                    var newRow = new ReportRow()
+                    {
+                        MaxTop = reportItem.Top,
+                        MaxHeight = reportItem.Height,
+                        MaxLeft = reportItem.Left,
+                        MaxWidth = reportItem.Width,
+                        TotalHeight = reportItem.Height,
+                        TotalWidth = reportItem.Width
+                    };
+
+                    newRow.RowItems.Add(reportItem);
+                    reportRows.Add(newRow);
+                }
+                else
+                {
+                    currentRow.MaxTop = reportItem.Top > currentRow.MaxTop ? reportItem.Top : currentRow.MaxTop;
+                    currentRow.MaxWidth = reportItem.Width > currentRow.MaxWidth ? reportItem.Width : currentRow.MaxWidth;
+                    currentRow.MaxLeft = reportItem.Left > currentRow.MaxLeft ? reportItem.Left : currentRow.MaxLeft;
+                    currentRow.MaxHeight = reportItem.Height > currentRow.MaxHeight ? reportItem.Height : currentRow.MaxHeight;
+                    currentRow.TotalWidth += reportItem.Width;
+                    currentRow.TotalHeight += reportItem.Height;
+                    currentRow.RowItems.Add(reportItem);
+                }
+            }
+
+            if (reportItem is Tablix)
+            {
+                var tablix = (Tablix)reportItem;
+
+                if (tablix.DataSetReference != null)
+                {
+                    // We potentially have calculated text which needs resolving from the Data Set.
+                    tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(tablix.DataSetReference, _report.ReportParameters, userProvidedParameters)).ToList();
+                }
+            }
         }
 
         private void HandleDynamicParameterInsert(DynamicParameters param, ReportParameter rdlParameter, ReportParameter userProvidedParameter, DataSetQuery dsQuery)

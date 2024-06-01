@@ -118,6 +118,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public double MaxHeight { get; set; }
         public double MaxLeft { get; set; }
         public double MaxWidth { get; set; }
+        public double TotalWidth { get; set; }
+        public double TotalHeight { get; set; }
         public List<ReportItem> RowItems { get; set; } = new List<ReportItem>();
     }
 }

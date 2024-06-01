@@ -107,13 +107,16 @@ namespace ReportViewer.NET
             var reportParameters = this.ProcessReportParameters(xml.Root, dataSets);
             var embeddedImages = this.ProcessEmbeddedImages(xml.Root);
 
-            var reportItems = this.ProcessReportItems(xml.Root, dataSets, embeddedImages);
-            
+            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(_ns1 + "Body").Descendants(_ns1 + "ReportItems"), dataSets, embeddedImages);
+            var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(_ns1 + "PageFooter").Descendants(_ns1 + "ReportItems"), dataSets, embeddedImages);
+
             reportRdl.DataSources = _dataSources;
             reportRdl.DataSets = dataSets;
             reportRdl.ReportParameters = reportParameters;
-            reportRdl.ReportItems = reportItems;
+            reportRdl.ReportBodyItems = reportBodyItems;
+            reportRdl.ReportFooterItems = reportFooterItems;
             reportRdl.EmbeddedImages = embeddedImages;
+            reportRdl.ReportWidth = xml.Root.Descendants(_ns1 + "ReportSections").Elements(_ns1 + "ReportSection").Elements(_ns1 + "Width").FirstOrDefault()?.Value;
 
             return reportRdl;
         }
@@ -273,11 +276,10 @@ namespace ReportViewer.NET
             return reportParamList;
         }
 
-        private List<ReportItem> ProcessReportItems(XElement root, IEnumerable<DataSet> datasets, IEnumerable<EmbeddedImage> embeddedImages)
+        private List<ReportItem> ProcessReportItems(IEnumerable<XElement> reportItemElements, IEnumerable<DataSet> datasets, IEnumerable<EmbeddedImage> embeddedImages)
         {
             var reportItemList = new List<ReportItem>();
-            var reportItemElements = root.Descendants(_ns1 + "ReportItems");
-
+            
             if (reportItemElements != null)
             {
                 foreach (var ri in reportItemElements)

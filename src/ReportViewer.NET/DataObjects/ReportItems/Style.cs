@@ -25,7 +25,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string ZIndex { get; set; }
         public string FontFamily { get; set; }
         public string FontWeight { get; set; }
-        public string Color { get; set; }
+        public string FontSize { get; set; }
+        public string Color { get; set; }        
 
         public Style()
         {
@@ -72,6 +73,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             ZIndex = style?.Element(ReportItem.Namespace + "ZIndex")?.Value;
             FontFamily = style?.Element(ReportItem.Namespace + "FontFamily")?.Value;
             FontWeight = style?.Element(ReportItem.Namespace + "FontWeight")?.Value;
+            FontSize = style?.Element(ReportItem.Namespace + "FontSize")?.Value;
             Color = style?.Element(ReportItem.Namespace + "Color")?.Value;
         }
 
@@ -123,6 +125,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             sb.Append(!string.IsNullOrEmpty(ZIndex) ? $"z-index: {ZIndex};" : "");
             sb.Append(!string.IsNullOrEmpty(FontFamily) ? $"font-family: {FontFamily};" : "");
             sb.Append(!string.IsNullOrEmpty(FontWeight) ? $"font-weight: {FontWeight};" : "");
+            sb.Append(!string.IsNullOrEmpty(FontSize) ? $"font-size: {FontSize};" : "");
             sb.Append(!string.IsNullOrEmpty(Color) ? $"color: {Color};" : "");
 
             //if (!string.IsNullOrEmpty(this.Top) || !string.IsNullOrEmpty(this.Left))

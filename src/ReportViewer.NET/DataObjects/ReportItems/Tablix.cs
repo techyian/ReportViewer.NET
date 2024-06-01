@@ -41,7 +41,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<table {Style?.Build()} class=\"table reportviewer-table\">");
+            sb.AppendLine($"<table {Style?.Build()} class=\"reportviewer-table\">");
             sb.AppendLine(TablixBodyObj?.Build());
             sb.AppendLine("</table>");
 
