@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
@@ -57,6 +59,59 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     return 1;
                 }
             }
+        }
+    }
+
+    public class TablixMemberSortComparer<T> : IComparer<T>
+    {
+        private string _fieldName;
+
+        public TablixMemberSortComparer(string fieldName)
+        {
+            _fieldName = fieldName;
+        }
+
+        public int Compare(T x, T y)
+        {
+            IDictionary<string, object> xDic = x as IDictionary<string, object>;
+            IDictionary<string, object> yDic = y as IDictionary<string, object>;
+
+            Type fieldType = xDic[_fieldName].GetType();
+
+            if (!xDic.ContainsKey(_fieldName) || xDic[_fieldName] == null)
+            {
+                return 1;
+            }
+
+            if (!yDic.ContainsKey(_fieldName) || yDic[_fieldName] == null)
+            {
+                return -1;
+            }
+
+            switch (Type.GetTypeCode(fieldType))
+            {
+                case TypeCode.String:
+                    return string.Compare(xDic[_fieldName].ToString(), yDic[_fieldName].ToString());                    
+                case TypeCode.Int32:
+                    if ((int)xDic[_fieldName] < (int)yDic[_fieldName])
+                    {
+                        return -1;
+                    }
+                    if ((int)xDic[_fieldName] == (int)yDic[_fieldName])
+                    {
+                        return 0;
+                    }
+                    if ((int)xDic[_fieldName] > (int)yDic[_fieldName])
+                    {
+                        return 1;
+                    }
+
+                    return 0;
+                case TypeCode.DateTime:
+                    return ((DateTime)xDic[_fieldName]).CompareTo((DateTime)yDic[_fieldName]);
+            }
+
+            return 0;
         }
     }
 

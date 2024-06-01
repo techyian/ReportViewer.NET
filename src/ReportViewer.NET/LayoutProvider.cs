@@ -214,7 +214,7 @@ namespace ReportViewer.NET
             }
         }
 
-        private async Task<IEnumerable<dynamic>> RunDataSetQuery(DataSetReference dataSetReference, IEnumerable<ReportParameter> reportParams, IEnumerable<ReportParameter> userProvidedParameters)
+        private async Task<IEnumerable<IDictionary<string, object>>> RunDataSetQuery(DataSetReference dataSetReference, IEnumerable<ReportParameter> reportParams, IEnumerable<ReportParameter> userProvidedParameters)
         {
             DataSetQuery dsQuery = dataSetReference.DataSet?.Query;
             IEnumerable<dynamic> results = Enumerable.Empty<dynamic>();
@@ -245,7 +245,7 @@ namespace ReportViewer.NET
                 if (invalidParameter)
                 {
                     // TODO: Report this to the user.
-                    return results;
+                    return results.Cast<IDictionary<string, object>>();
                 }
 
                 // Run query and use field parameters.
@@ -277,7 +277,7 @@ namespace ReportViewer.NET
                 }
             }
 
-            return results;
+            return results.Cast<IDictionary<string, object>>();
         }
 
         private string ParseTablixExpressionString(string tablixText, DataSetReference dataSetReference, IEnumerable<DataObjects.DataSet> dataSets)

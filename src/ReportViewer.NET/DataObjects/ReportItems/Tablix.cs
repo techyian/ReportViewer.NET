@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -58,11 +59,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public List<TablixRow> TablixRows { get; set; }
         public Tablix Tablix { get; set; }
 
+        internal ExpressionParser Parser { get; set; }
+
         internal TablixBody(Tablix tablix, XElement tablixBody)
         {
             this.Tablix = tablix;
             this.TablixColumns = new List<TablixColumn>();
             this.TablixRows = new List<TablixRow>();
+            this.Parser = new ExpressionParser();
 
             var columns = tablixBody.Elements(ReportItem.Namespace + "TablixColumns").Elements(ReportItem.Namespace + "TablixColumn");
             var rows = tablixBody.Elements(ReportItem.Namespace + "TablixRows").Elements(ReportItem.Namespace + "TablixRow");
@@ -99,13 +103,38 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             sb.AppendLine("<tbody>");
 
+            foreach (var tablixMember in this.Tablix.TablixRowHierarchy.TablixMembers)
+            {
+                if (tablixMember.TablixMemberSort != null && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
+                {
+                    // Order dataset results by expression.
+                    var fieldsIdx = tablixMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
+                    var fieldEnd = tablixMember.TablixMemberSort.SortExpression.IndexOf('.', fieldsIdx);
+                    var fieldName = tablixMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                    
+                    this.Tablix.DataSetReference.DataSet.DataSetResults = this.Tablix.DataSetReference.DataSet.DataSetResults.Order(new TablixMemberSortComparer<IDictionary<string, object>>(fieldName)).ToList();
+                }
+
+                if (tablixMember.TablixMemberGroup != null && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
+                {
+                    // Group items to dictionary.
+                    var fieldsIdx = tablixMember.TablixMemberGroup.GroupExpression.IndexOf("Fields!");
+                    var fieldEnd = tablixMember.TablixMemberGroup.GroupExpression.IndexOf('.', fieldsIdx);
+                    var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+
+                    var groupedResults = this.Tablix.DataSetReference.DataSet.DataSetResults.GroupBy(g => g[fieldName]).ToList();
+                }
+
+
+            }
+
             for (var i = 0; i < this.TablixRows.Count; i++)
             {
                 var row = this.TablixRows[i];
-
-                if (row.ContainsRepeatExpression && row.Body.Tablix.DataSetReference != null && row.Body.Tablix.DataSetReference.DataSet.DataSetResults != null)
+                                
+                if (row.ContainsRepeatExpression && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
                 {
-                    foreach (var result in row.Body.Tablix.DataSetReference.DataSet.DataSetResults)
+                    foreach (var result in this.Tablix.DataSetReference.DataSet.DataSetResults)
                     {
                         row.Values = result;
 
