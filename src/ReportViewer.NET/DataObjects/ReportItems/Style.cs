@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
 {
     public class Style
     {
-        public string TextAlign { get; set; } = "Left";
+        public string TextAlign { get; set; }
         public Border Border { get; set; }
         public Border BorderBottom { get; set; }
         public string PaddingLeft { get; set; }
@@ -27,7 +23,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string FontWeight { get; set; }
         public string FontSize { get; set; }
         public string Color { get; set; }        
-
+        
         public Style()
         {
 
@@ -127,11 +123,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             sb.Append(!string.IsNullOrEmpty(FontWeight) ? $"font-weight: {FontWeight};" : "");
             sb.Append(!string.IsNullOrEmpty(FontSize) ? $"font-size: {FontSize};" : "");
             sb.Append(!string.IsNullOrEmpty(Color) ? $"color: {Color};" : "");
-
-            //if (!string.IsNullOrEmpty(this.Top) || !string.IsNullOrEmpty(this.Left))
-            //{
-            //    sb.Append("position: absolute;");
-            //}
 
             sb.Append("\"");
 

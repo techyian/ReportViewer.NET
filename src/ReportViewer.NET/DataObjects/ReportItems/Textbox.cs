@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
@@ -38,7 +37,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 foreach (var p in paragraphs)
                 {
-                    Paragraphs.Add(new Paragraph(this, p));
+                    this.Paragraphs.Add(new Paragraph(this, p));
                 }
             }
         }
@@ -47,11 +46,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<div {Style?.Build()}>");
+            sb.AppendLine($"<div {this.Style?.Build()}>");
 
-            if (Paragraphs != null)
+            if (this.Paragraphs != null)
             {
-                foreach (var p in Paragraphs)
+                foreach (var p in this.Paragraphs)
                 {
                     sb.AppendLine(p.Build());
                 }
@@ -71,8 +70,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         public Paragraph(Textbox textbox, XElement paragraph)
         {
-            Textbox = textbox;
-            TextRuns = new List<TextRun>();
+            this.Textbox = textbox;
+            this.Style = new Style(paragraph.Element(ReportItem.Namespace + "Style"));
+            this.TextRuns = new List<TextRun>();
 
             var textRuns = paragraph.Elements(ReportItem.Namespace + "TextRuns").Elements(ReportItem.Namespace + "TextRun");
 
@@ -80,7 +80,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 foreach (var tr in textRuns)
                 {
-                    TextRuns.Add(new TextRun(this, tr));
+                    this.TextRuns.Add(new TextRun(this, tr));
                 }
             }
         }
@@ -89,11 +89,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<p {Style?.Build()}>");
+            sb.AppendLine($"<p {this.Style?.Build()}>");
 
-            if (TextRuns != null)
+            if (this.TextRuns != null)
             {
-                foreach (var tr in TextRuns)
+                foreach (var tr in this.TextRuns)
                 {
                     sb.AppendLine(tr.Build());
                     sb.AppendLine("<span> </span>");
@@ -119,38 +119,38 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         public TextRun(Paragraph paragraph, XElement textRun)
         {
-            Paragraph = paragraph;
-            Value = textRun.Element(ReportItem.Namespace + "Value")?.Value;
-            Style = new Style(textRun.Element(ReportItem.Namespace + "Style"));
-            Format = textRun.Element(ReportItem.Namespace + "Style").Element(ReportItem.Namespace + "Format")?.Value;
+            this.Paragraph = paragraph;
+            this.Value = textRun.Element(ReportItem.Namespace + "Value")?.Value;
+            this.Style = new Style(textRun.Element(ReportItem.Namespace + "Style"));
+            this.Format = textRun.Element(ReportItem.Namespace + "Style").Element(ReportItem.Namespace + "Format")?.Value;
         }
 
         public string Build()
         {
-            if (Value.StartsWith('='))
+            if (this.Value.StartsWith('='))
             {
-                TablixCell cell = Paragraph.Textbox.Cell;
+                TablixCell cell = this.Paragraph.Textbox.Cell;
 
                 if (cell != null)
                 {
                     // We've come from a tablix cell.
                     if (cell.Row.Values != null)
                     {
-                        var parsedValue = ParseTablixExpressionString(Value, cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Row.Values, null, Format);
+                        var parsedValue = ParseTablixExpressionString(this.Value, cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Row.Values, null, this.Format);
 
-                        return $"<span {Style?.Build()}>{parsedValue}</span>";
+                        return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }
                 }
                 else
                 {
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    var parsedValue = ParseTablixExpressionString(Value, null, null, Paragraph.Textbox.DataSets, Format);
+                    var parsedValue = ParseTablixExpressionString(this.Value, null, null, this.Paragraph.Textbox.DataSets, Format);
 
-                    return $"<span {Style?.Build()}>{parsedValue}</span>";
+                    return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                 }
             }
 
-            return $"<span {Style?.Build()}>{Value}</span>";
+            return $"<span {this.Style?.Build()}>{this.Value}</span>";
         }
 
         // TODO: Extract this into parser class.
