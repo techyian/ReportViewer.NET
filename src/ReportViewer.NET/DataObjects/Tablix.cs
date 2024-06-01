@@ -43,8 +43,23 @@ namespace ReportViewer.NET.DataObjects
                     return -1;
                 }
             }
-            
-            return -1;
+            else
+            {
+                if (y?.Top > x?.Top + x?.Height)
+                {
+                    return -1;
+                }
+                else
+                {
+                    // Same row.
+                    if (y?.Left > x?.Left)
+                    {
+                        return -1;
+                    }
+
+                    return 1;
+                }
+            }
         }
     }
 
