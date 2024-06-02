@@ -62,7 +62,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             if (this.DoesToggle)
             {
-                sb.AppendLine($"<button class=\"reportitem-expand\">{_expandSvg}</button>");
+                sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
             }
 
             if (this.Paragraphs != null)

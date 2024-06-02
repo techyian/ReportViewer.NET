@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div>
+    <h1 class="display-4">Welcome</h1>
+    
+    <div class="report-viewer">
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+    <script type="text/javascript">
+        var reportViewer = new ReportViewer();
+
+        reportViewer.postReportParameters();    
+    </script>
+}
