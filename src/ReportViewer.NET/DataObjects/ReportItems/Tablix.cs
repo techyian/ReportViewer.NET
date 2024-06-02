@@ -11,8 +11,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {   
         public string DataSetName { get; set; }
         public DataSetReference DataSetReference { get; set; }
-        public bool Hidden { get; set; }
-        public string ToggleItem { get; set; }        
         public IEnumerable<DataSet> DataSets { get; set; }
         public TablixBody TablixBodyObj { get; set; }
         public TablixHierarchy TablixColumnHierarchy { get; set; }
@@ -24,9 +22,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.DataSets = datasets;
             this.TablixBodyObj = new TablixBody(this, tablix.Element(Namespace + "TablixBody"));
 
-            this.DataSetName = tablix.Element(Namespace + "DataSetName")?.Value;
-            this.Hidden = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "Hidden")?.Value == "true";
-            this.ToggleItem = tablix.Element(Namespace + "Visibility")?.Element(Namespace + "ToggleItem")?.Value;
+            this.DataSetName = tablix.Element(Namespace + "DataSetName")?.Value;            
             this.TablixRowHierarchy = new TablixHierarchy(tablix.Element(Namespace + "TablixRowHierarchy"), this);
             this.TablixColumnHierarchy = new TablixHierarchy(tablix.Element(Namespace + "TablixColumnHierarchy"), this);
 
@@ -45,7 +41,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<table {this.Style?.Build()} class=\"reportviewer-table\">");
+            sb.AppendLine($"<table {this.Style?.Build()} class=\"reportviewer-table\" data-toggle=\"{this.ToggleItem}\">");
             sb.AppendLine(this.TablixBodyObj?.Build());
             sb.AppendLine("</table>");
 

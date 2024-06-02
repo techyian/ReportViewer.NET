@@ -170,7 +170,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     return ((DateTime)value).ToString(requestedFormat);
             }
 
-            return value.ToString() ?? string.Empty;
+            return value?.ToString() ?? string.Empty;
         }
 
         public void ParseCountExpression(

@@ -79,13 +79,13 @@ namespace ReportViewer.NET.DataObjects
                         case "String":
                             return @"<div class=""reportparam reportparam-string"">
                                     <label for=""" + this.Name + @""">" + this.Prompt + @"</label>
-                                    <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" class=""form-control"" data-nullable=""" + nullable + @""" value=""" + value + @""" /> 
+                                    <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" /> 
                                 </div> ";
                         case "DateTime":
                             return @"
                                 <div class=""reportparam reportparam-date date"">
                                         <label for=""" + this.Name + @""">" + this.Prompt + @"</label>                                        
-                                        <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" class=""form-control"" data-nullable=""" + nullable + @""" value=""" + value + @""" />
+                                        <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" />
                                 </div>
                                 ";
                         case "Boolean":

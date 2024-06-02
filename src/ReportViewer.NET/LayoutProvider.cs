@@ -64,14 +64,16 @@ namespace ReportViewer.NET
                     invalidParameter = true;
                 }
             }
+                        
+            sb.AppendLine("</div>");
 
             // If OK, create run report button.
             if (!invalidParameter)
             {
-                sb.AppendLine(@"<button type=""button"" id=""RunReportBtn"">Run report</button>");
+                sb.AppendLine("<div class=\"reportparameters-run\">");
+                sb.AppendLine("<button type=\"button\" id=\"RunReportBtn\">Run report</button>");
+                sb.AppendLine("</div>");
             }
-
-            sb.AppendLine("</div>");
             sb.AppendLine($"<div class=\"reportoutput-container\"></div>");
             return new HtmlString(sb.ToString());
         }
@@ -85,7 +87,7 @@ namespace ReportViewer.NET
             {
                 new ReportRow()
             };
-
+            
             reportBodyItems = reportBodyItems.Order(new ReportItemComparer()).ToList();
             reportFooterItems = reportFooterItems.Order(new ReportItemComparer()).ToList();
 
@@ -100,14 +102,19 @@ namespace ReportViewer.NET
             {
                 await this.BuildReportRows(reportRows, reportItem, userProvidedParameters);
             }
-                        
+
+            var hiddenRows = reportBodyItems.Where(r => r.Hidden).ToList();
+            hiddenRows.AddRange(reportFooterItems.Where(r => r.Hidden));
+
             // Process rows into HTML.
             foreach (var reportRow in reportRows) 
             {
                 sb.AppendLine("<div class=\"report-row\">");
-                                
+
                 foreach (var reportItem in reportRow.RowItems)
                 {
+                    reportItem.DoesToggle = hiddenRows.Any(r => r.ToggleItem == reportItem.Name);
+
                     sb.AppendLine(reportItem.Build());
                 }
                 
