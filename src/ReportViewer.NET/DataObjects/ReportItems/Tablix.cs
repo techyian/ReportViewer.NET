@@ -160,22 +160,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             sb.AppendLine("<tbody>");
 
-            var tablixMembers = new List<TablixMember>();
+            var rowIdx = 0;
 
-            foreach (var tm in this.Tablix.TablixRowHierarchy.TablixMembers)
+            for (var i = 0; i < this.Tablix.TablixRowHierarchy.TablixMembers.Count; i++)
             {
-                tablixMembers.Add(tm);
-
-                if (tm.TablixMembers.Count > 0)
-                {
-                    tablixMembers.AddRange(tm.TablixMembers.Where(t => t.TablixMemberGroup != null || t.TablixHeader != null));
-                }
-            }
-
-            for (var i = 0; i < tablixMembers.Count; i++)
-            {
-                var tablixMember = tablixMembers[i];
-                var row = this.TablixRows[i];
+                var tablixMember = this.Tablix.TablixRowHierarchy.TablixMembers[i];
+                var row = this.TablixRows[rowIdx];
 
                 List<IDictionary<string, object>> dataSetResults = this.Tablix.DataSetReference?.DataSet?.DataSetResults;
                 List<IGrouping<object, IDictionary<string, object>>> groupedResults = null;
@@ -235,6 +225,38 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 }
                                 sb.AppendLine("</tr>");
                             }
+
+                            if (tablixMember.TablixMembers.Any(tm => tm.TablixMemberGroup != null))
+                            {
+                                foreach (var innerTablixMember in tablixMember.TablixMembers.Where(tm => tm.TablixMemberGroup != null))
+                                {                                    
+                                    var groupedRow = this.TablixRows[rowIdx + 1];
+
+                                    // As we're in the inner members, use values from row before.
+                                    groupedRow.GroupedResults = groupedResults[j];
+                                    groupedRow.Values = this.TablixRows[rowIdx].Values;
+
+                                    sb.AppendLine($"<tr height=\"{groupedRow.Height}\">");
+                                    if (innerTablixMember.TablixHeader != null)
+                                    {
+                                        sb.AppendLine(innerTablixMember.TablixHeader.Build());
+                                    }
+                                    else if (innerTablixMember.TablixMemberGroup != null)
+                                    {
+                                        // We are grouped from the previous tablix member. Create cell.
+                                        sb.AppendLine("<td></td>");
+                                    }
+
+                                    sb.AppendLine(groupedRow.Build());
+                                    sb.AppendLine("</tr>");
+                                }                                                                
+                            }
+                        }
+
+                        if (tablixMember.TablixMembers.Any(tm => tm.TablixMemberGroup != null))
+                        {
+                            // We have used the grouped row and don't need to show it again.
+                            rowIdx++;
                         }
                     }
                     else
@@ -253,7 +275,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     sb.AppendLine($"<tr height=\"{row.Height}\">");
                     if (tablixMember.TablixHeader != null)
-                    {
+                    {                        
                         sb.AppendLine(tablixMember.TablixHeader.Build());
                     }
                     else if (tablixMember.TablixMemberGroup != null)
@@ -261,10 +283,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         // We are grouped from the previous tablix member. Create cell.
                         sb.AppendLine("<td></td>");
                     }
-                                            
+
                     sb.AppendLine(row.Build());
                     sb.AppendLine("</tr>");
                 }
+
+                rowIdx++;
             }
 
             sb.AppendLine("</tbody>");
@@ -297,6 +321,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TablixBody Body { get; set; }
         public bool ContainsRepeatExpression { get; set; }
         public dynamic Values { get; set; }
+        public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
 
         internal TablixRow(TablixBody body, XElement row)
         {

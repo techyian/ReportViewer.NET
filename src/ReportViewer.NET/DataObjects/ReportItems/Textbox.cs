@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 
@@ -131,13 +132,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 if (cell != null)
                 {
                     // We've come from a tablix cell.
-                    if (cell.Row?.Values != null)
+                    if (cell.Row != null)
                     {
-                        var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Row.Values, null, this.Format);
+                        var dataSetResults = cell.Row.GroupedResults?.Select(r => r).ToList() ?? cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                        var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, cell.Row.Values, null, this.Format);
 
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }
-                    else if (cell.Header?.TablixMember?.Values != null)
+                    else if (cell.Header != null)
                     {
                         var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Header.TablixMember.Values, null, this.Format);
 

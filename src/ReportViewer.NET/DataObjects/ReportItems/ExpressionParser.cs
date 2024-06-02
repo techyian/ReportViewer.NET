@@ -250,7 +250,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     case TablixOperator.Count:
                         return (typeof(int), dataSetResults.Count());
                     case TablixOperator.Field:                       
-                        if (values.ContainsKey(fieldName))
+                        if (values != null && values.ContainsKey(fieldName))
                         {
                             if (values[fieldName] == null)
                             {
