@@ -187,7 +187,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     var fieldEnd = tablixMember.TablixMemberGroup.GroupExpression.IndexOf('.', fieldsIdx);
                     var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
 
-                    groupedResults = this.Tablix.DataSetReference.DataSet.DataSetResults.GroupBy(g => g[fieldName]).ToList();
+                    groupedResults = dataSetResults.GroupBy(g => g[fieldName]).ToList();
                 }
 
                 if (((tablixMember.TablixHeader != null && tablixMember.TablixHeader.ContainsRepeatExpression ) || row.ContainsRepeatExpression) && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
