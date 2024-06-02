@@ -62,7 +62,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         }
     }
 
-    public class TablixMemberSortComparer<T> : IComparer<T>
+    public class TablixMemberSortComparer : IComparer<IDictionary<string, object>>
     {
         private string _fieldName;
 
@@ -71,11 +71,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             _fieldName = fieldName;
         }
 
-        public int Compare(T x, T y)
-        {
-            IDictionary<string, object> xDic = x as IDictionary<string, object>;
-            IDictionary<string, object> yDic = y as IDictionary<string, object>;
-
+        public int Compare(IDictionary<string, object>? xDic, IDictionary<string, object>? yDic)
+        {            
             Type fieldType = xDic[_fieldName].GetType();
 
             if (!xDic.ContainsKey(_fieldName) || xDic[_fieldName] == null)
