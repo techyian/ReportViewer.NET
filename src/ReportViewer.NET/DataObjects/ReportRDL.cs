@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using ReportViewer.NET.DataObjects.ReportItems;
 
 namespace ReportViewer.NET.DataObjects
@@ -8,6 +6,7 @@ namespace ReportViewer.NET.DataObjects
     public class ReportRDL
     {
         public string Name { get; set; }
+        public string Namespace { get; set; }
         public string ReportServerUrl { get; set; }
         public List<DataSource> DataSources { get; set; }
         public List<DataSet> DataSets { get; set; }
@@ -15,6 +14,6 @@ namespace ReportViewer.NET.DataObjects
         public List<ReportItem> ReportBodyItems { get; set; }
         public List<ReportItem> ReportFooterItems { get; set; }
         public List<EmbeddedImage> EmbeddedImages { get; set; }
-        public string ReportWidth { get; set; }
+        public string ReportWidth { get; set; }        
     }
 }

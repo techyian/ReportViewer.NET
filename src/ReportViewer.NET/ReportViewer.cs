@@ -184,6 +184,7 @@ namespace ReportViewer.NET
 
                     datasetObj.Query.DataSourceName = queryElement.Element(_ns1 + "DataSourceName")?.Value;
                     datasetObj.Query.CommandText = queryElement.Element(_ns1 + "CommandText")?.Value;
+                    datasetObj.Query.CommandType = queryElement.Element(_ns1 + "CommandType")?.Value;
                 }
 
                 // Process Fields

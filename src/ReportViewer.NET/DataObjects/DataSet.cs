@@ -16,6 +16,7 @@ namespace ReportViewer.NET.DataObjects
     {
         public string DataSourceName { get; set; }
         public List<DataSetQueryParameter> QueryParameters { get; set; }
+        public string CommandType { get; set; }
         public string CommandText { get; set; }
     }
 

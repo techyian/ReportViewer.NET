@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using ReportViewer.NET.Comparers;
+using ReportViewer.NET.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -168,12 +169,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 if (tablixMember.TablixMemberSort != null && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
                 {
-                    // Order dataset results by expression.
+                    // Order dataset results by expression.                    
                     var fieldsIdx = tablixMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
                     var fieldEnd = tablixMember.TablixMemberSort.SortExpression.IndexOf('.', fieldsIdx);
                     var fieldName = tablixMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
-
-                    dataSetResults = this.Tablix.DataSetReference.DataSet.DataSetResults.Order(new TablixMemberSortComparer(fieldName)).ToList();
+                    var baseComparer = new TablixMemberSortComparer(fieldName, null);
+                                        
+                    dataSetResults = this.SortTablixMember(tablixMember, baseComparer, this.Tablix.DataSetReference.DataSet.DataSetResults.Order(baseComparer)).ToList();
                 }
 
                 if (tablixMember.TablixMemberGroup != null && 
@@ -224,7 +226,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                             if (tablixMember.TablixMembers.Any(tm => tm.TablixMemberGroup != null))
                             {
-                                foreach (var innerTablixMember in tablixMember.TablixMembers.Where(tm => tm.TablixMemberGroup != null))
+                                foreach (var innerTablixMember in 
+                                    tablixMember.TablixMembers.Where(tm => tm.TablixMemberGroup != null && !string.IsNullOrEmpty(tm.TablixMemberGroup.GroupExpression))
+                                )
                                 {                                    
                                     var groupedRow = this.TablixRows[rowIdx + 1];
 
@@ -291,6 +295,39 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             return sb.ToString();
         }
+
+        /// <summary>
+        /// Recursive method which will find sub sort tablix members and apply the <see cref="TablixMemberSortComparer"/> class.
+        /// </summary>
+        /// <param name="tablixMember">The current tablix member, we expect this to have a sort expression.</param>
+        /// <param name="baseComparer">The base comparer which may have parents.</param>
+        /// <param name="dataSet">The current dataset which will have been ordered at least once previously.</param>
+        /// <returns>An <see cref="IOrderedEnumerable{TElement}"/> dataset.</returns>
+        private IOrderedEnumerable<IDictionary<string, object>> SortTablixMember(TablixMember tablixMember, TablixMemberSortComparer baseComparer, IOrderedEnumerable<IDictionary<string, object>> dataSet)
+        {
+            var subMembersWithSortExpression = tablixMember.TablixMembers.Where(tm => tm.TablixMemberSort != null);                
+
+            if (!subMembersWithSortExpression.Any())
+            {
+                return dataSet;
+            }
+
+            foreach (var subMember in subMembersWithSortExpression)
+            {
+                if (this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
+                {
+                    // Order dataset results by expression.                    
+                    var fieldsIdx = subMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
+                    var fieldEnd = subMember.TablixMemberSort.SortExpression.IndexOf('.', fieldsIdx);
+                    var fieldName = subMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                    var comparer = new TablixMemberSortComparer(fieldName, baseComparer);
+
+                    return this.SortTablixMember(subMember, comparer, dataSet.Order(comparer));
+                }
+            }
+
+            return dataSet;
+        }
     }
 
     public class TablixColumn
@@ -335,7 +372,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                     if (!ContainsRepeatExpression && !string.IsNullOrEmpty(c.Value))
                     {
-                        this.ContainsRepeatExpression = !LayoutProvider.CountRegex.IsMatch(c.Value) && LayoutProvider.FieldRegex.IsMatch(c.Value);
+                        this.ContainsRepeatExpression = !CountParser.CountRegex.IsMatch(c.Value) && FieldParser.FieldRegex.IsMatch(c.Value);
                     }
                 }
             }
@@ -497,7 +534,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixMember = tablixMember;
             this.Size = element.Element(ReportItem.Namespace + "Size")?.Value;
             this.TablixHeaderContent = new TablixCell(this, element);
-            this.ContainsRepeatExpression = !LayoutProvider.CountRegex.IsMatch(element?.Value) && LayoutProvider.FieldRegex.IsMatch(element?.Value);
+            this.ContainsRepeatExpression = !CountParser.CountRegex.IsMatch(element?.Value ?? string.Empty) && FieldParser.FieldRegex.IsMatch(element?.Value ?? string.Empty);
         }
 
         public string Build()
@@ -563,6 +600,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         Add,
         Subtract,
         Multiply,
-        Divide
+        Divide,
+        String
     }
 }
