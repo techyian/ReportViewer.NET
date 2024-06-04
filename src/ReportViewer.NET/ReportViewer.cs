@@ -314,6 +314,16 @@ namespace ReportViewer.NET
                             reportItemList.Add(new Image(img, embeddedImages));
                         }
                     }
+
+                    var lineElements = ri.Elements(_ns1 + "Line");
+
+                    if (lineElements != null)
+                    {
+                        foreach (var line in lineElements)
+                        {
+                            reportItemList.Add(new Line(line));
+                        }
+                    }
                 }
             }
 

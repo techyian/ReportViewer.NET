@@ -33,7 +33,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     // TODO: Handle other mime types.
                     case "image/jpeg":
-                        return $"<img class=\"img\" {Style?.Build()} src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />";
+                        return $"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />";
                 }
             }
 

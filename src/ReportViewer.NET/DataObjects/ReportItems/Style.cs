@@ -8,6 +8,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string TextAlign { get; set; }
         public Border Border { get; set; }
         public Border BorderBottom { get; set; }
+        public Border TopBorder { get; set; }
+        public Border LeftBorder { get; set; }
+        public Border RightBorder { get; set; }
         public string PaddingLeft { get; set; }
         public string PaddingRight { get; set; }
         public string PaddingTop { get; set; }
@@ -36,6 +39,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             var border = style?.Element(ReportItem.Namespace + "Border");
             var borderBottom = style?.Element(ReportItem.Namespace + "BorderBottom");
+            var topBorder = style?.Element(ReportItem.Namespace + "TopBorder");
+            var leftBorder = style?.Element(ReportItem.Namespace + "LeftBorder");
+            var rightBorder = style?.Element(ReportItem.Namespace + "RightBorder");
 
             if (border != null)
             {
@@ -54,6 +60,36 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     Color = borderBottom.Element(ReportItem.Namespace + "Color")?.Value,
                     Style = borderBottom.Element(ReportItem.Namespace + "Style")?.Value,
                     Width = borderBottom.Element(ReportItem.Namespace + "Width")?.Value
+                };
+            }
+
+            if (topBorder != null)
+            {
+                this.TopBorder = new Border
+                {
+                    Color = topBorder.Element(ReportItem.Namespace + "Color")?.Value,
+                    Style = topBorder.Element(ReportItem.Namespace + "Style")?.Value,
+                    Width = topBorder.Element(ReportItem.Namespace + "Width")?.Value
+                };
+            }
+
+            if (leftBorder != null)
+            {
+                this.LeftBorder = new Border
+                {
+                    Color = leftBorder.Element(ReportItem.Namespace + "Color")?.Value,
+                    Style = leftBorder.Element(ReportItem.Namespace + "Style")?.Value,
+                    Width = leftBorder.Element(ReportItem.Namespace + "Width")?.Value
+                };
+            }
+
+            if (rightBorder != null)
+            {
+                this.RightBorder = new Border
+                {
+                    Color = rightBorder.Element(ReportItem.Namespace + "Color")?.Value,
+                    Style = rightBorder.Element(ReportItem.Namespace + "Style")?.Value,
+                    Width = rightBorder.Element(ReportItem.Namespace + "Width")?.Value
                 };
             }
 
@@ -83,12 +119,27 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             if (this.Border != null)
             {
-                sb.Append(this.Border.Style == "None" ? "border: none;" : $"border: {this.Border.Width} solid {this.Border.Color};");
+                sb.Append(this.Border.Style == "None" ? "" : $"border: {this.Border.Width} solid {this.Border.Color};");
             }
 
             if (this.BorderBottom != null)
             {
-                sb.Append(this.BorderBottom.Style == "None" ? "border: none;" : $"border-bottom: {this.BorderBottom.Width} solid {this.BorderBottom.Color};");
+                sb.Append(this.BorderBottom.Style == "None" ? "" : $"border-bottom: {this.BorderBottom.Width} solid {this.BorderBottom.Color};");
+            }
+
+            if (this.TopBorder != null)
+            {
+                sb.Append(this.TopBorder.Style == "None" ? "" : $"border-top: {this.TopBorder.Width} solid {this.TopBorder.Color};");
+            }
+
+            if (this.LeftBorder != null)
+            {
+                sb.Append(this.LeftBorder.Style == "None" ? "" : $"border-left: {this.LeftBorder.Width} solid {this.LeftBorder.Color};");
+            }
+
+            if (this.RightBorder != null)
+            {
+                sb.Append(this.RightBorder.Style == "None" ? "" : $"border-right: {this.RightBorder.Width} solid {this.RightBorder.Color};");
             }
 
             sb.Append(!string.IsNullOrEmpty(this.PaddingLeft) ? $"padding-left: {this.PaddingLeft};" : "");
