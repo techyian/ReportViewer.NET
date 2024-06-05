@@ -13,12 +13,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Sizing { get; set; }
         public EmbeddedImage EmbeddedImage { get; set; }
 
-        public Image(XElement image, IEnumerable<EmbeddedImage> embeddedImages)
-            : base(image)
+        public Image(XElement image, IEnumerable<EmbeddedImage> embeddedImages, ReportRDL report)
+            : base(image, report)
         {
-            this.Source = image.Element(ReportItem.Namespace + "Source")?.Value;
-            this.Value = image.Element(ReportItem.Namespace + "Value")?.Value;
-            this.Sizing = image.Element(ReportItem.Namespace + "Sizing")?.Value;
+            this.Source = image.Element(report.Namespace + "Source")?.Value;
+            this.Value = image.Element(report.Namespace + "Value")?.Value;
+            this.Sizing = image.Element(report.Namespace + "Sizing")?.Value;
 
             // TODO: Handle other sources? 
             this.EmbeddedImage = embeddedImages.FirstOrDefault(i => i.Name == this.Value);

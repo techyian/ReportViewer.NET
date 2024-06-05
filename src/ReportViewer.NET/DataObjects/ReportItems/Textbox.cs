@@ -27,23 +27,23 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             </svg>
         ";
 
-        public Textbox(TablixCell cell, XElement textbox, IEnumerable<DataSet> dataSets)
-            : this(textbox, dataSets)
+        public Textbox(TablixCell cell, XElement textbox, IEnumerable<DataSet> dataSets, ReportRDL report)
+            : this(textbox, dataSets, report)
         {
             Cell = cell;
         }
 
-        public Textbox(XElement textbox, IEnumerable<DataSet> dataSets)
-            : base(textbox)
+        public Textbox(XElement textbox, IEnumerable<DataSet> dataSets, ReportRDL report)
+            : base(textbox, report)
         {
             this.DataSets = dataSets;
             this.Paragraphs = new List<Paragraph>();
 
             this.Name = textbox.Attribute("Name")?.Value;
-            this.CanGrow = textbox.Element(ReportItem.Namespace + "CanGrow")?.Value == "true";
-            this.KeepTogether = textbox.Element(ReportItem.Namespace + "KeepTogether")?.Value == "true";
+            this.CanGrow = textbox.Element(report.Namespace + "CanGrow")?.Value == "true";
+            this.KeepTogether = textbox.Element(report.Namespace + "KeepTogether")?.Value == "true";
 
-            var paragraphs = textbox.Elements(ReportItem.Namespace + "Paragraphs").Elements(ReportItem.Namespace + "Paragraph");
+            var paragraphs = textbox.Elements(report.Namespace + "Paragraphs").Elements(report.Namespace + "Paragraph");
             
             if (paragraphs != null)
             {
@@ -88,10 +88,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public Paragraph(Textbox textbox, XElement paragraph)
         {
             this.Textbox = textbox;
-            this.Style = new Style(paragraph.Element(ReportItem.Namespace + "Style"));
+            this.Style = new Style(paragraph.Element(this.Textbox.Report.Namespace + "Style"), this.Textbox.Report);
             this.TextRuns = new List<TextRun>();
 
-            var textRuns = paragraph.Elements(ReportItem.Namespace + "TextRuns").Elements(ReportItem.Namespace + "TextRun");
+            var textRuns = paragraph.Elements(this.Textbox.Report.Namespace + "TextRuns").Elements(this.Textbox.Report.Namespace + "TextRun");
 
             if (textRuns != null)
             {
@@ -136,14 +136,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TextRun(Paragraph paragraph, XElement textRun)
         {
             this.Paragraph = paragraph;
-            this.Value = textRun.Element(ReportItem.Namespace + "Value")?.Value;
-            this.Style = new Style(textRun.Element(ReportItem.Namespace + "Style"));
-            this.Format = textRun.Element(ReportItem.Namespace + "Style").Element(ReportItem.Namespace + "Format")?.Value;
+            this.Value = textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Value")?.Value;
+            this.Style = new Style(textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Style"), this.Paragraph.Textbox.Report);
+            this.Format = textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Style").Element(this.Paragraph.Textbox.Report.Namespace + "Format")?.Value;
             this.Parser = new ExpressionParser();
         }
 
         public string Build()
-        {
+        {            
             if (this.Value.StartsWith('='))
             {
                 TablixCell cell = this.Paragraph.Textbox.Cell;

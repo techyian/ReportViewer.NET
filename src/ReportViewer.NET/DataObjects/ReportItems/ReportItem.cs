@@ -5,9 +5,8 @@ using System.Xml.Linq;
 namespace ReportViewer.NET.DataObjects.ReportItems
 {    
     public abstract class ReportItem
-    {
-        public static XNamespace Namespace = "http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition";
-
+    {        
+        public ReportRDL Report { get; set; }
         public string Name { get; set; }        
         public Style Style { get; set; }
         public double Top { get; set; }
@@ -18,12 +17,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string ToggleItem { get; set; }
         public bool DoesToggle { get; set; }
         
-        public ReportItem(XElement element)
+        public ReportItem(XElement element, ReportRDL report)
         {
-            var topValue = element.Element(Namespace + "Top")?.Value;
-            var leftValue = element.Element(Namespace + "Left")?.Value;
-            var widthValue = element.Element(Namespace + "Width")?.Value;
-            var heightValue = element.Element(Namespace + "Height")?.Value;
+            this.Report = report;
+
+            var topValue = element.Element(report.Namespace + "Top")?.Value;
+            var leftValue = element.Element(report.Namespace + "Left")?.Value;
+            var widthValue = element.Element(report.Namespace + "Width")?.Value;
+            var heightValue = element.Element(report.Namespace + "Height")?.Value;
 
             if (!string.IsNullOrEmpty(topValue) && double.TryParse(topValue.Substring(0, topValue.Length - 2), out var top))
             {
@@ -45,14 +46,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 Height = height;
             }
 
-            this.Style = new Style(element.Element(Namespace + "Style"));
+            this.Style = new Style(element.Element(report.Namespace + "Style"), report);
             this.Style.Top = topValue;
             this.Style.Left = leftValue;
             this.Style.Height = heightValue;
             this.Style.Width = widthValue;
 
-            this.Hidden = this.Style.Hidden = element.Element(Namespace + "Visibility")?.Element(Namespace + "Hidden")?.Value == "true";
-            this.ToggleItem = element.Element(Namespace + "Visibility")?.Element(Namespace + "ToggleItem")?.Value;
+            this.Hidden = this.Style.Hidden = element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "Hidden")?.Value == "true";
+            this.ToggleItem = element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "ToggleItem")?.Value;
         }
 
         public abstract string Build();

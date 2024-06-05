@@ -33,23 +33,23 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         }
 
-        public Style(XElement style)
+        public Style(XElement style, ReportRDL report)
         {
-            this.TextAlign = style?.Element(ReportItem.Namespace + "TextAlign")?.Value;
+            this.TextAlign = style?.Element(report.Namespace + "TextAlign")?.Value;
 
-            var border = style?.Element(ReportItem.Namespace + "Border");
-            var borderBottom = style?.Element(ReportItem.Namespace + "BorderBottom");
-            var topBorder = style?.Element(ReportItem.Namespace + "TopBorder");
-            var leftBorder = style?.Element(ReportItem.Namespace + "LeftBorder");
-            var rightBorder = style?.Element(ReportItem.Namespace + "RightBorder");
+            var border = style?.Element(report.Namespace + "Border");
+            var borderBottom = style?.Element(report.Namespace + "BorderBottom");
+            var topBorder = style?.Element(report.Namespace + "TopBorder");
+            var leftBorder = style?.Element(report.Namespace + "LeftBorder");
+            var rightBorder = style?.Element(report.Namespace + "RightBorder");
 
             if (border != null)
             {
                 this.Border = new Border
                 {
-                    Color = border.Element(ReportItem.Namespace + "Color")?.Value,
-                    Style = border.Element(ReportItem.Namespace + "Style")?.Value,
-                    Width = border.Element(ReportItem.Namespace + "Width")?.Value
+                    Color = border.Element(report.Namespace + "Color")?.Value,
+                    Style = border.Element(report.Namespace + "Style")?.Value,
+                    Width = border.Element(report.Namespace + "Width")?.Value ?? "1px"
                 };
             }
 
@@ -57,9 +57,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.BorderBottom = new Border
                 {
-                    Color = borderBottom.Element(ReportItem.Namespace + "Color")?.Value,
-                    Style = borderBottom.Element(ReportItem.Namespace + "Style")?.Value,
-                    Width = borderBottom.Element(ReportItem.Namespace + "Width")?.Value
+                    Color = borderBottom.Element(report.Namespace + "Color")?.Value,
+                    Style = borderBottom.Element(report.Namespace + "Style")?.Value,
+                    Width = borderBottom.Element(report.Namespace + "Width")?.Value ?? "1px"
                 };
             }
 
@@ -67,9 +67,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.TopBorder = new Border
                 {
-                    Color = topBorder.Element(ReportItem.Namespace + "Color")?.Value,
-                    Style = topBorder.Element(ReportItem.Namespace + "Style")?.Value,
-                    Width = topBorder.Element(ReportItem.Namespace + "Width")?.Value
+                    Color = topBorder.Element(report.Namespace + "Color")?.Value,
+                    Style = topBorder.Element(report.Namespace + "Style")?.Value,
+                    Width = topBorder.Element(report.Namespace + "Width")?.Value ?? "1px"
                 };
             }
 
@@ -77,9 +77,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.LeftBorder = new Border
                 {
-                    Color = leftBorder.Element(ReportItem.Namespace + "Color")?.Value,
-                    Style = leftBorder.Element(ReportItem.Namespace + "Style")?.Value,
-                    Width = leftBorder.Element(ReportItem.Namespace + "Width")?.Value
+                    Color = leftBorder.Element(report.Namespace + "Color")?.Value,
+                    Style = leftBorder.Element(report.Namespace + "Style")?.Value,
+                    Width = leftBorder.Element(report.Namespace + "Width")?.Value ?? "1px"
                 };
             }
 
@@ -87,27 +87,27 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.RightBorder = new Border
                 {
-                    Color = rightBorder.Element(ReportItem.Namespace + "Color")?.Value,
-                    Style = rightBorder.Element(ReportItem.Namespace + "Style")?.Value,
-                    Width = rightBorder.Element(ReportItem.Namespace + "Width")?.Value
+                    Color = rightBorder.Element(report.Namespace + "Color")?.Value,
+                    Style = rightBorder.Element(report.Namespace + "Style")?.Value,
+                    Width = rightBorder.Element(report.Namespace + "Width")?.Value ?? "1px"
                 };
             }
 
-            this.PaddingLeft = style?.Element(ReportItem.Namespace + "PaddingLeft")?.Value;
-            this.PaddingRight = style?.Element(ReportItem.Namespace + "PaddingRight")?.Value;
-            this.PaddingTop = style?.Element(ReportItem.Namespace + "PaddingTop")?.Value;
-            this.PaddingBottom = style?.Element(ReportItem.Namespace + "PaddingBottom")?.Value;
-            this.BackgroundColor = style?.Element(ReportItem.Namespace + "BackgroundColor")?.Value;
-            this.VerticalAlign = style?.Element(ReportItem.Namespace + "VerticalAlign")?.Value;
-            this.Top = style?.Element(ReportItem.Namespace + "Top")?.Value;
-            this.Left = style?.Element(ReportItem.Namespace + "Left")?.Value;
-            this.Height = style?.Element(ReportItem.Namespace + "Height")?.Value;
-            this.Width = style?.Element(ReportItem.Namespace + "Width")?.Value;
-            this.ZIndex = style?.Element(ReportItem.Namespace + "ZIndex")?.Value;
-            this.FontFamily = style?.Element(ReportItem.Namespace + "FontFamily")?.Value;
-            this.FontWeight = style?.Element(ReportItem.Namespace + "FontWeight")?.Value;
-            this.FontSize = style?.Element(ReportItem.Namespace + "FontSize")?.Value;
-            this.Color = style?.Element(ReportItem.Namespace + "Color")?.Value;
+            this.PaddingLeft = style?.Element(report.Namespace + "PaddingLeft")?.Value;
+            this.PaddingRight = style?.Element(report.Namespace + "PaddingRight")?.Value;
+            this.PaddingTop = style?.Element(report.Namespace + "PaddingTop")?.Value;
+            this.PaddingBottom = style?.Element(report.Namespace + "PaddingBottom")?.Value;
+            this.BackgroundColor = style?.Element(report.Namespace + "BackgroundColor")?.Value;
+            this.VerticalAlign = style?.Element(report.Namespace + "VerticalAlign")?.Value;
+            this.Top = style?.Element(report.Namespace + "Top")?.Value;
+            this.Left = style?.Element(report.Namespace + "Left")?.Value;
+            this.Height = style?.Element(report.Namespace + "Height")?.Value;
+            this.Width = style?.Element(report.Namespace + "Width")?.Value;
+            this.ZIndex = style?.Element(report.Namespace + "ZIndex")?.Value;
+            this.FontFamily = style?.Element(report.Namespace + "FontFamily")?.Value;
+            this.FontWeight = style?.Element(report.Namespace + "FontWeight")?.Value;
+            this.FontSize = style?.Element(report.Namespace + "FontSize")?.Value;
+            this.Color = style?.Element(report.Namespace + "Color")?.Value;
         }
 
         public string Build()

@@ -3,18 +3,18 @@ using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
-
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace ReportViewer.NET
 {
     public class ReportViewer : IReportViewer
     {        
-        private readonly XNamespace _ns1 = "http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition";
-        private readonly XNamespace _ns2 = "http://schemas.microsoft.com/SQLServer/reporting/reportdesigner";
+        public static XNamespace ReportDesigner = "http://schemas.microsoft.com/SQLServer/reporting/reportdesigner";
 
         private List<ReportRDL> _reportRdls;
         private List<DataSource> _dataSources;
@@ -87,14 +87,14 @@ namespace ReportViewer.NET
         {            
             var reportRdl = new ReportRDL();
                         
-            // Validate xml.
-            if (!this.ValidateRdlNamespace(xml.Root.Attributes()))
-            {
-                throw new InvalidDataException("Root namespace is invalid");                
-            }
+            XPathNavigator xpn = xml.CreateNavigator();
+            xpn.MoveToFollowing(XPathNodeType.Element);
+            IDictionary<string, string> namespaces = xpn.GetNamespacesInScope(XmlNamespaceScope.All);
+
+            reportRdl.Namespace = namespaces[""];
 
             // Validate data sources.
-            var dataSourceElements = xml.Root.Descendants(_ns1 + "DataSources").Elements(_ns1 + "DataSource");
+            var dataSourceElements = xml.Root.Descendants(reportRdl.Namespace + "DataSources").Elements(reportRdl.Namespace + "DataSource");
 
             if (!this.ValidateDataSource(dataSourceElements))
             {
@@ -102,13 +102,13 @@ namespace ReportViewer.NET
             }
 
             // Fetch data sets.
-            var datasetElements = xml.Root.Descendants(_ns1 + "DataSets").SelectMany(e => e.Elements(_ns1 + "DataSet"));
-            var dataSets = this.ProcessDataSets(xml.Root, datasetElements);
-            var reportParameters = this.ProcessReportParameters(xml.Root, dataSets);
-            var embeddedImages = this.ProcessEmbeddedImages(xml.Root);
+            var datasetElements = xml.Root.Descendants(reportRdl.Namespace + "DataSets").SelectMany(e => e.Elements(reportRdl.Namespace + "DataSet"));
+            var dataSets = this.ProcessDataSets(xml.Root, datasetElements, reportRdl.Namespace);
+            var reportParameters = this.ProcessReportParameters(xml.Root, dataSets, reportRdl.Namespace);
+            var embeddedImages = this.ProcessEmbeddedImages(xml.Root, reportRdl.Namespace);
 
-            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(_ns1 + "Body").Descendants(_ns1 + "ReportItems"), dataSets, embeddedImages);
-            var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(_ns1 + "PageFooter").Descendants(_ns1 + "ReportItems"), dataSets, embeddedImages);
+            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "Body").Descendants(reportRdl.Namespace + "ReportItems"), dataSets, embeddedImages, reportRdl);
+            var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "PageFooter").Descendants(reportRdl.Namespace + "ReportItems"), dataSets, embeddedImages, reportRdl);
 
             reportRdl.DataSources = _dataSources;
             reportRdl.DataSets = dataSets;
@@ -116,23 +116,9 @@ namespace ReportViewer.NET
             reportRdl.ReportBodyItems = reportBodyItems;
             reportRdl.ReportFooterItems = reportFooterItems;
             reportRdl.EmbeddedImages = embeddedImages;
-            reportRdl.ReportWidth = xml.Root.Descendants(_ns1 + "ReportSections").Elements(_ns1 + "ReportSection").Elements(_ns1 + "Width").FirstOrDefault()?.Value;
+            reportRdl.ReportWidth = xml.Root.Descendants(reportRdl.Namespace + "ReportSections").Elements(reportRdl.Namespace + "ReportSection").Elements(reportRdl.Namespace + "Width").FirstOrDefault()?.Value;
 
             return reportRdl;
-        }
-
-        private bool ValidateRdlNamespace(IEnumerable<XAttribute> attributes)
-        {
-            var ns1 = ("xmlns", "http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition");
-            var ns2 = ("xmlns:rd", "http://schemas.microsoft.com/SQLServer/reporting/reportdesigner");
-
-            if (!attributes.Any(a => a.Value == ns1.Item2) ||
-                !attributes.Any(a => a.Value == ns2.Item2))
-            {
-                return false;
-            }
-
-            return true;
         }
 
         private bool ValidateDataSource(IEnumerable<XElement> dataSources)
@@ -148,10 +134,10 @@ namespace ReportViewer.NET
             return true;
         }
 
-        private List<DataSet> ProcessDataSets(XElement root, IEnumerable<XElement> datasetElements)
+        private List<DataSet> ProcessDataSets(XElement root, IEnumerable<XElement> datasetElements, XNamespace ns)
         {
             var datasets = new List<DataSet>();
-            var reportParameterElements = root.Descendants(_ns1 + "ReportParameters").Elements(_ns1 + "ReportParameter");
+            var reportParameterElements = root.Descendants(ns + "ReportParameters").Elements(ns + "ReportParameter");
 
             foreach (var ds in datasetElements)
             {
@@ -160,13 +146,13 @@ namespace ReportViewer.NET
                 datasetObj.Name = ds.Attribute("Name").Value;
 
                 // Process Query
-                var queryElement = ds.Element(_ns1 + "Query");
+                var queryElement = ds.Element(ns + "Query");
 
                 if (queryElement != null)
                 {                    
                     datasetObj.Query = new DataSetQuery();
 
-                    var queryParams = queryElement.Element(_ns1 + "QueryParameters")?.Elements(_ns1 + "QueryParameter");
+                    var queryParams = queryElement.Element(ns + "QueryParameters")?.Elements(ns + "QueryParameter");
 
                     if (queryParams != null)
                     {
@@ -182,13 +168,13 @@ namespace ReportViewer.NET
                         }
                     }
 
-                    datasetObj.Query.DataSourceName = queryElement.Element(_ns1 + "DataSourceName")?.Value;
-                    datasetObj.Query.CommandText = queryElement.Element(_ns1 + "CommandText")?.Value;
-                    datasetObj.Query.CommandType = queryElement.Element(_ns1 + "CommandType")?.Value;
+                    datasetObj.Query.DataSourceName = queryElement.Element(ns + "DataSourceName")?.Value;
+                    datasetObj.Query.CommandText = queryElement.Element(ns + "CommandText")?.Value;
+                    datasetObj.Query.CommandType = queryElement.Element(ns + "CommandType")?.Value;
                 }
 
                 // Process Fields
-                var fieldElements = ds.Element(_ns1 + "Fields")?.Elements(_ns1 + "Field");
+                var fieldElements = ds.Element(ns + "Fields")?.Elements(ns + "Field");
 
                 if (fieldElements != null)
                 {
@@ -197,7 +183,7 @@ namespace ReportViewer.NET
                     foreach (var field in fieldElements)
                     {
                         var fieldName = field.Attribute("Name")?.Value;
-                        var typeName = field.Element(_ns2 + "TypeName")?.Value;
+                        var typeName = field.Element(ReportDesigner + "TypeName")?.Value;
                         var fieldObj = new DataSetField()
                         {
                             Name = fieldName,
@@ -210,7 +196,7 @@ namespace ReportViewer.NET
 
                             if (reportParameterElement != null)
                             {
-                                fieldObj.Label = reportParameterElement.Element(_ns1 + "Prompt")?.Value;
+                                fieldObj.Label = reportParameterElement.Element(ns + "Prompt")?.Value;
                             }
                         }
 
@@ -224,21 +210,21 @@ namespace ReportViewer.NET
             return datasets;
         }
 
-        private List<ReportParameter> ProcessReportParameters(XElement root, IEnumerable<DataSet> datasets)
+        private List<ReportParameter> ProcessReportParameters(XElement root, IEnumerable<DataSet> datasets, XNamespace ns)
         {
             var reportParamList = new List<ReportParameter>();
-            var reportParameterElements = root.Descendants(_ns1 + "ReportParameters").Elements(_ns1 + "ReportParameter");
+            var reportParameterElements = root.Descendants(ns + "ReportParameters").Elements(ns + "ReportParameter");
 
             foreach (var rp in reportParameterElements)
             {
                 var reportParamObj = new ReportParameter()
                 {
                     Name = rp.Attribute("Name")?.Value,
-                    DataType = rp.Element(_ns1 + "DataType")?.Value,
-                    Nullable = rp.Element(_ns1 + "Nullable")?.Value == "true",
-                    Prompt = rp.Element(_ns1 + "Prompt")?.Value,
-                    MultiValue = rp.Element(_ns1 + "MultiValue")?.Value == "true",
-                    DefaultValue = rp.Element(_ns1 + "DefaultValue")?.Element(_ns1 + "Values")?.Element(_ns1 + "Value")?.Value
+                    DataType = rp.Element(ns + "DataType")?.Value,
+                    Nullable = rp.Element(ns + "Nullable")?.Value == "true",
+                    Prompt = rp.Element(ns + "Prompt")?.Value,
+                    MultiValue = rp.Element(ns + "MultiValue")?.Value == "true",
+                    DefaultValue = rp.Element(ns + "DefaultValue")?.Element(ns + "Values")?.Element(ns + "Value")?.Value
                 };
 
                 if (!string.IsNullOrEmpty(reportParamObj.DataType))
@@ -257,15 +243,15 @@ namespace ReportViewer.NET
                     }
                 }
 
-                var dsRef = rp.Element(_ns1 + "ValidValues")?.Element(_ns1 + "DataSetReference");
+                var dsRef = rp.Element(ns + "ValidValues")?.Element(ns + "DataSetReference");
 
                 if (dsRef != null)
                 {
                     reportParamObj.DataSetReference = new DataSetReference()
                     {
-                        DataSetName = dsRef.Element(_ns1 + "DataSetName")?.Value,
-                        ValueField = dsRef.Element(_ns1 + "ValueField")?.Value,
-                        LabelField = dsRef.Element(_ns1 + "LabelField")?.Value                        
+                        DataSetName = dsRef.Element(ns + "DataSetName")?.Value,
+                        ValueField = dsRef.Element(ns + "ValueField")?.Value,
+                        LabelField = dsRef.Element(ns + "LabelField")?.Value                        
                     };
 
                     reportParamObj.DataSetReference.DataSet = datasets.FirstOrDefault(ds => ds.Name == reportParamObj.DataSetReference.DataSetName);
@@ -277,7 +263,7 @@ namespace ReportViewer.NET
             return reportParamList;
         }
 
-        private List<ReportItem> ProcessReportItems(IEnumerable<XElement> reportItemElements, IEnumerable<DataSet> datasets, IEnumerable<EmbeddedImage> embeddedImages)
+        private List<ReportItem> ProcessReportItems(IEnumerable<XElement> reportItemElements, IEnumerable<DataSet> datasets, IEnumerable<EmbeddedImage> embeddedImages, ReportRDL rdl)
         {
             var reportItemList = new List<ReportItem>();
             
@@ -285,43 +271,43 @@ namespace ReportViewer.NET
             {
                 foreach (var ri in reportItemElements)
                 {
-                    var tablixElements = ri.Elements(_ns1 + "Tablix");
+                    var tablixElements = ri.Elements(rdl.Namespace + "Tablix");
 
                     if (tablixElements != null)
                     {
                         foreach (var te in tablixElements)
                         {
-                            reportItemList.Add(new Tablix(te, datasets));
+                            reportItemList.Add(new Tablix(te, datasets, rdl));
                         }
                     }
 
-                    var textboxElements = ri.Elements(_ns1 + "Textbox");
+                    var textboxElements = ri.Elements(rdl.Namespace + "Textbox");
 
                     if (textboxElements != null)
                     {
                         foreach (var tb in textboxElements)
                         {
-                            reportItemList.Add(new Textbox(tb, datasets));
+                            reportItemList.Add(new Textbox(tb, datasets, rdl));
                         }
                     }
 
-                    var imageElements = ri.Elements(_ns1 + "Image");
+                    var imageElements = ri.Elements(rdl.Namespace + "Image");
 
                     if (imageElements != null)
                     {
                         foreach (var img in imageElements)
                         {
-                            reportItemList.Add(new Image(img, embeddedImages));
+                            reportItemList.Add(new Image(img, embeddedImages, rdl));
                         }
                     }
 
-                    var lineElements = ri.Elements(_ns1 + "Line");
+                    var lineElements = ri.Elements(rdl.Namespace + "Line");
 
                     if (lineElements != null)
                     {
                         foreach (var line in lineElements)
                         {
-                            reportItemList.Add(new Line(line));
+                            reportItemList.Add(new Line(line, rdl));
                         }
                     }
                 }
@@ -330,10 +316,10 @@ namespace ReportViewer.NET
             return reportItemList;
         }
 
-        private List<EmbeddedImage> ProcessEmbeddedImages(XElement root)
+        private List<EmbeddedImage> ProcessEmbeddedImages(XElement root, XNamespace ns)
         {
             var embeddedImages = new List<EmbeddedImage>();
-            var reportEmbeddedImages = root.Descendants(_ns1 + "EmbeddedImages").Elements(_ns1 + "EmbeddedImage");
+            var reportEmbeddedImages = root.Descendants(ns + "EmbeddedImages").Elements(ns + "EmbeddedImage");
 
             if (reportEmbeddedImages != null)
             {
@@ -342,8 +328,8 @@ namespace ReportViewer.NET
                     embeddedImages.Add(new EmbeddedImage
                     {
                         Name = ei.Attribute("Name")?.Value,
-                        MimeType = ei.Element(_ns1 + "MIMEType")?.Value,
-                        ImageData = ei.Element(_ns1 + "ImageData")?.Value
+                        MimeType = ei.Element(ns + "MIMEType")?.Value,
+                        ImageData = ei.Element(ns + "ImageData")?.Value
                     });                    
                 }
             }

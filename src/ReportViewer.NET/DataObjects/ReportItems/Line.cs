@@ -5,7 +5,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 {
     public class Line : ReportItem
     {
-        public Line(XElement element) : base(element)
+        public Line(XElement element, ReportRDL report) : base(element, report)
         {
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Xml.Linq;
 using ReportViewer.NET.DataObjects.ReportItems;
 
 namespace ReportViewer.NET.DataObjects
@@ -6,7 +7,7 @@ namespace ReportViewer.NET.DataObjects
     public class ReportRDL
     {
         public string Name { get; set; }
-        public string Namespace { get; set; }
+        public XNamespace Namespace { get; set; }
         public string ReportServerUrl { get; set; }
         public List<DataSource> DataSources { get; set; }
         public List<DataSet> DataSets { get; set; }
