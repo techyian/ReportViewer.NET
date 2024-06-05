@@ -16,6 +16,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public Image(XElement image, IEnumerable<EmbeddedImage> embeddedImages, ReportRDL report)
             : base(image, report)
         {
+            this.Style.Top = "";
             this.Source = image.Element(report.Namespace + "Source")?.Value;
             this.Value = image.Element(report.Namespace + "Value")?.Value;
             this.Sizing = image.Element(report.Namespace + "Sizing")?.Value;
@@ -34,6 +35,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     // TODO: Handle other mime types.
                     case "image/jpeg":
                         return $"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />";
+                    case "image/png":
+                        return $"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />";
                 }
             }
 

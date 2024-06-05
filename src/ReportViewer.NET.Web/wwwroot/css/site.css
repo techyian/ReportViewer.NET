@@ -73,6 +73,10 @@ body {
     width: 100%;
 }
 
+.report-row img {
+    position: relative;
+}
+
 .report-row div p, .report-row div span {
     font-size: 10pt;
     font-weight: 400;
@@ -88,6 +92,10 @@ body {
     width: 100%;
     margin-bottom: 0.75rem;
     overflow-x: auto;
+}
+
+.report-row td div {
+    height: 100%;
 }
 
 .reportitem-expand {
