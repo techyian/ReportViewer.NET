@@ -293,8 +293,7 @@ namespace ReportViewer.NET
                         results = await conn.QueryAsync(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
                     }
                     catch (Exception e)
-                    {
-                        var t = true;
+                    {                        
                     }
                 }
             }

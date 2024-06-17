@@ -160,7 +160,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     }
                     else if (cell.Header != null)
                     {
-                        var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults, cell.Header.TablixMember.Values, null, this.Format);
+                        var dataSetResults = cell.Header.GroupedResults?.Select(r => r).ToList() ?? cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                        var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, cell.Header.TablixMember.Values, null, this.Format);
 
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }

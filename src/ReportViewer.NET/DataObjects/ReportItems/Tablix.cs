@@ -148,122 +148,163 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             sb.AppendLine("<tbody>");
 
             var rowIdx = 0;
+            var insertedKey = false;
 
             for (var i = 0; i < this.Tablix.TablixRowHierarchy.TablixMembers.Count; i++)
             {
-                var tablixMember = this.Tablix.TablixRowHierarchy.TablixMembers[i];
-                var row = this.TablixRows[rowIdx];
+                rowIdx = this.ProcessTablixMembers(sb, null, null, this.Tablix.TablixRowHierarchy.TablixMembers[i], new List<TablixMember>(), rowIdx, ref insertedKey);
+            }
 
-                List<IDictionary<string, object>> dataSetResults = this.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                List<IGrouping<object, IDictionary<string, object>>> groupedResults = null;
+            sb.AppendLine("</tbody>");
 
-                if (tablixMember.TablixMemberSort != null && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
+            return sb.ToString();
+        }
+
+        private int FindAllSubMembers(TablixMember member, int currentCount)
+        {
+            if (member.TablixMembers.Any())
+            {
+                foreach (var submember in member.TablixMembers)
                 {
-                    // Order dataset results by expression.                    
-                    var fieldsIdx = tablixMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
-                    var fieldEnd = tablixMember.TablixMemberSort.SortExpression.IndexOf('.', fieldsIdx);
-                    var fieldName = tablixMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
-                    var baseComparer = new TablixMemberSortComparer(fieldName, null);
-                                        
-                    dataSetResults = this.SortTablixMember(tablixMember, baseComparer, this.Tablix.DataSetReference.DataSet.DataSetResults.Order(baseComparer)).ToList();
+                    currentCount = this.FindAllSubMembers(submember, currentCount);
+                }
+            }
+
+            return currentCount + 1;
+        }
+
+        private int ProcessTablixMembers(
+            StringBuilder sb, 
+            List<IDictionary<string, object>> dataSetResults, 
+            IGrouping<object, IDictionary<string, object>> groupResults,
+            TablixMember tablixMember,
+            List<TablixMember> prevTablixMembers,            
+            int currentRowIndx,
+            ref bool insertedKey)
+        {            
+            List<IDictionary<string, object>> dsr = dataSetResults ?? this.Tablix.DataSetReference?.DataSet?.DataSetResults;
+            List<IGrouping<object, IDictionary<string, object>>> groupedResults = null;
+
+            if (tablixMember.TablixMemberSort != null && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
+            {
+                // Order dataset results by expression.                    
+                var fieldsIdx = tablixMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
+                var fieldEnd = tablixMember.TablixMemberSort.SortExpression.IndexOf('.', fieldsIdx);
+                var fieldName = tablixMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                var baseComparer = new TablixMemberSortComparer(fieldName, null);
+
+                dataSetResults = this.SortTablixMember(tablixMember, baseComparer, this.Tablix.DataSetReference.DataSet.DataSetResults.Order(baseComparer)).ToList();
+            }
+
+            if (tablixMember.TablixMemberGroup != null &&
+                !string.IsNullOrEmpty(tablixMember.TablixMemberGroup.GroupExpression) &&
+                this.Tablix.DataSetReference != null &&
+                this.Tablix.DataSetReference.DataSet.DataSetResults != null
+            )
+            {
+                // Group items to dictionary.
+                var fieldsIdx = tablixMember.TablixMemberGroup.GroupExpression.IndexOf("Fields!");
+                var fieldEnd = tablixMember.TablixMemberGroup.GroupExpression.IndexOf('.', fieldsIdx);
+                var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+
+                groupedResults = dataSetResults.GroupBy(g => g[fieldName]).ToList();
+            }
+
+            if (groupedResults != null)
+            {
+                // Starting a new grouping
+                var after = 0;
+
+                foreach (var groupedResult in groupedResults)
+                {
+                    var before = currentRowIndx;
+                    var prevMembersBeforeGroup = new List<TablixMember>(prevTablixMembers);
+
+                    foreach (var childMember in tablixMember.TablixMembers)
+                    {
+                        prevTablixMembers.Add(tablixMember);
+                        currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, ref insertedKey);                        
+                    }
+
+                    prevTablixMembers = prevMembersBeforeGroup;
+                    insertedKey = false;
+                    after = currentRowIndx;
+                    currentRowIndx = before;
                 }
 
-                if (tablixMember.TablixMemberGroup != null && 
-                    !string.IsNullOrEmpty(tablixMember.TablixMemberGroup.GroupExpression) &&
+                currentRowIndx = after;
+            }
+            else if (tablixMember.TablixMembers.Any())
+            {
+                foreach (var childMember in tablixMember.TablixMembers)
+                {
+                    prevTablixMembers.Add(tablixMember);
+                    currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupResults, childMember, prevTablixMembers, currentRowIndx, ref insertedKey);                    
+                }
+            }
+            else
+            {
+                var row = this.TablixRows[currentRowIndx];
+                
+                row.GroupedResults = groupResults;
+
+                var lastGroup = tablixMember.TablixMemberGroup != null ? tablixMember : prevTablixMembers.Where(t => t.TablixMemberGroup != null).LastOrDefault();
+                var lastHeader = tablixMember.TablixHeader != null ? tablixMember : prevTablixMembers.Where(t => t.TablixHeader != null).LastOrDefault();
+
+                if (lastHeader != null && lastHeader.TablixHeader != null)
+                {
+                    lastHeader.TablixHeader.GroupedResults = groupResults;
+                }
+
+                if (lastHeader != null && 
+                    lastHeader.TablixHeader != null && 
+                    (lastHeader.TablixHeader.ContainsRepeatExpression || row.ContainsRepeatExpression) &&
+                    !lastHeader.TablixHeader.ContainsAggregatorExpression && 
+                    !row.ContainsAggregatorExpression &&
                     this.Tablix.DataSetReference != null && 
                     this.Tablix.DataSetReference.DataSet.DataSetResults != null
-                )
+                   )
                 {
-                    // Group items to dictionary.
-                    var fieldsIdx = tablixMember.TablixMemberGroup.GroupExpression.IndexOf("Fields!");
-                    var fieldEnd = tablixMember.TablixMemberGroup.GroupExpression.IndexOf('.', fieldsIdx);
-                    var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
-
-                    groupedResults = dataSetResults.GroupBy(g => g[fieldName]).ToList();
-                }
-
-                if (((tablixMember.TablixHeader != null && tablixMember.TablixHeader.ContainsRepeatExpression ) || row.ContainsRepeatExpression) && this.Tablix.DataSetReference != null && this.Tablix.DataSetReference.DataSet.DataSetResults != null)
-                {
-                    // As we have a row which we need to repeat over, we need to determine whether the results are intended to be grouped by a key.
-                    if (groupedResults != null)
+                    if (groupResults != null)
                     {
-                        // We are displaying grouped results.
-                        for (var j = 0; j < groupedResults.Count; j++)
+                        var groupRowCount = this.FindAllSubMembers(lastGroup, 0);
+
+                        // We are displaying grouped results.                                
+                        foreach (var result in groupResults)
                         {
-                            var insertedKey = false;
+                            row.Values = lastHeader.Values = result;
 
-                            foreach (var result in groupedResults[j])
+                            sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\">");
+
+                            // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
+                            // cell in the first column.
+                            if (!insertedKey)
                             {
-                                row.Values = tablixMember.Values = result;
+                                // Hidden
+                                //sb.AppendLine("<td aria-hidden=\"true\"></td>");
 
-                                sb.AppendLine($"<tr height=\"{row.Height}\">");
-                                                                
-                                // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
-                                // cell in the first column.
-                                if (!insertedKey)
-                                {
-                                    // Hidden
-                                    sb.AppendLine("<td aria-hidden=\"true\"></td>");
-
-                                    tablixMember.TablixHeader.RowSpan = groupedResults[j].Count();
-                                    sb.AppendLine(tablixMember.TablixHeader.Build());
-                                    sb.AppendLine(row.Build());
-                                    insertedKey = true;
-                                }
-                                else
-                                {
-                                    sb.AppendLine("<td></td>");
-                                    sb.AppendLine(row.Build());
-                                }
-                                sb.AppendLine("</tr>");
+                                lastHeader.TablixHeader.RowSpan = groupResults.Count() + groupRowCount;// groupRowCount > groupResults.Count() ? groupRowCount : groupResults.Count();
+                                sb.AppendLine(lastHeader.TablixHeader.Build());
+                                sb.AppendLine(row.Build());
+                                insertedKey = true;
                             }
-
-                            if (tablixMember.TablixMembers.Any(tm => tm.TablixMemberGroup != null))
+                            else
                             {
-                                foreach (var innerTablixMember in 
-                                    tablixMember.TablixMembers.Where(tm => tm.TablixMemberGroup != null && rowIdx + 1 < this.TablixRows.Count)
-                                )
-                                {                                    
-                                    var groupedRow = this.TablixRows[rowIdx + 1];
-
-                                    // As we're in the inner members, use values from row before.
-                                    groupedRow.GroupedResults = groupedResults[j];
-                                    groupedRow.Values = this.TablixRows[rowIdx].Values;
-
-                                    sb.AppendLine($"<tr height=\"{groupedRow.Height}\">");
-                                    if (innerTablixMember.TablixHeader != null)
-                                    {
-                                        sb.AppendLine(innerTablixMember.TablixHeader.Build());
-                                    }
-                                    else if (innerTablixMember.TablixMemberGroup != null)
-                                    {
-                                        // We are grouped from the previous tablix member. Create cell.
-                                        // Fixes rowspan misalignment.
-                                        sb.AppendLine("<td aria-hidden=\"true\"></td>");
-                                        sb.AppendLine("<td></td>");
-                                    }
-
-                                    sb.AppendLine(groupedRow.Build());
-                                    sb.AppendLine("</tr>");
-                                }                                                                
+                                //sb.AppendLine("<td aria-hidden=\"true\"></td>");
+                                sb.AppendLine(row.Build());
                             }
-                        }
-
-                        if (tablixMember.TablixMembers.Any(tm => tm.TablixMemberGroup != null) && rowIdx + 1 < this.TablixRows.Count)
-                        {
-                            // We have used the grouped row and don't need to show it again.
-                            rowIdx++;
+                            sb.AppendLine("</tr>");
                         }
                     }
                     else
                     {
-                        foreach (var result in dataSetResults)
+                        foreach (var result in dsr)
                         {
                             row.Values = result;
 
-                            sb.AppendLine($"<tr height=\"{row.Height}\">");
+                            sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"false\">");
                             // Fixes rowspan misalignment.
-                            sb.AppendLine("<td aria-hidden=\"true\"></td>");
+                            //sb.AppendLine("<td aria-hidden=\"true\"></td>");
                             sb.AppendLine(row.Build());
                             sb.AppendLine("</tr>");
                         }
@@ -271,30 +312,20 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
                 else
                 {
-                    sb.AppendLine($"<tr height=\"{row.Height}\">");
-                    if (tablixMember.TablixHeader != null)
+                    sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"false\">");
+                    if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey) || !lastHeader.TablixHeader.ContainsRepeatExpression))
                     {
-                        // Fixes rowspan misalignment.
-                        sb.AppendLine("<td aria-hidden=\"true\"></td>");
-                        sb.AppendLine(tablixMember.TablixHeader.Build());
-                    }
-                    else if (tablixMember.TablixMemberGroup != null)
-                    {
-                        // We are grouped from the previous tablix member. Create cell.
-                        sb.AppendLine("<td></td>");
-                        sb.AppendLine("<td></td>");
+                        sb.AppendLine(lastHeader.TablixHeader.Build());
                     }
 
                     sb.AppendLine(row.Build());
                     sb.AppendLine("</tr>");
                 }
-
-                rowIdx++;
+                
+                currentRowIndx++;
             }
-
-            sb.AppendLine("</tbody>");
-
-            return sb.ToString();
+                        
+            return currentRowIndx;
         }
 
         /// <summary>
@@ -355,6 +386,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public List<TablixCell> TablixCells { get; set; }
         public TablixBody Body { get; set; }
         public bool ContainsRepeatExpression { get; set; }
+        public bool ContainsAggregatorExpression { get; set; }
         public dynamic Values { get; set; }
         public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
 
@@ -372,9 +404,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     this.TablixCells.Add(new TablixCell(this, c, this.Body.Tablix.Report));
 
-                    if (!ContainsRepeatExpression && !string.IsNullOrEmpty(c.Value))
+                    if (!this.ContainsRepeatExpression && !string.IsNullOrEmpty(c.Value))
                     {
                         this.ContainsRepeatExpression = !CountParser.CountRegex.IsMatch(c.Value) && FieldParser.FieldRegex.IsMatch(c.Value);
+                    }
+
+                    if (!this.ContainsAggregatorExpression && !string.IsNullOrEmpty(c.Value))
+                    {
+                        // TODO: Add other aggregator functions.
+                        this.ContainsAggregatorExpression = CountParser.CountRegex.IsMatch(c.Value);
                     }
                 }
             }
@@ -383,24 +421,71 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Build()
         {
             var sb = new StringBuilder();
-                        
+            
             if (this.TablixCells != null)
             {
-                foreach (var cell in this.TablixCells)
+                for (var i = 0; i < this.TablixCells.Count;)
                 {
-                    sb.AppendLine("<td>");
-                    if (cell.TablixCellContent != null)
+                    var emptyCells = 0;
+                    for (var j = i + 1; j < this.TablixCells.Count; j++)
                     {
-                        for (var i = 0; i < cell.TablixCellContent.Count; i++)
+                        if (this.TablixCells[j].TablixCellContent.Count == 0)
                         {
-                            var content = cell.TablixCellContent[i];
-
-                            sb.AppendLine(content.Build());
+                            emptyCells++;
+                        }                
+                        else
+                        {
+                            break;
                         }
                     }
-                    sb.AppendLine("</td>");
+
+                    if (this.TablixCells[i].TablixCellContent.Count > 0)
+                    {
+                        sb.AppendLine(emptyCells > 0 ? $"<td colspan=\"{emptyCells + 1}\">" : "<td>");
+                    }
+
+                    for (var j = 0; j < this.TablixCells[i].TablixCellContent.Count; j++)
+                    {
+                        var content = this.TablixCells[i].TablixCellContent[j];
+
+                        sb.AppendLine(content.Build());
+                    }
+                    
+                    if (this.TablixCells[i].TablixCellContent.Count > 0)
+                    {
+                        sb.AppendLine("</td>");
+                    }
+                    
+                    if (emptyCells > 0)
+                    {
+                        i += emptyCells;
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                    
                 }
             }
+            
+
+            //if (this.TablixCells != null)
+            //{
+            //    foreach (var cell in this.TablixCells)
+            //    {
+            //        sb.AppendLine("<td>");
+            //        if (cell.TablixCellContent != null)
+            //        {
+            //            for (var i = 0; i < cell.TablixCellContent.Count; i++)
+            //            {
+            //                var content = cell.TablixCellContent[i];
+
+            //                sb.AppendLine(content.Build());
+            //            }
+            //        }
+            //        sb.AppendLine("</td>");
+            //    }
+            //}
                         
             return sb.ToString();
         }
@@ -485,15 +570,18 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
     public class TablixMember
     {
+        public Guid Id { get; set; }
         public TablixHierarchy TablixHierarchy { get; set; }
         public TablixMemberGroup TablixMemberGroup { get; set; }
         public TablixMemberSort TablixMemberSort { get; set; }
         public TablixHeader TablixHeader { get; set; }
         public List<TablixMember> TablixMembers { get; set; }
         public dynamic Values { get; set; }
-                        
+        public string KeepWithGroup { get; set; }
+        
         public TablixMember(XElement element, TablixHierarchy tablixHierarchy)
         {
+            this.Id = Guid.NewGuid();
             this.TablixHierarchy = tablixHierarchy;
             this.TablixMembers = new List<TablixMember>();
 
@@ -523,7 +611,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     this.TablixMembers.Add(new TablixMember(member, this.TablixHierarchy));
                 }
-            }            
+            }    
+            
+            this.KeepWithGroup = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "KeepWithGroup")?.Value;
         }
     }
 
@@ -533,14 +623,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Size { get; set; }
         public TablixCell TablixHeaderContent { get; set; }
         public bool ContainsRepeatExpression { get; set; }
+        public bool ContainsAggregatorExpression { get; set; }
         public int RowSpan { get; set; }
+        public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
 
         public TablixHeader(TablixMember tablixMember, XElement element)
         {
             this.TablixMember = tablixMember;
             this.Size = element.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "Size")?.Value;
             this.TablixHeaderContent = new TablixCell(this, element, this.TablixMember.TablixHierarchy.Tablix.Report);
-            this.ContainsRepeatExpression = !CountParser.CountRegex.IsMatch(element?.Value ?? string.Empty) && FieldParser.FieldRegex.IsMatch(element?.Value ?? string.Empty);
+
+            // TODO: Add other aggregator functions.
+            this.ContainsAggregatorExpression = CountParser.CountRegex.IsMatch(element?.Value ?? string.Empty);
+            this.ContainsRepeatExpression = !this.ContainsAggregatorExpression && FieldParser.FieldRegex.IsMatch(element?.Value ?? string.Empty);            
         }
 
         public string Build()
