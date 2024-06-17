@@ -1,7 +1,9 @@
-﻿using ReportViewer.NET.Comparers;
+﻿using HtmlAgilityPack;
+using ReportViewer.NET.Comparers;
 using ReportViewer.NET.Parsers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
@@ -87,14 +89,63 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         public string Build()
         {
+            var tablixBody = string.Empty;
+
             if (this.Tablix.TablixRowHierarchy.TablixMembers.Any(t => t.TablixHeader != null))
             {
-                return this.BuildWithRowHierarchy();
+                tablixBody = this.BuildWithRowHierarchy();
             }
             else
             {
-                return this.BuildNoRowHierarchy();
-            }            
+                tablixBody = this.BuildNoRowHierarchy();
+            }
+
+            // Use HTMLAgilityPack to fix rowspans.
+            var htmlDoc = new HtmlDocument();
+            htmlDoc.LoadHtml(tablixBody);
+
+            var tablixRows = htmlDoc.DocumentNode.SelectNodes("//tr[@data-rowspan-start = '']");
+
+            if (tablixRows != null)
+            {
+                foreach (var tr in tablixRows)
+                {
+                    int groupCount = 1;
+                    HtmlNode sibling = tr.NextSibling;
+
+                    while (sibling != null)
+                    {
+                        // Break out if we're starting a new rowspan, i.e. new group key, or if we've entered a new row which is ungrouped.
+                        if (sibling.Name == "tr" && (sibling.Attributes.Any(a => a.Name == "data-rowspan-start") || sibling.Attributes.Any(a => a.Name == "data-grouped-result" && a.Value == "false")))
+                        {
+                            break;
+                        }
+
+                        if (sibling.Name == "tr" && !sibling.Attributes.Any(a => a.Name == "data-rowspan-start"))
+                        {
+                            groupCount++;
+                        }
+
+                        sibling = sibling.NextSibling;
+                    }
+
+                    var groupKey = tr.SelectSingleNode("./td[@data-group-key = '']");
+
+                    if (groupKey != null)
+                    {
+                        groupKey.Attributes.Add("rowspan", groupCount.ToString());
+                    }
+                }
+
+                using (var sw = new StringWriter())
+                {
+                    htmlDoc.Save(sw);
+
+                    return sw.ToString();
+                }
+            }
+
+            return tablixBody;
         }
 
         private string BuildNoRowHierarchy()
@@ -207,7 +258,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 var fieldEnd = tablixMember.TablixMemberGroup.GroupExpression.IndexOf('.', fieldsIdx);
                 var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
 
-                groupedResults = dataSetResults.GroupBy(g => g[fieldName]).ToList();
+                groupedResults = dsr?.GroupBy(g => g[fieldName]).ToList();
             }
 
             if (groupedResults != null)
@@ -274,7 +325,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         {
                             row.Values = lastHeader.Values = result;
 
-                            sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\">");
+                            sb.AppendLine(
+                                !insertedKey ?
+                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start>" :
+                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\">"
+                            );
 
                             // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
                             // cell in the first column.
@@ -283,7 +338,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 // Hidden
                                 //sb.AppendLine("<td aria-hidden=\"true\"></td>");
 
-                                lastHeader.TablixHeader.RowSpan = groupResults.Count() + groupRowCount;// groupRowCount > groupResults.Count() ? groupRowCount : groupResults.Count();
+                                lastHeader.TablixHeader.IsKey = true;
+
+                                //lastHeader.TablixHeader.RowSpan =
+                                //groupResults.Count() + groupRowCount;
+                                //    groupRowCount == 1 && groupResults.Count() == 1 ? 1 : groupRowCount + groupResults.Count();
+                                //groupRowCount > 1 ? groupRowCount + groupResults.Count() : 1;
                                 sb.AppendLine(lastHeader.TablixHeader.Build());
                                 sb.AppendLine(row.Build());
                                 insertedKey = true;
@@ -312,7 +372,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
                 else
                 {
-                    sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"false\">");
+                    sb.AppendLine(
+                        lastGroup != null ? 
+                        $"<tr height=\"{row.Height}\" data-grouped-result=\"true\">" :
+                        $"<tr height=\"{row.Height}\" data-grouped-result=\"false\">"
+                    );
+                                        
                     if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey) || !lastHeader.TablixHeader.ContainsRepeatExpression))
                     {
                         sb.AppendLine(lastHeader.TablixHeader.Build());
@@ -623,8 +688,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Size { get; set; }
         public TablixCell TablixHeaderContent { get; set; }
         public bool ContainsRepeatExpression { get; set; }
-        public bool ContainsAggregatorExpression { get; set; }
-        public int RowSpan { get; set; }
+        public bool ContainsAggregatorExpression { get; set; }        
+        public bool IsKey { get; set; }        
         public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
 
         public TablixHeader(TablixMember tablixMember, XElement element)
@@ -644,7 +709,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             if (this.TablixHeaderContent.TablixCellContent.Count > 0)
             {
-                sb.AppendLine(this.RowSpan > 0 ? $"<td rowspan=\"{this.RowSpan}\">" : "<td>");
+                sb.AppendLine(this.IsKey ? "<td data-group-key>" : "<td>");
                 foreach (var cell in this.TablixHeaderContent.TablixCellContent)
                 {
                     sb.AppendLine(cell.Build());
