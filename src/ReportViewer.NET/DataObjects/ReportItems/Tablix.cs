@@ -129,11 +129,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         sibling = sibling.NextSibling;
                     }
 
-                    var groupKey = tr.SelectSingleNode("./td[@data-group-key = '']");
+                    var groupKeys = tr.SelectNodes("./td[@data-group-key = '']");
 
-                    if (groupKey != null)
+                    if (groupKeys != null)
                     {
-                        groupKey.Attributes.Add("rowspan", groupCount.ToString());
+                        foreach (var gk in groupKeys)
+                        {
+                            gk.Attributes.Add("rowspan", groupCount.ToString());
+                        }                        
                     }
                 }
 
@@ -246,7 +249,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 dataSetResults = this.SortTablixMember(tablixMember, baseComparer, this.Tablix.DataSetReference.DataSet.DataSetResults.Order(baseComparer)).ToList();
             }
-
+                        
             if (tablixMember.TablixMemberGroup != null &&
                 !string.IsNullOrEmpty(tablixMember.TablixMemberGroup.GroupExpression) &&
                 this.Tablix.DataSetReference != null &&
@@ -271,9 +274,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     var before = currentRowIndx;
                     var prevMembersBeforeGroup = new List<TablixMember>(prevTablixMembers);
 
+                    prevTablixMembers.Add(tablixMember);
+
                     foreach (var childMember in tablixMember.TablixMembers)
-                    {
-                        prevTablixMembers.Add(tablixMember);
+                    {                        
                         currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, ref insertedKey);                        
                     }
 
@@ -287,9 +291,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
             else if (tablixMember.TablixMembers.Any())
             {
+                prevTablixMembers.Add(tablixMember);
+
                 foreach (var childMember in tablixMember.TablixMembers)
-                {
-                    prevTablixMembers.Add(tablixMember);
+                {                    
                     currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupResults, childMember, prevTablixMembers, currentRowIndx, ref insertedKey);                    
                 }
             }
@@ -301,6 +306,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 var lastGroup = tablixMember.TablixMemberGroup != null ? tablixMember : prevTablixMembers.Where(t => t.TablixMemberGroup != null).LastOrDefault();
                 var lastHeader = tablixMember.TablixHeader != null ? tablixMember : prevTablixMembers.Where(t => t.TablixHeader != null).LastOrDefault();
+                var headersFoundInTablixMembers = prevTablixMembers.Where(t => t.TablixHeader != null);
 
                 if (lastHeader != null && lastHeader.TablixHeader != null)
                 {
@@ -323,7 +329,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         // We are displaying grouped results.                                
                         foreach (var result in groupResults)
                         {
-                            row.Values = lastHeader.Values = result;
+                            row.Values = result;
 
                             sb.AppendLine(
                                 !insertedKey ?
@@ -334,23 +340,29 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
                             // cell in the first column.
                             if (!insertedKey)
-                            {
-                                // Hidden
-                                //sb.AppendLine("<td aria-hidden=\"true\"></td>");
-
-                                lastHeader.TablixHeader.IsKey = true;
-
-                                //lastHeader.TablixHeader.RowSpan =
-                                //groupResults.Count() + groupRowCount;
-                                //    groupRowCount == 1 && groupResults.Count() == 1 ? 1 : groupRowCount + groupResults.Count();
-                                //groupRowCount > 1 ? groupRowCount + groupResults.Count() : 1;
-                                sb.AppendLine(lastHeader.TablixHeader.Build());
+                            {                               
+                                
+                                if (headersFoundInTablixMembers.Any())
+                                {
+                                    foreach (var header in headersFoundInTablixMembers)
+                                    {
+                                        header.Values = result;
+                                        header.TablixHeader.IsKey = true;
+                                        sb.AppendLine(header.TablixHeader.Build());
+                                    }
+                                }
+                                else
+                                {
+                                    lastHeader.Values = result;
+                                    lastHeader.TablixHeader.IsKey = true;
+                                    sb.AppendLine(lastHeader.TablixHeader.Build());
+                                }
+                                
                                 sb.AppendLine(row.Build());
                                 insertedKey = true;
                             }
                             else
-                            {
-                                //sb.AppendLine("<td aria-hidden=\"true\"></td>");
+                            {                             
                                 sb.AppendLine(row.Build());
                             }
                             sb.AppendLine("</tr>");
@@ -362,9 +374,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         {
                             row.Values = result;
 
-                            sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"false\">");
-                            // Fixes rowspan misalignment.
-                            //sb.AppendLine("<td aria-hidden=\"true\"></td>");
+                            sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"false\">");                            
                             sb.AppendLine(row.Build());
                             sb.AppendLine("</tr>");
                         }
@@ -378,7 +388,17 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         $"<tr height=\"{row.Height}\" data-grouped-result=\"false\">"
                     );
                                         
-                    if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey) || !lastHeader.TablixHeader.ContainsRepeatExpression))
+                    if (headersFoundInTablixMembers.Any())
+                    {
+                        foreach (var header in headersFoundInTablixMembers)
+                        {
+                            if ((header.TablixHeader.ContainsRepeatExpression && !insertedKey) || !header.TablixHeader.ContainsRepeatExpression)
+                            {
+                                sb.AppendLine(header.TablixHeader.Build());
+                            }                            
+                        }
+                    }
+                    else if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey) || !lastHeader.TablixHeader.ContainsRepeatExpression))
                     {
                         sb.AppendLine(lastHeader.TablixHeader.Build());
                     }

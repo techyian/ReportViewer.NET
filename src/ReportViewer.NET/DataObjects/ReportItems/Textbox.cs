@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualBasic;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
@@ -60,7 +59,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             
             sb.AppendLine($"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\">");
 
-            if (this.DoesToggle)
+            if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name))
             {
                 sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
             }

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using ReportViewer.NET.DataObjects.ReportItems;
 using ReportViewer.NET.Comparers;
 using ReportViewer.NET.Parsers;
+using ReportViewer.NET.Extensions;
 
 namespace ReportViewer.NET
 {
@@ -100,9 +101,6 @@ namespace ReportViewer.NET
                 await this.BuildReportRows(reportRows, reportItem, userProvidedParameters);
             }
 
-            var hiddenRows = reportBodyItems.Where(r => r.Hidden).ToList();
-            hiddenRows.AddRange(reportFooterItems.Where(r => r.Hidden));
-
             // Process rows into HTML.
             foreach (var reportRow in reportRows) 
             {
@@ -110,8 +108,6 @@ namespace ReportViewer.NET
 
                 foreach (var reportItem in reportRow.RowItems)
                 {
-                    reportItem.DoesToggle = hiddenRows.Any(r => r.ToggleItem == reportItem.Name);
-
                     sb.AppendLine(reportItem.Build());
                 }
                 
@@ -237,7 +233,7 @@ namespace ReportViewer.NET
         }
 
         private async Task<IEnumerable<IDictionary<string, object>>> RunDataSetQuery(DataObjects.DataSet dataSet, IEnumerable<ReportParameter> reportParams, IEnumerable<ReportParameter> userProvidedParameters)
-        {
+        {            
             DataSetQuery dsQuery = dataSet?.Query;
             IEnumerable<dynamic> results = Enumerable.Empty<dynamic>();
             
@@ -266,7 +262,12 @@ namespace ReportViewer.NET
 
                 if (invalidParameter)
                 {
-                    // TODO: Report this to the user.
+                    // TODO: Report this to the user.                    
+                    foreach (IDictionary<string, object> dic in results)
+                    {
+                        dic.ChangeDapperKeys();
+                    }
+
                     return results.Cast<IDictionary<string, object>>();
                 }
 
@@ -277,7 +278,7 @@ namespace ReportViewer.NET
                 {
                     using (var conn = new SqlConnection(connString))
                     {
-                        results = await conn.QueryAsync(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
+                        results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
                     }
                 }
             }
@@ -290,12 +291,17 @@ namespace ReportViewer.NET
                 {
                     try
                     {
-                        results = await conn.QueryAsync(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
+                        results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
                     }
                     catch (Exception e)
                     {                        
                     }
                 }
+            }
+
+            foreach (IDictionary<string, object> dic in results)
+            {
+                dic.ChangeDapperKeys();
             }
 
             return results.Cast<IDictionary<string, object>>();

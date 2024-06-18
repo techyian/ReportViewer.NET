@@ -15,8 +15,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public double Height { get; set; }
         public bool Hidden { get; set; }
         public string ToggleItem { get; set; }
-        public bool DoesToggle { get; set; }
-        
+                
         public ReportItem(XElement element, ReportRDL report)
         {
             this.Report = report;
@@ -54,6 +53,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             this.Hidden = this.Style.Hidden = element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "Hidden")?.Value == "true";
             this.ToggleItem = element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "ToggleItem")?.Value;
+
+            if (this.Hidden)
+            {
+                this.Report.HiddenItems.Add(this);
+            }            
         }
 
         public abstract string Build();
