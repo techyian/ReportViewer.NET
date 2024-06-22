@@ -41,13 +41,11 @@ namespace ReportViewer.NET.Parsers
         }
 
         public override void Parse()
-        {
-            var fieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
-
+        {            
             // TODO: Handle other count expressions not using fields??
-            if (fieldRegex.IsMatch(this.CurrentString))
+            if (FieldParser.FieldRegex.IsMatch(this.CurrentString))
             {
-                var match = fieldRegex.Match(this.CurrentString);
+                var match = FieldParser.FieldRegex.Match(this.CurrentString);
                 var matchString = match.Value;
 
                 var fieldsIdx = matchString.IndexOf("Fields!");

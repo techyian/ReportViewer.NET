@@ -787,6 +787,22 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         Subtract,
         Multiply,
         Divide,
-        String
+        String,
+        If,
+        IsArray,
+        IsDate,
+        IsNothing,
+        IsNumeric,
+        Equals,
+        LessThan,
+        LessThanEqualTo,
+        GreaterThan,
+        GreaterThanEqualTo,
+        NotEqual,
+        Like,
+        Is,
+        ConcatAnd,
+        ConcatPlus,
+
     }
 }

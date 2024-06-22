@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.SqlServer.Server;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
@@ -57,7 +58,32 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             var sb = new StringBuilder();
             
-            sb.AppendLine($"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\">");
+            if (this.Style.BackgroundColor != null && this.Style.BackgroundColor.StartsWith('='))
+            {
+                var expressionParser = new ExpressionParser();
+
+                if (this.Cell != null)
+                {
+                    // We've come from a tablix cell.
+                    if (this.Cell.Row != null)
+                    {
+                        var dataSetResults = this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                        this.Style.BackgroundColor = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Row.Values, null, null);                                                
+                    }
+                    else if (this.Cell.Header != null)
+                    {
+                        var dataSetResults = this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                        this.Style.BackgroundColor = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Header.TablixMember.Values, null, null);                                                
+                    }
+                }
+                else
+                {
+                    // We've come from a standalone textbox. Try to find dataset for this field.
+                    this.Style.BackgroundColor = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, null, null, this.Report.DataSets, null);
+                }
+            }
+
+            sb.AppendLine($"<div {this.Style.Build()} data-toggle=\"{this.ToggleItem}\">");
 
             if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name))
             {
