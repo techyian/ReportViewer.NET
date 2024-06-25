@@ -389,7 +389,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     switch (next.Operator)
                     {
                         case TablixOperator.Count:
-                            newExpr.Value = (int)prev.Value;
+                            newExpr.Value = double.Parse(prev.Value?.ToString() ?? "");
                             break;                                      
                     }
                                         
@@ -421,16 +421,16 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             switch (prev.Operator)
             {
                 case TablixOperator.Add:
-                    newExpr.Value = (double)prev.Value + (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") + double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.Subtract:
-                    newExpr.Value = (double)prev.Value - (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") - double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.Multiply:
-                    newExpr.Value = (double)prev.Value * (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") * double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.Divide:
-                    newExpr.Value = (double)prev.Value / (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") / double.Parse(next.Value?.ToString() ?? "");
                     break;
             }
         }
@@ -451,16 +451,16 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             switch (prev.Operator)
             {
                 case TablixOperator.LessThan:
-                    newExpr.Value = (double)prev.Value < (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") < double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.LessThanEqualTo:
-                    newExpr.Value = (double)prev.Value <= (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") <= double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.GreaterThan:
-                    newExpr.Value = (double)prev.Value > (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") > double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.GreaterThanEqualTo:
-                    newExpr.Value = (double)prev.Value >= (double)next.Value;
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") >= double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.Equals:                    
                     switch (Type.GetTypeCode(prev.ResolvedType))

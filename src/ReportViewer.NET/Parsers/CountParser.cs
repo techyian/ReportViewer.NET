@@ -1,4 +1,5 @@
-﻿using ReportViewer.NET.DataObjects.ReportItems;
+﻿using Microsoft.AspNetCore.Http;
+using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +44,24 @@ namespace ReportViewer.NET.Parsers
         public override void Parse()
         {            
             // TODO: Handle other count expressions not using fields??
-            if (FieldParser.FieldRegex.IsMatch(this.CurrentString))
+            var countMatch = CountRegex.Match(this.CurrentString);
+            var countValue = countMatch.Value;
+
+            if (FieldParser.FieldDatasetRegex.IsMatch(countValue))
+            {
+                var fieldDataSetMatch = FieldParser.FieldDatasetRegex.Match(countValue);
+                var fieldDataSetValue = fieldDataSetMatch.Value;
+                var dataSetStart = fieldDataSetValue.IndexOf('"');
+
+                if (dataSetStart > -1)
+                {
+                    var dataSetEnd = fieldDataSetValue.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
+                    var dataSetName = fieldDataSetValue.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
+                    this.CurrentExpression.DataSetName = dataSetName;
+                }                                
+            }
+
+            if (FieldParser.FieldRegex.IsMatch(countValue))
             {
                 var match = FieldParser.FieldRegex.Match(this.CurrentString);
                 var matchString = match.Value;
@@ -55,14 +73,6 @@ namespace ReportViewer.NET.Parsers
                 this.CurrentExpression.Index = match.Index;
                 this.CurrentExpression.Field = fieldName;
 
-                var dataSetStart = matchString.IndexOf('"', fieldEnd);
-
-                if (dataSetStart > -1)
-                {
-                    var dataSetEnd = matchString.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
-                    var dataSetName = matchString.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
-                    this.CurrentExpression.DataSetName = dataSetName;
-                }
                 (Type, object) extractedValue = ExtractExpressionValue(fieldName, this.CurrentExpression.DataSetName);
 
                 this.CurrentExpression.ResolvedType = extractedValue.Item1;

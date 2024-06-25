@@ -40,15 +40,15 @@ namespace ReportViewer.NET.DataObjects
                         
                         if (userProvidedParameter != null &&
                             (
-                             (this.MultiValue && userProvidedParameter.Values != null && userProvidedParameter.Values.Any(p => p == res[this.DataSetReference.ValueField].ToString())) || 
-                             (!this.MultiValue && userProvidedParameter.Value == res[this.DataSetReference.ValueField].ToString())
+                             (this.MultiValue && userProvidedParameter.Values != null && userProvidedParameter.Values.Any(p => p == res[this.DataSetReference.ValueField.ToLower()].ToString())) || 
+                             (!this.MultiValue && userProvidedParameter.Value == res[this.DataSetReference.ValueField.ToLower()].ToString())
                             ) 
                         )
                         {
                             sb.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
-                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField] + @""" data-multivalue=""" + multiValue + @""" checked>
-                                    <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField] + @"</label>
+                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""" checked>
+                                    <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField.ToLower()] + @"</label>
                                 </div>
                             ");
                         }
@@ -56,8 +56,8 @@ namespace ReportViewer.NET.DataObjects
                         {
                             sb.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
-                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField] + @""" data-multivalue=""" + multiValue + @""">
-                                    <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField] + @"</label>
+                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""">
+                                    <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField.ToLower()] + @"</label>
                                 </div>
                             ");
                         }
