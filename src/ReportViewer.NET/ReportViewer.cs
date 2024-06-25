@@ -25,7 +25,7 @@ namespace ReportViewer.NET
             _dataSources = new List<DataSource>();
         }
 
-        public ReportRDL RegisterRdl(string filepath)
+        public void RegisterRdl(string filepath)
         {            
             if (!File.Exists(filepath))
             {
@@ -45,9 +45,7 @@ namespace ReportViewer.NET
                 rdl.Name = Path.GetFileName(filepath);
 
                 _reportRdls.Add(rdl);
-            }
-
-            return null;
+            }                        
         }
 
         public void RegisterDataSource(string name, string connectionString)
@@ -64,9 +62,9 @@ namespace ReportViewer.NET
                 throw new NullReferenceException("Requested RDL not registered.");
             }
 
-            var layoutProvider = new LayoutProvider(rdl);
+            var layoutProvider = new LayoutProvider();
 
-            return layoutProvider.PublishReportParameters(userProvidedParameters);
+            return layoutProvider.PublishReportParameters(rdl, userProvidedParameters);
         }
 
         public Task<HtmlString> PublishReportOutput(string report, IEnumerable<ReportParameter> userProvidedParameters)
@@ -78,9 +76,9 @@ namespace ReportViewer.NET
                 throw new NullReferenceException("Requested RDL not registered.");
             }
 
-            var layoutProvider = new LayoutProvider(rdl);
+            var layoutProvider = new LayoutProvider();
 
-            return layoutProvider.PublishReportOutput(userProvidedParameters);
+            return layoutProvider.PublishReportOutput(rdl, userProvidedParameters);
         }
 
         private ReportRDL ParseXml(XDocument xml)
@@ -308,6 +306,20 @@ namespace ReportViewer.NET
                         foreach (var line in lineElements)
                         {
                             reportItemList.Add(new Line(line, rdl));
+                        }
+                    }
+
+                    // Subreports should be registered before the parent.
+                    var subReports = ri.Elements(rdl.Namespace + "Subreport");
+
+                    if (subReports != null)
+                    {
+                        foreach (var sr in subReports)
+                        {
+                            var srPath = sr.Element(rdl.Namespace + "ReportName")?.Value;
+                            var srName = srPath.Split('/').Last();
+
+                            reportItemList.Add(new SubReport(sr, rdl, _reportRdls.First(r => r.Name == srName + ".rdl")));
                         }
                     }
                 }

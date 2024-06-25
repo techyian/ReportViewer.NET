@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
 {
@@ -13,13 +14,24 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             TablixOperator.NotEqual, TablixOperator.Like, TablixOperator.Is
         };
 
-
         public dynamic ParseTablixExpressionString(
             string tablixText,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             IEnumerable<DataSet> dataSets,
             string requestedFormat
+        )
+        {
+            var expressions = this.RetrieveExpressionsFromString(tablixText, dataSetResults, values, dataSets);
+
+            return ParseTablixExpressions(expressions, requestedFormat).Value;
+        }
+
+        public List<TablixExpression> RetrieveExpressionsFromString(
+            string tablixText,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
+            IDictionary<string, object> values,
+            IEnumerable<DataSet> dataSets
         )
         {
             string currentString = tablixText.TrimStart('=');
@@ -59,7 +71,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         else
                         {
                             currentExpression.ResolvedType = typeof(string);
-                            currentExpression.Value = currentString;
+                            currentExpression.Value = currentString.TrimStart('"').TrimEnd('"');
                         }
                         
                         expressions.Add(currentExpression);
@@ -72,7 +84,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 currentString = proposedString;
             }
 
-            return ParseTablixExpressions(expressions, requestedFormat).Value;
+            return expressions;
         }
 
         private void SearchArithmeticOperators(
@@ -81,7 +93,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             ref string proposedString
         )
         {
-            if (currentString.IndexOf("+") > -1 &&
+            if (currentString.IndexOf("+") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("+")) &&
                     (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("+") < currentExpression.Index)
                 )
             {
@@ -92,7 +104,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
             }
 
-            if (currentString.IndexOf("-") > -1 &&
+            if (currentString.IndexOf("-") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("-")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("-") < currentExpression.Index)
             )
             {
@@ -103,7 +115,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
             }
 
-            if (currentString.IndexOf("*") > -1 &&
+            if (currentString.IndexOf("*") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("*")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("*") < currentExpression.Index)
             )
             {
@@ -114,7 +126,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
             }
 
-            if (currentString.IndexOf("/") > -1 &&
+            if (currentString.IndexOf("/") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("/")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("/") < currentExpression.Index)
             )
             {
@@ -132,7 +144,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             ref string proposedString
         )
         {
-            if (currentString.IndexOf(">=") > -1 &&
+            if (currentString.IndexOf(">=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf(">=")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf(">=") < currentExpression.Index)
             )
             {
@@ -143,7 +155,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2);
             }
 
-            if (currentString.IndexOf("<=") > -1 &&
+            if (currentString.IndexOf("<=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("<=")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("<=") < currentExpression.Index)
             )
             {
@@ -154,7 +166,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2);
             }
 
-            if (currentString.IndexOf(">") > -1 &&
+            if (currentString.IndexOf(">") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf(">")) &&
                     (currentExpression.Operator == TablixOperator.None || currentString.IndexOf(">") < currentExpression.Index)
                 )
             {
@@ -165,7 +177,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
             }
 
-            if (currentString.IndexOf("<") > -1 &&
+            if (currentString.IndexOf("<") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("<")) &&
                     (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("<") < currentExpression.Index)
                 )
             {
@@ -176,7 +188,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
             }
                                     
-            if (currentString.IndexOf("=") > -1 &&
+            if (currentString.IndexOf("=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("=")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("=") < currentExpression.Index)
             )
             {
@@ -187,7 +199,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
             }
 
-            if (currentString.IndexOf("And") > -1 &&
+            if (currentString.IndexOf("And") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("And")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("And") < currentExpression.Index)
             )
             {
@@ -198,7 +210,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 3, currentString.Length - idx - 3);
             }
 
-            if (currentString.IndexOf("<>") > -1 &&
+            if (currentString.IndexOf("<>") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("<>")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("<>") < currentExpression.Index)
             )
             {
@@ -209,7 +221,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2);
             }
 
-            if (currentString.IndexOf("Like") > -1 &&
+            if (currentString.IndexOf("Like") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("Like")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Like") < currentExpression.Index)
             )
             {
@@ -220,7 +232,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 proposedString = currentString.Substring(idx + 4, currentString.Length - idx - 4);
             }
 
-            if (currentString.IndexOf("Is") > -1 &&
+            if (currentString.IndexOf("Is") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("IsNothing")) &&
                 ((currentString.IndexOf("IsNothing") > -1 && currentString.IndexOf("Is") < currentString.IndexOf("IsNothing")) || (currentString.IndexOf("IsNothing") == -1)) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Is") < currentExpression.Index)
             )
@@ -366,8 +378,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         // Treat all further expressions as string concatenation.
                         newExpr.ResolvedType = typeof(string);
-                        newExpr.Value = $"{prev.Value}{next.Value}";
-                        return newExpr;
+                        newExpr.Value = $"{prev.Value}{next.Value}";                        
                     }
 
                     if (newExpr.ResolvedType == typeof(bool))
@@ -399,22 +410,27 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             if (ArithmeticOperators.Contains(next.Operator))
             {
                 newExpr.Operator = next.Operator;
-                newExpr.Value = (int)prev.Value;
+                newExpr.Value = prev.Value;
+            }
+
+            if (ComparisonOperators.Contains(prev.Operator))
+            {
+                newExpr.ResolvedType = typeof(double);
             }
 
             switch (prev.Operator)
             {
                 case TablixOperator.Add:
-                    newExpr.Value = (int)prev.Value + (int)next.Value;
+                    newExpr.Value = (double)prev.Value + (double)next.Value;
                     break;
                 case TablixOperator.Subtract:
-                    newExpr.Value = (int)prev.Value - (int)next.Value;
+                    newExpr.Value = (double)prev.Value - (double)next.Value;
                     break;
                 case TablixOperator.Multiply:
-                    newExpr.Value = (int)prev.Value * (int)next.Value;
+                    newExpr.Value = (double)prev.Value * (double)next.Value;
                     break;
                 case TablixOperator.Divide:
-                    newExpr.Value = (int)prev.Value / (int)next.Value;
+                    newExpr.Value = (double)prev.Value / (double)next.Value;
                     break;
             }
         }
@@ -424,28 +440,67 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             if (ComparisonOperators.Contains(next.Operator))
             {
                 newExpr.Operator = next.Operator;
-                newExpr.Value = (int)prev.Value;
+                newExpr.Value = prev.Value;
+            }
+
+            if (ComparisonOperators.Contains(prev.Operator))
+            {
+                newExpr.ResolvedType = typeof(bool);
             }
 
             switch (prev.Operator)
             {
                 case TablixOperator.LessThan:
-                    newExpr.Value = (int)prev.Value < (int)next.Value;
+                    newExpr.Value = (double)prev.Value < (double)next.Value;
                     break;
                 case TablixOperator.LessThanEqualTo:
-                    newExpr.Value = (int)prev.Value <= (int)next.Value;
+                    newExpr.Value = (double)prev.Value <= (double)next.Value;
                     break;
                 case TablixOperator.GreaterThan:
-                    newExpr.Value = (int)prev.Value > (int)next.Value;
+                    newExpr.Value = (double)prev.Value > (double)next.Value;
                     break;
                 case TablixOperator.GreaterThanEqualTo:
-                    newExpr.Value = (int)prev.Value >= (int)next.Value;
+                    newExpr.Value = (double)prev.Value >= (double)next.Value;
                     break;
-                case TablixOperator.Equals:
-                    newExpr.Value = (int)prev.Value == (int)next.Value;
+                case TablixOperator.Equals:                    
+                    switch (Type.GetTypeCode(prev.ResolvedType))
+                    {
+                        case TypeCode.DateTime:
+                            newExpr.Value = prev.Value != null && next.Value != null ? DateTime.Parse(prev.Value.ToString()) == DateTime.Parse(next.Value.ToString()) : false;
+                            break;
+                        case TypeCode.String:
+                            newExpr.Value = prev.Value != null && next.Value != null ? string.Compare(prev.Value.ToString(), next.Value.ToString()) == 0 : false;
+                            break;
+                        case TypeCode.Int16:
+                        case TypeCode.Int32:
+                        case TypeCode.Int64:
+                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString()) == double.Parse(next.Value.ToString()) : false;
+                            break;
+                        case TypeCode.Object:
+                            newExpr.Value = prev.Value == next.Value;
+                            break;
+                    }
+
                     break;
                 case TablixOperator.NotEqual:
-                    newExpr.Value = (int)prev.Value != (int)next.Value;
+                    switch (Type.GetTypeCode(prev.ResolvedType))
+                    {
+                        case TypeCode.DateTime:
+                            newExpr.Value = prev.Value != null && next.Value != null ? DateTime.Parse(prev.Value.ToString()) != DateTime.Parse(next.Value.ToString()) : false;
+                            break;
+                        case TypeCode.String:
+                            newExpr.Value = prev.Value != null && next.Value != null ? string.Compare(prev.Value.ToString(), next.Value.ToString()) != 0 : false;
+                            break;
+                        case TypeCode.Int16:
+                        case TypeCode.Int32:
+                        case TypeCode.Int64:
+                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString()) != double.Parse(next.Value.ToString()) : false;
+                            break;
+                        case TypeCode.Object:
+                            newExpr.Value = prev.Value != next.Value;
+                            break;
+                    }
+                                        
                     break;
             }
         }
@@ -463,6 +518,32 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
 
             return finalExpression;
+        }
+
+        public static bool WithinStringLiteral(string currentString, int idx)
+        {
+            var inQuotes = false;
+
+            for (var i = 0; i < currentString.Length; i++)
+            {
+                var value = currentString[i];
+
+                if (i == idx && !inQuotes)
+                {
+                    return false;
+                }
+
+                if (value == '"' && !inQuotes)
+                {
+                    inQuotes = true;
+                }
+                else if (value == '"' && inQuotes)
+                {
+                    inQuotes = false;
+                }
+            }
+
+            return true;
         }
     }
 }

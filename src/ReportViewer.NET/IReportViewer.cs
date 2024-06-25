@@ -7,7 +7,7 @@ namespace ReportViewer.NET
 {
     public interface IReportViewer
     {
-        ReportRDL RegisterRdl(string filepath);
+        void RegisterRdl(string filepath);
         void RegisterDataSource(string name, string connectionString);
         Task<HtmlString> PublishReportParameters(string report, IEnumerable<ReportParameter> userProvidedParameters);
         Task<HtmlString> PublishReportOutput(string report, IEnumerable<ReportParameter> userProvidedParameters);

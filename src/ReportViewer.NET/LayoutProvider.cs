@@ -17,16 +17,13 @@ namespace ReportViewer.NET
 {
     internal class LayoutProvider
     {        
-        private ReportRDL _report;
-
-        public LayoutProvider(ReportRDL report) 
-        {
-            _report = report;
+        public LayoutProvider() 
+        {            
         }
 
-        public async Task<HtmlString> PublishReportParameters(IEnumerable<ReportParameter> userProvidedParameters)
+        public async Task<HtmlString> PublishReportParameters(ReportRDL report, IEnumerable<ReportParameter> userProvidedParameters)
         {            
-            var reportParams = _report.ReportParameters;
+            var reportParams = report.ReportParameters;
             var sb = new StringBuilder();
             var invalidParameter = false;
 
@@ -45,7 +42,7 @@ namespace ReportViewer.NET
                     if (reportParam.DataSetReference.DataSet == null)
                         continue;
 
-                    reportParam.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(reportParam.DataSetReference.DataSet, reportParams, userProvidedParameters)).ToList();
+                    reportParam.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(report, reportParam.DataSetReference.DataSet, reportParams, userProvidedParameters)).ToList();
 
                     sb.AppendLine(reportParam.Build(userProvidedParameters?.FirstOrDefault(p => p.Name == reportParam.Name)));
                 }
@@ -76,10 +73,10 @@ namespace ReportViewer.NET
             return new HtmlString(sb.ToString());
         }
                 
-        public async Task<HtmlString> PublishReportOutput(IEnumerable<ReportParameter> userProvidedParameters)
+        public async Task<HtmlString> PublishReportOutput(ReportRDL report, IEnumerable<ReportParameter> userProvidedParameters)
         {
-            var reportBodyItems = _report.ReportBodyItems;
-            var reportFooterItems = _report.ReportFooterItems;
+            var reportBodyItems = report.ReportBodyItems;
+            var reportFooterItems = report.ReportFooterItems;
             var sb = new StringBuilder();
             var reportRows = new List<ReportRow>()
             {
@@ -92,13 +89,13 @@ namespace ReportViewer.NET
             // Build rows for body items.
             foreach (var reportItem in reportBodyItems)
             {
-                await this.BuildReportRows(reportRows, reportItem, userProvidedParameters);
+                await this.BuildReportRows(report, reportRows, reportItem, userProvidedParameters);
             }
 
             // Build rows for footer items.
             foreach (var reportItem in reportFooterItems)
             {
-                await this.BuildReportRows(reportRows, reportItem, userProvidedParameters);
+                await this.BuildReportRows(report, reportRows, reportItem, userProvidedParameters);
             }
 
             // Process rows into HTML.
@@ -108,7 +105,18 @@ namespace ReportViewer.NET
 
                 foreach (var reportItem in reportRow.RowItems)
                 {
-                    sb.AppendLine(reportItem.Build());
+                    if (reportItem is SubReport)
+                    {
+                        // Recursively build the report output for subreport using provided parameters for parent. The parent should be provided with all parameters the child needs.
+                        // The subreport should also be registered with the ReportViewer and any relevant data sources registered.
+                        // The subreport should be registered before the parent.
+                        var sr = (SubReport)reportItem;
+                        sb.AppendLine((await this.PublishReportOutput(sr.GetSubReportRDL(), userProvidedParameters)).ToString());
+                    }
+                    else
+                    {
+                        sb.AppendLine(reportItem.Build());
+                    }                    
                 }
                 
                 sb.AppendLine("</div>");
@@ -117,7 +125,7 @@ namespace ReportViewer.NET
             return new HtmlString(sb.ToString());
         }
 
-        private async Task BuildReportRows(List<ReportRow> reportRows, ReportItem reportItem, IEnumerable<ReportParameter> userProvidedParameters)
+        private async Task BuildReportRows(ReportRDL report, List<ReportRow> reportRows, ReportItem reportItem, IEnumerable<ReportParameter> userProvidedParameters)
         {
             var currentRow = reportRows.Last();
 
@@ -167,7 +175,7 @@ namespace ReportViewer.NET
                 if (tablix.DataSetReference != null)
                 {
                     // We potentially have calculated text which needs resolving from the Data Set.
-                    tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(tablix.DataSetReference?.DataSet, _report.ReportParameters, userProvidedParameters)).ToList();
+                    tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(report, tablix.DataSetReference?.DataSet, report.ReportParameters, userProvidedParameters)).ToList();
                 }
             }
 
@@ -180,11 +188,11 @@ namespace ReportViewer.NET
                 {
                     var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, textbox.DataSets);
                     var dsName = fieldParser.ExtractDataSetName();
-                    var ds = _report.DataSets.Where(ds => ds.Name == dsName).FirstOrDefault();
+                    var ds = report.DataSets.Where(ds => ds.Name == dsName).FirstOrDefault();
 
                     if (!string.IsNullOrEmpty(dsName) && ds != null && ds.DataSetResults == null)
                     {                        
-                        ds.DataSetResults = (await this.RunDataSetQuery(ds, _report.ReportParameters, userProvidedParameters)).ToList();
+                        ds.DataSetResults = (await this.RunDataSetQuery(report, ds, report.ReportParameters, userProvidedParameters)).ToList();
                     }
                 }                                
             }
@@ -232,7 +240,7 @@ namespace ReportViewer.NET
             }
         }
 
-        private async Task<IEnumerable<IDictionary<string, object>>> RunDataSetQuery(DataObjects.DataSet dataSet, IEnumerable<ReportParameter> reportParams, IEnumerable<ReportParameter> userProvidedParameters)
+        private async Task<IEnumerable<IDictionary<string, object>>> RunDataSetQuery(ReportRDL report, DataObjects.DataSet dataSet, IEnumerable<ReportParameter> reportParams, IEnumerable<ReportParameter> userProvidedParameters)
         {            
             DataSetQuery dsQuery = dataSet?.Query;
             IEnumerable<dynamic> results = Enumerable.Empty<dynamic>();
@@ -272,7 +280,7 @@ namespace ReportViewer.NET
                 }
 
                 // Run query and use field parameters.
-                var connString = _report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName)?.ConnectionString;
+                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName)?.ConnectionString;
 
                 if (!string.IsNullOrEmpty(connString))
                 {
@@ -285,7 +293,7 @@ namespace ReportViewer.NET
             else
             {
                 // We can run the query as no user fields are required.
-                var connString = _report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName)?.ConnectionString;
+                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName)?.ConnectionString;
 
                 using (var conn = new SqlConnection(connString))
                 {

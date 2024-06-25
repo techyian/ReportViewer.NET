@@ -23,6 +23,8 @@ namespace ReportViewer.NET.Parsers
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
         {
+            fieldName = fieldName.ToLower();
+
             if (this.DataSetResults != null)
             {
                 if (this.Values != null && this.Values.ContainsKey(fieldName))
