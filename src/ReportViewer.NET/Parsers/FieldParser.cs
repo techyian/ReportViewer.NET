@@ -9,6 +9,7 @@ namespace ReportViewer.NET.Parsers
     public class FieldParser : BaseParser
     {
         public static Regex FieldRegex = new Regex("(\\bFields!\\b(.*?)Value)");
+        public static Regex FieldDatasetRegex = new Regex("(\\bFields!\\b(.*?)\\))");
 
         public FieldParser(
             string currentString, 
@@ -65,7 +66,7 @@ namespace ReportViewer.NET.Parsers
         {
             var fieldsIdx = this.CurrentString.IndexOf("Fields!");
             var fieldEnd = this.CurrentString.IndexOf(".", fieldsIdx);
-            var fieldName = this.CurrentString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+            var fieldName = this.CurrentString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
 
             this.CurrentExpression.Index = fieldsIdx;
             this.CurrentExpression.Field = fieldName;
@@ -77,11 +78,12 @@ namespace ReportViewer.NET.Parsers
 
         public string ExtractDataSetName()
         {
-            var matchString = this.RegexMatch.Value;
+            var match = FieldDatasetRegex.Match(this.CurrentString);
+            var matchString = match.Value;
 
             var fieldsIdx = matchString.IndexOf("Fields!");
             var fieldEnd = matchString.IndexOf('.', fieldsIdx);
-            var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+            var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
 
             this.CurrentExpression.Index = this.RegexMatch.Index;
             this.CurrentExpression.Field = fieldName;

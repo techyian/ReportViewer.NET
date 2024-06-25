@@ -10,7 +10,7 @@ namespace ReportViewer.NET.Parsers
     public class FirstParser : BaseParser
     {
         public static Regex FirstRegex = new Regex("(?:\\(*?)(?:First?)(\\((.*?)\\)\\)*)");
-
+        
         public FirstParser(
             string currentString, 
             TablixOperator op, 
@@ -63,33 +63,30 @@ namespace ReportViewer.NET.Parsers
 
         public override void Parse()
         {
-            var fieldRegex = new Regex("(\\bFields!\\b[^\\)]+)");
-                        
-            if (fieldRegex.IsMatch(this.CurrentString))
+            // TODO: Filtering on field value e.g. =First(Fields!MiddleInitial.Value = "P")
+            // TODO: Filtering on field value by parameter value e.g. =First(Fields!MiddleInitial.Value = Parameters!MiddleInitial.Value(0))
+            var match = FirstRegex.Match(this.CurrentString);
+            var matchString = match.Value;
+
+            var fieldsIdx = matchString.IndexOf("Fields!");
+            var fieldEnd = matchString.IndexOf('.', fieldsIdx);
+            var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
+
+            this.CurrentExpression.Index = match.Index;
+            this.CurrentExpression.Field = fieldName;
+
+            var dataSetStart = matchString.IndexOf('"', fieldEnd);
+
+            if (dataSetStart > -1)
             {
-                var match = fieldRegex.Match(this.CurrentString);
-                var matchString = match.Value;
-
-                var fieldsIdx = matchString.IndexOf("Fields!");
-                var fieldEnd = matchString.IndexOf('.', fieldsIdx);
-                var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
-
-                this.CurrentExpression.Index = match.Index;
-                this.CurrentExpression.Field = fieldName;
-
-                var dataSetStart = matchString.IndexOf('"', fieldEnd);
-
-                if (dataSetStart > -1)
-                {
-                    var dataSetEnd = matchString.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
-                    var dataSetName = matchString.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
-                    this.CurrentExpression.DataSetName = dataSetName;
-                }
-                (Type, object) extractedValue = ExtractExpressionValue(fieldName, this.CurrentExpression.DataSetName);
-
-                this.CurrentExpression.ResolvedType = extractedValue.Item1;
-                this.CurrentExpression.Value = extractedValue.Item2;
+                var dataSetEnd = matchString.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
+                var dataSetName = matchString.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
+                this.CurrentExpression.DataSetName = dataSetName;
             }
+            (Type, object) extractedValue = ExtractExpressionValue(fieldName, this.CurrentExpression.DataSetName);
+
+            this.CurrentExpression.ResolvedType = extractedValue.Item1;
+            this.CurrentExpression.Value = extractedValue.Item2;
         }
     }
 }

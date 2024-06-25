@@ -50,7 +50,7 @@ namespace ReportViewer.NET.Parsers
 
                 var fieldsIdx = matchString.IndexOf("Fields!");
                 var fieldEnd = matchString.IndexOf('.', fieldsIdx);
-                var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
 
                 this.CurrentExpression.Index = match.Index;
                 this.CurrentExpression.Field = fieldName;

@@ -244,7 +244,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 // Order dataset results by expression.                    
                 var fieldsIdx = tablixMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
                 var fieldEnd = tablixMember.TablixMemberSort.SortExpression.IndexOf('.', fieldsIdx);
-                var fieldName = tablixMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                var fieldName = tablixMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
                 var baseComparer = new TablixMemberSortComparer(fieldName, null);
 
                 dataSetResults = this.SortTablixMember(tablixMember, baseComparer, this.Tablix.DataSetReference.DataSet.DataSetResults.Order(baseComparer)).ToList();
@@ -259,7 +259,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 // Group items to dictionary.
                 var fieldsIdx = tablixMember.TablixMemberGroup.GroupExpression.IndexOf("Fields!");
                 var fieldEnd = tablixMember.TablixMemberGroup.GroupExpression.IndexOf('.', fieldsIdx);
-                var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
 
                 groupedResults = dsr?.GroupBy(g => g[fieldName]).ToList();
             }
@@ -437,7 +437,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     // Order dataset results by expression.                    
                     var fieldsIdx = subMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
                     var fieldEnd = subMember.TablixMemberSort.SortExpression.IndexOf('.', fieldsIdx);
-                    var fieldName = subMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7));
+                    var fieldName = subMember.TablixMemberSort.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
                     var comparer = new TablixMemberSortComparer(fieldName, baseComparer);
 
                     return this.SortTablixMember(subMember, comparer, dataSet.Order(comparer));
