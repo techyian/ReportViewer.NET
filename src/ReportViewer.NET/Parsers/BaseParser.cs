@@ -46,10 +46,23 @@ namespace ReportViewer.NET.Parsers
             _endIndx = idx + group.Value.Length;
         }
 
+        /// <summary>
+        /// Performs parsing of the expression. Override and add logic to decompose expression, ensuring any nested expressions are also parsed.
+        /// </summary>
         public abstract void Parse();
 
+        /// <summary>
+        /// Intended use is to retrieve expression data from a pre-loaded dataset or current results for Tablix.
+        /// </summary>
+        /// <param name="fieldName">The field you want to retrieve from dataset.</param>
+        /// <param name="dataSetName">The dataset's name, if provided by expression; otherwise null.</param>
+        /// <returns>A tuple containing the type and value of the requested field.</returns>
         public abstract (Type, object) ExtractExpressionValue(string fieldName, string dataSetName);
 
+        /// <summary>
+        /// Helper method to return remaining text following the expression we intend to parse.
+        /// </summary>
+        /// <returns>Remaining text following the expression we intend to parse</returns>
         public string GetProposedString()
         {
             return _endIndx == this.CurrentString.Length ? "" : this.CurrentString.Substring(_endIndx, this.CurrentString.Length - _endIndx);

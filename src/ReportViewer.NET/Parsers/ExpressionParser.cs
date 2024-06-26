@@ -1,10 +1,10 @@
-﻿using ReportViewer.NET.Parsers;
+﻿using ReportViewer.NET.DataObjects;
+using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
-namespace ReportViewer.NET.DataObjects.ReportItems
+namespace ReportViewer.NET.Parsers
 {
     internal class ExpressionParser
     {
@@ -22,7 +22,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             string requestedFormat
         )
         {
-            var expressions = this.RetrieveExpressionsFromString(tablixText, dataSetResults, values, dataSets);
+            var expressions = RetrieveExpressionsFromString(tablixText, dataSetResults, values, dataSets);
 
             return ParseTablixExpressions(expressions, requestedFormat).Value;
         }
@@ -44,11 +44,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 var currentExpression = new TablixExpression();
                 var proposedString = string.Empty;
 
-                this.SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
-                this.SearchArithmeticOperators(currentString, currentExpression, ref proposedString);
-                this.SearchComparisonOperators(currentString, currentExpression, ref proposedString);
-                this.SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
-                this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
+                SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
+                SearchArithmeticOperators(currentString, currentExpression, ref proposedString);
+                SearchComparisonOperators(currentString, currentExpression, ref proposedString);
+                SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
+                SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
 
                 if (FieldParser.FieldRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == TablixOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
@@ -73,7 +73,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             currentExpression.ResolvedType = typeof(string);
                             currentExpression.Value = currentString.TrimStart('"').TrimEnd('"');
                         }
-                        
+
                         expressions.Add(currentExpression);
                     }
 
@@ -89,7 +89,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         private void SearchArithmeticOperators(
             string currentString,
-            TablixExpression currentExpression,           
+            TablixExpression currentExpression,
             ref string proposedString
         )
         {
@@ -140,7 +140,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         private void SearchComparisonOperators(
             string currentString,
-            TablixExpression currentExpression,           
+            TablixExpression currentExpression,
             ref string proposedString
         )
         {
@@ -187,7 +187,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1);
             }
-                                    
+
             if (currentString.IndexOf("=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("=")) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("=") < currentExpression.Index)
             )
@@ -233,7 +233,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
 
             if (currentString.IndexOf("Is") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("IsNothing")) &&
-                ((currentString.IndexOf("IsNothing") > -1 && currentString.IndexOf("Is") < currentString.IndexOf("IsNothing")) || (currentString.IndexOf("IsNothing") == -1)) &&
+                (currentString.IndexOf("IsNothing") > -1 && currentString.IndexOf("Is") < currentString.IndexOf("IsNothing") || currentString.IndexOf("IsNothing") == -1) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Is") < currentExpression.Index)
             )
             {
@@ -320,8 +320,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         }
 
         private void SearchAggregateFunctions(
-            string currentString, 
-            TablixExpression currentExpression, 
+            string currentString,
+            TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             IEnumerable<DataSet> dataSets,
@@ -378,7 +378,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         // Treat all further expressions as string concatenation.
                         newExpr.ResolvedType = typeof(string);
-                        newExpr.Value = $"{prev.Value}{next.Value}";                        
+                        newExpr.Value = $"{prev.Value}{next.Value}";
                     }
 
                     if (newExpr.ResolvedType == typeof(bool))
@@ -390,11 +390,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         case TablixOperator.Count:
                             newExpr.Value = double.Parse(prev.Value?.ToString() ?? "");
-                            break;                                      
+                            break;
                     }
-                                        
-                    this.ArithmeticOperatorAggregator(prev, next, newExpr);
-                    this.ComparisonOperatorAggregator(prev, next, newExpr);
+
+                    ArithmeticOperatorAggregator(prev, next, newExpr);
+                    ComparisonOperatorAggregator(prev, next, newExpr);
 
                     return newExpr;
                 });
@@ -462,7 +462,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 case TablixOperator.GreaterThanEqualTo:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") >= double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.Equals:                    
+                case TablixOperator.Equals:
                     switch (Type.GetTypeCode(prev.ResolvedType))
                     {
                         case TypeCode.DateTime:
@@ -500,7 +500,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             newExpr.Value = prev.Value != next.Value;
                             break;
                     }
-                                        
+
                     break;
             }
         }
@@ -509,7 +509,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             if (string.IsNullOrEmpty(requestedFormat))
                 return finalExpression;
-                
+
             switch (Type.GetTypeCode(finalExpression.ResolvedType))
             {
                 case TypeCode.DateTime:
