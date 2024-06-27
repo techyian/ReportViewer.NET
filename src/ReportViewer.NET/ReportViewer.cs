@@ -275,7 +275,7 @@ namespace ReportViewer.NET
                     {
                         foreach (var te in tablixElements)
                         {
-                            reportItemList.Add(new Tablix(te, datasets, rdl));
+                            reportItemList.Add(new Tablix(te, datasets, rdl, _reportRdls));
                         }
                     }
 

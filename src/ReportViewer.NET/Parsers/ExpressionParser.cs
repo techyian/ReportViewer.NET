@@ -1,7 +1,9 @@
 ﻿using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.DataObjects.ReportItems;
+using ReportViewer.NET.Parsers.BuiltInFields;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace ReportViewer.NET.Parsers
@@ -18,7 +20,7 @@ namespace ReportViewer.NET.Parsers
             string tablixText,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataSet> dataSets,
+            IEnumerable<DataObjects.DataSet> dataSets,
             string requestedFormat
         )
         {
@@ -31,7 +33,7 @@ namespace ReportViewer.NET.Parsers
             string tablixText,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataSet> dataSets
+            IEnumerable<DataObjects.DataSet> dataSets
         )
         {
             string currentString = tablixText.TrimStart('=');
@@ -44,11 +46,12 @@ namespace ReportViewer.NET.Parsers
                 var currentExpression = new TablixExpression();
                 var proposedString = string.Empty;
 
-                SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
-                SearchArithmeticOperators(currentString, currentExpression, ref proposedString);
-                SearchComparisonOperators(currentString, currentExpression, ref proposedString);
-                SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
-                SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
+                this.SearchBuiltInFields(currentString, currentExpression, ref proposedString);
+                this.SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
+                this.SearchArithmeticOperators(currentString, currentExpression, ref proposedString);
+                this.SearchComparisonOperators(currentString, currentExpression, ref proposedString);
+                this.SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
+                this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
 
                 if (FieldParser.FieldRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == TablixOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
@@ -85,6 +88,21 @@ namespace ReportViewer.NET.Parsers
             }
 
             return expressions;
+        }
+
+        private void SearchBuiltInFields(
+            string currentString,
+            TablixExpression currentExpression,
+            ref string proposedString
+            )
+        {
+            if (ExecutionTimeParser.ExecutionTimeRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == TablixOperator.None || ExecutionTimeParser.ExecutionTimeRegex.Match(currentString).Index < currentExpression.Index))
+            {
+                var executionTimeParser = new ExecutionTimeParser(currentString, TablixOperator.ExecutionTime, currentExpression, null, null, null);
+                executionTimeParser.Parse();
+                proposedString = executionTimeParser.GetProposedString();
+            }
         }
 
         private void SearchArithmeticOperators(
@@ -279,7 +297,7 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataSet> dataSets,
+            IEnumerable<DataObjects.DataSet> dataSets,
             ref string proposedString
         )
         {
@@ -302,7 +320,7 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataSet> dataSets,
+            IEnumerable<DataObjects.DataSet> dataSets,
             ref string proposedString
         )
         {
@@ -324,7 +342,7 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataSet> dataSets,
+            IEnumerable<DataObjects.DataSet> dataSets,
             ref string proposedString
         )
         {

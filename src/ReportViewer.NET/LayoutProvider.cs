@@ -75,31 +75,37 @@ namespace ReportViewer.NET
                 
         public async Task<HtmlString> PublishReportOutput(ReportRDL report, IEnumerable<ReportParameter> userProvidedParameters)
         {
+            report.UserProvidedParameters = userProvidedParameters.ToList();
+
             var reportBodyItems = report.ReportBodyItems;
             var reportFooterItems = report.ReportFooterItems;
             var sb = new StringBuilder();
-            var reportRows = new List<ReportRow>()
+            var bodyReportRows = new List<ReportRow>()
             {
                 new ReportRow()
             };
-            
+            var footerReportRows = new List<ReportRow>()
+            {
+                new ReportRow()
+            };
+
             reportBodyItems = reportBodyItems.Order(new ReportItemComparer()).ToList();
             reportFooterItems = reportFooterItems.Order(new ReportItemComparer()).ToList();
 
             // Build rows for body items.
             foreach (var reportItem in reportBodyItems)
             {
-                await this.BuildReportRows(report, reportRows, reportItem, userProvidedParameters);
+                await this.BuildReportRows(report, bodyReportRows, reportItem, userProvidedParameters);
             }
 
             // Build rows for footer items.
             foreach (var reportItem in reportFooterItems)
             {
-                await this.BuildReportRows(report, reportRows, reportItem, userProvidedParameters);
+                await this.BuildReportRows(report, footerReportRows, reportItem, userProvidedParameters);
             }
 
             // Process rows into HTML.
-            foreach (var reportRow in reportRows) 
+            foreach (var reportRow in bodyReportRows) 
             {
                 sb.AppendLine("<div class=\"report-row\">");
 
@@ -121,7 +127,19 @@ namespace ReportViewer.NET
                 
                 sb.AppendLine("</div>");
             }
-                        
+
+            foreach (var reportRow in footerReportRows)
+            {
+                sb.AppendLine("<div class=\"report-row\">");
+
+                foreach (var reportItem in reportRow.RowItems)
+                {                    
+                    sb.AppendLine(reportItem.Build());                    
+                }
+
+                sb.AppendLine("</div>");
+            }
+
             return new HtmlString(sb.ToString());
         }
 
@@ -171,7 +189,7 @@ namespace ReportViewer.NET
             if (reportItem is Tablix)
             {
                 var tablix = (Tablix)reportItem;
-
+                                
                 if (tablix.DataSetReference != null)
                 {
                     // We potentially have calculated text which needs resolving from the Data Set.
@@ -236,6 +254,9 @@ namespace ReportViewer.NET
                     break;
                 case "Boolean":
                     param.Add($"@{name.TrimStart('@')}", value == "True", DbType.Boolean);
+                    break;
+                case "Integer":
+                    param.Add($"@{name.TrimStart('@')}", int.Parse(value), DbType.Int32);
                     break;
             }
         }

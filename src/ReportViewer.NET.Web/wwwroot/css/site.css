@@ -60,13 +60,13 @@ body {
 .reportoutput-container {
     position: relative;
     overflow: auto;
-    max-height: 500px;
-    height: 500px;
+    /*max-height: 500px;
+    height: 500px;*/
     margin-top: 0.75rem;
 }
 
 .report-row > div {
-    display: flex;    
+    display: flex;
 }
 
 .report-row div p {
@@ -94,7 +94,7 @@ body {
     overflow-x: auto;
 }
 
-.report-row td div {
+.report-row td div:not(.report-row) {
     height: 100%;
 }
 

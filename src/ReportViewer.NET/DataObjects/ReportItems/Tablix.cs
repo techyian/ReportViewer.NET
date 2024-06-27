@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using Microsoft.AspNetCore.Server.HttpSys;
 using ReportViewer.NET.Comparers;
 using ReportViewer.NET.Parsers;
 using System;
@@ -18,13 +19,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TablixBody TablixBodyObj { get; set; }
         public TablixHierarchy TablixColumnHierarchy { get; set; }
         public TablixHierarchy TablixRowHierarchy { get; set; }
-
-        public Tablix(XElement tablix, IEnumerable<DataSet> datasets, ReportRDL report)
+        public IEnumerable<ReportRDL> CurrentRegisteredReports { get; set; }
+        
+        public Tablix(XElement tablix, IEnumerable<DataSet> datasets, ReportRDL report, IEnumerable<ReportRDL> currentRegisteredReports)
             : base(tablix, report)
         {
             this.DataSets = datasets;
+            this.CurrentRegisteredReports = currentRegisteredReports;
             this.TablixBodyObj = new TablixBody(this, tablix.Element(report.Namespace + "TablixBody"));
-
+            
             this.DataSetName = tablix.Element(report.Namespace + "DataSetName")?.Value;            
             this.TablixRowHierarchy = new TablixHierarchy(tablix.Element(report.Namespace + "TablixRowHierarchy"), this);
             this.TablixColumnHierarchy = new TablixHierarchy(tablix.Element(report.Namespace + "TablixColumnHierarchy"), this);
@@ -533,7 +536,51 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         var content = this.TablixCells[i].TablixCellContent[j];
 
-                        sb.AppendLine(content.Build());
+                        if (content is SubReport)
+                        {
+                            var sr = (SubReport)content;
+                            var srRdl = sr.GetSubReportRDL();                            
+                            var layoutProvider = new LayoutProvider();
+                            var finalUserParamsForSubReport = new List<ReportParameter>();
+
+                            // Retrieve all parameters for the sub report.
+                            foreach (var p in srRdl.ReportParameters)
+                            {
+                                // Search user provided parameters first
+                                if (this.Body.Tablix.Report.UserProvidedParameters.Any(rp => rp.Name == p.Name))
+                                {
+                                    finalUserParamsForSubReport.Add(this.Body.Tablix.Report.UserProvidedParameters.First(rp => rp.Name == p.Name));
+                                }
+                                // Try to retrieve the parameter from the tablix row.
+                                else
+                                {
+                                    var expressionParser = new ExpressionParser();
+                                    var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                                    var parsedValue = expressionParser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, null);
+
+                                    if (parsedValue != null)
+                                    {                                        
+                                        finalUserParamsForSubReport.Add(new ReportParameter
+                                        {
+                                            Name = p.Name,
+                                            DataType = p.DataType,
+                                            Value = Convert.ToString(parsedValue)
+                                        });
+                                    }
+                                }
+                            }
+
+                            if (finalUserParamsForSubReport.Count != srRdl.ReportParameters.Count)
+                            {
+                                continue;
+                            }
+
+                            sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport).GetAwaiter().GetResult().Value);
+                        }
+                        else
+                        {
+                            sb.AppendLine(content.Build());
+                        }                                                
                     }
                     
                     if (this.TablixCells[i].TablixCellContent.Count > 0)
@@ -548,30 +595,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     else
                     {
                         i++;
-                    }
-                    
+                    }                    
                 }
-            }
-            
-
-            //if (this.TablixCells != null)
-            //{
-            //    foreach (var cell in this.TablixCells)
-            //    {
-            //        sb.AppendLine("<td>");
-            //        if (cell.TablixCellContent != null)
-            //        {
-            //            for (var i = 0; i < cell.TablixCellContent.Count; i++)
-            //            {
-            //                var content = cell.TablixCellContent[i];
-
-            //                sb.AppendLine(content.Build());
-            //            }
-            //        }
-            //        sb.AppendLine("</td>");
-            //    }
-            //}
-                        
+            }              
             return sb.ToString();
         }
     }
@@ -583,28 +609,65 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TablixHeader Header { get; set; }        
         public ReportRDL Report { get; set; }
 
-        internal TablixCell(TablixRow row, XElement cell, ReportRDL report)
-            : this(cell, report)
+        internal TablixCell(TablixRow row, XElement cell, ReportRDL report)        
         {
             this.Row = row;
-        }
-
-        internal TablixCell(TablixHeader tablixHeader, XElement cell, ReportRDL report)
-            : this(cell, report)
-        {
-            this.Header = tablixHeader;            
-        }
-
-        internal TablixCell(XElement cell, ReportRDL report)
-        {
             this.Report = report;
-
-            TablixCellContent = new List<ReportItem>();
+            this.TablixCellContent = new List<ReportItem>();
 
             var cellContents = cell.Elements(this.Report.Namespace + "CellContents");
-            
+
             if (cellContents != null)
-            {                
+            {
+                foreach (var c in cellContents)
+                {
+                    var textboxes = c.Elements(this.Report.Namespace + "Textbox");
+
+                    if (textboxes != null)
+                    {
+                        foreach (var textbox in textboxes)
+                        {                            
+                            this.TablixCellContent.Add(new Textbox(this, textbox, this.Row.Body.Tablix.DataSets, this.Report));
+                        }
+                    }
+
+                    // Process other types.
+                    var subreports = c.Elements(this.Report.Namespace + "Subreport");
+
+                    if (subreports != null)
+                    {
+                        foreach (var sr in subreports)
+                        {
+                            var srPath = sr.Element(this.Report.Namespace + "ReportName")?.Value;
+                            var srName = srPath.Split('/').Last();
+                            var registeredReport = this.Row.Body.Tablix.CurrentRegisteredReports.First(r => r.Name == srName + ".rdl");
+                            var subReportParameters = sr.Element(this.Report.Namespace + "Parameters").Elements(this.Report.Namespace + "Parameter");
+
+                            // Append the parameter expression values to the registered report as these won't have been added during registration.
+                            foreach (var subReportParam in subReportParameters)
+                            {
+                                var paramName = subReportParam.Attribute("Name")?.Value;
+                                var registeredParam = registeredReport.ReportParameters.First(p => p.Name == paramName);
+                                registeredParam.Value = subReportParam.Value;
+                            }
+
+                            this.TablixCellContent.Add(new SubReport(sr, this.Report, this.Row.Body.Tablix.CurrentRegisteredReports.First(r => r.Name == srName + ".rdl")));
+                        }
+                    }
+                }
+            }
+        }
+
+        internal TablixCell(TablixHeader tablixHeader, XElement cell, ReportRDL report)           
+        {
+            this.Header = tablixHeader;
+            this.Report = report;
+            this.TablixCellContent = new List<ReportItem>();
+
+            var cellContents = cell.Elements(this.Report.Namespace + "CellContents");
+
+            if (cellContents != null)
+            {
                 foreach (var c in cellContents)
                 {
                     var textboxes = c.Elements(this.Report.Namespace + "Textbox");
@@ -613,22 +676,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         foreach (var textbox in textboxes)
                         {
-                            IEnumerable<DataSet> dataSets = null;
-
-                            if (this.Row != null)
-                            {
-                                dataSets = this.Row.Body.Tablix.DataSets;
-                            }
-                            else if (this.Header != null)
-                            {
-                                dataSets = this.Header.TablixMember.TablixHierarchy.Tablix.DataSets;
-                            }
-
-                            TablixCellContent.Add(new Textbox(this, textbox, dataSets, this.Report));
+                            this.TablixCellContent.Add(new Textbox(this, textbox, this.Header.TablixMember.TablixHierarchy.Tablix.DataSets, this.Report));
                         }
                     }
-
-                    // Process other types.
                 }
             }
         }
@@ -803,6 +853,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         Is,
         ConcatAnd,
         ConcatPlus,
+        ExecutionTime
 
     }
 }
