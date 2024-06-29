@@ -16,6 +16,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string PaddingTop { get; set; }
         public string PaddingBottom { get; set; }
         public string BackgroundColor { get; set; }
+        public string BackgroundColorExpressionValue { get; set; }
         public string VerticalAlign { get; set; }
         public string Top { get; set; }
         public string Left { get; set; }
@@ -146,8 +147,16 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             sb.Append(!string.IsNullOrEmpty(this.PaddingRight) ? $"padding-right: {this.PaddingRight};" : "");
             sb.Append(!string.IsNullOrEmpty(this.PaddingTop) ? $"padding-top: {this.PaddingTop};" : "");
             sb.Append(!string.IsNullOrEmpty(this.PaddingBottom) ? $"padding-bottom: {this.PaddingBottom};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.BackgroundColor) ? $"background-color: {this.BackgroundColor};" : "");
-
+            
+            if (!string.IsNullOrEmpty(this.BackgroundColorExpressionValue))
+            {
+                sb.Append($"background-color: {this.BackgroundColorExpressionValue};");
+            }
+            else if (!string.IsNullOrEmpty(this.BackgroundColor))
+            {
+                sb.Append($"background-color: {this.BackgroundColor};");
+            }
+            
             if (!string.IsNullOrEmpty(this.VerticalAlign))
             {
                 sb.Append(!string.IsNullOrEmpty(this.VerticalAlign) ? $"vertical-align: {this.VerticalAlign};" : "");

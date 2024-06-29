@@ -1,5 +1,4 @@
 ﻿using HtmlAgilityPack;
-using Microsoft.AspNetCore.Server.HttpSys;
 using ReportViewer.NET.Comparers;
 using ReportViewer.NET.Parsers;
 using System;
@@ -853,7 +852,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         Is,
         ConcatAnd,
         ConcatPlus,
-        ExecutionTime
-
+        ExecutionTime,
+        And,
+        Not,
+        Or,
+        Xor,
+        AndAlso,
+        OrElse
     }
 }

@@ -68,18 +68,18 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     if (this.Cell.Row != null)
                     {
                         var dataSetResults = this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColor = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Row.Values, null, null);                                                
+                        this.Style.BackgroundColorExpressionValue = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Row.Values, null, null);                                                
                     }
                     else if (this.Cell.Header != null)
                     {
                         var dataSetResults = this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColor = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Header.TablixMember.Values, null, null);                                                
+                        this.Style.BackgroundColorExpressionValue = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Header.TablixMember.Values, null, null);                                                
                     }
                 }
                 else
                 {
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    this.Style.BackgroundColor = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, null, null, this.Report.DataSets, null);
+                    this.Style.BackgroundColorExpressionValue = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, null, null, this.Report.DataSets, null);
                 }
             }
 
