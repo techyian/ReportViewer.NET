@@ -111,8 +111,17 @@
 
             $('button[data-toggler="true"]').on('click', function () {
                 var togglerName = $(this).data('toggler-name');
-                var elementsToToggle = $('[data-toggle="' + togglerName + '"]');
+                var closestRow = $(this).closest('tr');
+                var rowKey = $(closestRow).data('row-key');
+                var elementsToToggle = [];
 
+                if (rowKey) {
+                    elementsToToggle = $('[data-row-key="' + rowKey + '"]').find('[data-toggle="' + togglerName + '"]');
+                }
+                else {
+                    elementsToToggle = $('[data-toggle="' + togglerName + '"]');
+                }
+                                
                 for (var i = 0; i < elementsToToggle.length; i++) {
                     if ($(elementsToToggle[i]).is(":visible")) {
                         $(elementsToToggle[i]).hide();

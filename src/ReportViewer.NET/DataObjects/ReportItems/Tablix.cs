@@ -204,8 +204,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             sb.AppendLine("<tbody>");
 
             var rowIdx = 0;
-            var insertedKey = false;
-
+            var insertedKey = (false, "");
+            
             for (var i = 0; i < this.Tablix.TablixRowHierarchy.TablixMembers.Count; i++)
             {
                 rowIdx = this.ProcessTablixMembers(sb, null, null, this.Tablix.TablixRowHierarchy.TablixMembers[i], new List<TablixMember>(), rowIdx, ref insertedKey);
@@ -236,7 +236,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             TablixMember tablixMember,
             List<TablixMember> prevTablixMembers,            
             int currentRowIndx,
-            ref bool insertedKey)
+            ref (bool, string) insertedKey)
         {            
             List<IDictionary<string, object>> dsr = dataSetResults ?? this.Tablix.DataSetReference?.DataSet?.DataSetResults;
             List<IGrouping<object, IDictionary<string, object>>> groupedResults = null;
@@ -284,7 +284,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     }
 
                     prevTablixMembers = prevMembersBeforeGroup;
-                    insertedKey = false;
+                    insertedKey = (false, "");
                     after = currentRowIndx;
                     currentRowIndx = before;
                 }
@@ -303,7 +303,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             else
             {
                 var row = this.TablixRows[currentRowIndx];
-                
+                var newKey = Guid.NewGuid().ToString().Split('-')[0];
+
                 row.GroupedResults = groupResults;
 
                 var lastGroup = tablixMember.TablixMemberGroup != null ? tablixMember : prevTablixMembers.Where(t => t.TablixMemberGroup != null).LastOrDefault();
@@ -334,16 +335,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             row.Values = result;
 
                             sb.AppendLine(
-                                !insertedKey ?
-                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start>" :
-                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\">"
+                                !insertedKey.Item1 ?
+                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start data-row-key=\"{newKey}\">" :
+                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-row-key=\"{insertedKey.Item2}\">"
                             );
 
                             // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
                             // cell in the first column.
-                            if (!insertedKey)
-                            {                               
-                                
+                            if (!insertedKey.Item1)
+                            {                                
                                 if (headersFoundInTablixMembers.Any())
                                 {
                                     foreach (var header in headersFoundInTablixMembers)
@@ -361,7 +361,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 }
                                 
                                 sb.AppendLine(row.Build());
-                                insertedKey = true;
+                                insertedKey = (true, newKey);
                             }
                             else
                             {                             
@@ -394,13 +394,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         foreach (var header in headersFoundInTablixMembers)
                         {
-                            if ((header.TablixHeader.ContainsRepeatExpression && !insertedKey) || !header.TablixHeader.ContainsRepeatExpression)
+                            if ((header.TablixHeader.ContainsRepeatExpression && !insertedKey.Item1) || !header.TablixHeader.ContainsRepeatExpression)
                             {
                                 sb.AppendLine(header.TablixHeader.Build());
                             }                            
                         }
                     }
-                    else if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey) || !lastHeader.TablixHeader.ContainsRepeatExpression))
+                    else if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey.Item1) || !lastHeader.TablixHeader.ContainsRepeatExpression))
                     {
                         sb.AppendLine(lastHeader.TablixHeader.Build());
                     }

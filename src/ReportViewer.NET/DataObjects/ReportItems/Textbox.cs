@@ -83,7 +83,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
             }
 
-            sb.AppendLine($"<div {this.Style.Build()} data-toggle=\"{this.ToggleItem}\">");
+            sb.AppendLine(!string.IsNullOrEmpty(this.ToggleItem) ? $"<div {this.Style.Build()} data-toggle=\"{this.ToggleItem}\">" : $"<div {this.Style.Build()}>");
 
             if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name))
             {
