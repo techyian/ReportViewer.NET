@@ -8,8 +8,8 @@ namespace ReportViewer.NET.Web.Controllers
     public class HomeController : Controller, IReportViewerController
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly IReportViewer _reportViewer;
-        public HomeController(ILogger<HomeController> logger, IReportViewer reportViewer)
+        private readonly IReportHandler _reportViewer;
+        public HomeController(ILogger<HomeController> logger, IReportHandler reportViewer)
         {
             _logger = logger;
             _reportViewer = reportViewer;
@@ -32,17 +32,17 @@ namespace ReportViewer.NET.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ParameterViewer([FromBody] IEnumerable<ReportParameter> userProvidedParameters)
+        public async Task<IActionResult> ParameterViewer([FromQuery] string rdl, [FromBody] IEnumerable<ReportParameter> userProvidedParameters)
         {
-            var paramHtml = await _reportViewer.PublishReportParameters("TMSAttendanceOverviewReport.rdl", userProvidedParameters);
+            var paramHtml = await _reportViewer.PublishReportParameters(rdl, userProvidedParameters);
 
             return Ok(paramHtml);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReportViewer([FromBody] IEnumerable<ReportParameter> userProvidedParameters)
+        public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] IEnumerable<ReportParameter> userProvidedParameters)
         {
-            var reportHtml = await _reportViewer.PublishReportOutput("TMSAttendanceOverviewReport.rdl", userProvidedParameters);
+            var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters);
 
             return Ok(reportHtml);
         }

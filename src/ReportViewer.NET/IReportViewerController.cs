@@ -7,7 +7,7 @@ namespace ReportViewer.NET
 {
     public interface IReportViewerController
     {
-        Task<IActionResult> ParameterViewer(IEnumerable<ReportParameter> userProvidedParameters);        
-        Task<IActionResult> ReportViewer(IEnumerable<ReportParameter> userProvidedParameters);
+        Task<IActionResult> ParameterViewer(string rdl, IEnumerable<ReportParameter> userProvidedParameters);        
+        Task<IActionResult> ReportViewer(string rdl, IEnumerable<ReportParameter> userProvidedParameters);
     }
 }
