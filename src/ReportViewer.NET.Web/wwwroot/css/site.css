@@ -106,6 +106,10 @@ body {
     margin-right: 0.25rem;
 }
 
+.reportviewer-table tbody td {
+    padding: 0;
+}
+
 .custom-checkbox .custom-control-label::before {
     border-radius: .25rem;
 }

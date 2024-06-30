@@ -25,7 +25,7 @@ namespace ReportViewer.NET
             _dataSources = new List<DataSource>();
         }
 
-        public void RegisterRdlFromFile(string filePath)
+        public void RegisterRdlFromFile(string rdlName, string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -42,7 +42,7 @@ namespace ReportViewer.NET
                 var xml = XDocument.Load(sr);
                 var rdl = this.ParseXml(xml);
 
-                rdl.Name = Path.GetFileName(filePath);
+                rdl.Name = rdlName;
 
                 _reportRdls.Add(rdl);
             }
@@ -332,7 +332,7 @@ namespace ReportViewer.NET
                             var srPath = sr.Element(rdl.Namespace + "ReportName")?.Value;
                             var srName = srPath.Split('/').Last();
 
-                            reportItemList.Add(new SubReport(sr, rdl, _reportRdls.First(r => r.Name == srName + ".rdl")));
+                            reportItemList.Add(new SubReport(sr, rdl, _reportRdls.First(r => r.Name == srName)));
                         }
                     }
                 }

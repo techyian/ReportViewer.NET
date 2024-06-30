@@ -639,7 +639,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         {
                             var srPath = sr.Element(this.Report.Namespace + "ReportName")?.Value;
                             var srName = srPath.Split('/').Last();
-                            var registeredReport = this.Row.Body.Tablix.CurrentRegisteredReports.First(r => r.Name == srName + ".rdl");
+                            var registeredReport = this.Row.Body.Tablix.CurrentRegisteredReports.First(r => r.Name == srName);
                             var subReportParameters = sr.Element(this.Report.Namespace + "Parameters").Elements(this.Report.Namespace + "Parameter");
 
                             // Append the parameter expression values to the registered report as these won't have been added during registration.
@@ -650,7 +650,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 registeredParam.Value = subReportParam.Value;
                             }
 
-                            this.TablixCellContent.Add(new SubReport(sr, this.Report, this.Row.Body.Tablix.CurrentRegisteredReports.First(r => r.Name == srName + ".rdl")));
+                            this.TablixCellContent.Add(new SubReport(sr, this.Report, this.Row.Body.Tablix.CurrentRegisteredReports.First(r => r.Name == srName)));
                         }
                     }
                 }
