@@ -99,17 +99,6 @@ namespace ReportViewer.NET.Parsers
             var thenExpression = _expressionParser.ParseTablixExpressionString(stringGroups[1], this.DataSetResults, this.Values, this.DataSets, null);
             var elseExpression = _expressionParser.ParseTablixExpressionString(stringGroups[2], this.DataSetResults, this.Values, this.DataSets, null);
 
-            //var elseValueIdx = matchValue.LastIndexOf(',');
-            //var elseValue = matchValue.Substring(elseValueIdx + 1, matchValue.Length - elseValueIdx - 1).TrimEnd(')').Replace("\"", "");
-            //var remaining = matchValue.Substring(0, elseValueIdx);
-            //var ifValueIdx = remaining.LastIndexOf(',');
-            //var ifValue = remaining.Substring(ifValueIdx + 1, remaining.Length - ifValueIdx - 1).Replace("\"", "");
-            
-            //// Start from idx 4 to remove IIF(
-            //remaining = remaining.Substring(4, ifValueIdx - 4);
-
-            //var booleanExpression = _expressionParser.ParseTablixExpressionString(remaining, this.DataSetResults, this.Values, this.DataSets, null);
-
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);
             this.CurrentExpression.Value = (bool)booleanExpression ? thenExpression : elseExpression;

@@ -1,8 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
+	<Description>ReportViewer.NET is a .NET library used to render SSRS reports in webpages.</Description>
+	<AssemblyTitle>ReportViewer.NET</AssemblyTitle>
+	<AssemblyName>ReportViewer.NET</AssemblyName>
+	<PackageId>ReportViewer.NET</PackageId>
+	<RootNamespace>ReportViewer.NET</RootNamespace>
+	<Copyright>Ian Auty (c) 2024-</Copyright>
+	<NeutralLanguage>en-US</NeutralLanguage>
+	<Authors>Ian Auty</Authors>
+	<PackageTags>ssrs, aspnetcore</PackageTags>
+	<PackageProjectUrl>https://github.com/techyian/ReportViewer.NET</PackageProjectUrl>
+	<RepositoryType>git</RepositoryType>
+	<RepositoryUrl>https://github.com/techyian/ReportViewer.NET</RepositoryUrl>
+	<VersionPrefix>0.1.0</VersionPrefix>
+	<TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

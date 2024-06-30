@@ -14,7 +14,7 @@ namespace ReportViewer.NET.Comparers
             _baseComparer = baseComparer;
         }
 
-        public int Compare(IDictionary<string, object>? xDic, IDictionary<string, object>? yDic)
+        public int Compare(IDictionary<string, object> xDic, IDictionary<string, object> yDic)
         {
             if (_baseComparer != null)
             {

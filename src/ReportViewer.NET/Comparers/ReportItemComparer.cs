@@ -5,7 +5,7 @@ namespace ReportViewer.NET.Comparers
 {
     public class ReportItemComparer : IComparer<ReportItem>
     {
-        public int Compare(ReportItem? x, ReportItem? y)
+        public int Compare(ReportItem x, ReportItem y)
         {
             if (x?.Top == y?.Top && x?.Left < y?.Left)
             {
