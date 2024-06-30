@@ -12,24 +12,24 @@ using System.Xml.XPath;
 
 namespace ReportViewer.NET
 {
-    public class ReportViewer : IReportViewer
+    public class ReportHandler : IReportHandler
     {        
         public static XNamespace ReportDesigner = "http://schemas.microsoft.com/SQLServer/reporting/reportdesigner";
 
         private List<ReportRDL> _reportRdls;
         private List<DataSource> _dataSources;
         
-        public ReportViewer()
+        public ReportHandler()
         {
             _reportRdls = new List<ReportRDL>();
             _dataSources = new List<DataSource>();
         }
 
-        public void RegisterRdl(string filepath)
-        {            
-            if (!File.Exists(filepath))
+        public void RegisterRdlFromFile(string filePath)
+        {
+            if (!File.Exists(filePath))
             {
-                throw new FileNotFoundException("Requested file path does not exist.");                
+                throw new FileNotFoundException("Requested file path does not exist.");
             }
 
             if (_dataSources == null)
@@ -37,15 +37,28 @@ namespace ReportViewer.NET
                 throw new InvalidDataException("Data sources have not been initialised.");
             }
 
-            using (var sr = new StreamReader(filepath))
+            using (var sr = new StreamReader(filePath))
             {
                 var xml = XDocument.Load(sr);
                 var rdl = this.ParseXml(xml);
 
-                rdl.Name = Path.GetFileName(filepath);
+                rdl.Name = Path.GetFileName(filePath);
 
                 _reportRdls.Add(rdl);
-            }                        
+            }
+        }
+
+        public void RegisterRdlFromString(string rdlName, string rdlXml)
+        {
+            using (var sr = new StringReader(rdlXml))
+            {
+                var xml = XDocument.Load(sr);
+                var rdl = this.ParseXml(xml);
+
+                rdl.Name = rdlName;
+
+                _reportRdls.Add(rdl);
+            }
         }
 
         public void RegisterDataSource(string name, string connectionString)
