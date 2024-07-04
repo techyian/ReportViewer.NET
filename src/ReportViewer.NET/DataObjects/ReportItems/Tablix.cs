@@ -858,6 +858,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         Or,
         Xor,
         AndAlso,
-        OrElse
+        OrElse,
+        Left
     }
 }

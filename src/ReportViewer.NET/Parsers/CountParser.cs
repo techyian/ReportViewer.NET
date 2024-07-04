@@ -9,7 +9,7 @@ namespace ReportViewer.NET.Parsers
 {
     public class CountParser : BaseParser
     {
-        public static Regex CountRegex = new Regex("(?:\\(*?)(?:Count?)(\\((.*?)\\)\\)*)");
+        public static Regex CountRegex = new Regex("(?:\\(*?)(?:Count?)(\\((.*?)\\)\\)*)", RegexOptions.IgnoreCase);
 
         public CountParser(
             string currentString, 

@@ -4,20 +4,28 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers
 {
     internal class ExpressionParser
     {
         private readonly TablixOperator[] ArithmeticOperators = { TablixOperator.Add, TablixOperator.Subtract, TablixOperator.Multiply, TablixOperator.Divide };
+        
         private readonly TablixOperator[] ComparisonOperators = {
             TablixOperator.LessThan, TablixOperator.LessThanEqualTo, TablixOperator.GreaterThan, TablixOperator.GreaterThanEqualTo, TablixOperator.Equals,
             TablixOperator.NotEqual, TablixOperator.Like, TablixOperator.Is
         };
+        
         private readonly TablixOperator[] LogicalOperators =
         {
             TablixOperator.And, TablixOperator.Not, TablixOperator.Or, TablixOperator.Xor,
             TablixOperator.AndAlso, TablixOperator.OrElse
+        };
+
+        private readonly TablixOperator[] ConcatenationOperators =
+        {
+            TablixOperator.ConcatAnd, TablixOperator.ConcatPlus
         };
 
         public dynamic ParseTablixExpressionString(
@@ -57,6 +65,7 @@ namespace ReportViewer.NET.Parsers
                 this.SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
                 this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
                 this.SearchLogicalOperators(currentString, currentExpression, ref proposedString);
+                this.SearchTextFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
 
                 if (FieldParser.FieldRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == TablixOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
@@ -345,9 +354,23 @@ namespace ReportViewer.NET.Parsers
 
         }
 
-        private void SearchTextFunctions()
+        private void SearchTextFunctions(
+            string currentString,
+            TablixExpression currentExpression,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
+            IDictionary<string, object> values,
+            IEnumerable<DataObjects.DataSet> dataSets,
+            ref string proposedString
+        )
         {
-
+            if (LeftParser.LeftRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == TablixOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var leftParser = new LeftParser(currentString, TablixOperator.Left, currentExpression, dataSetResults, values, dataSets);
+                leftParser.Parse();
+                proposedString = leftParser.GetProposedString();
+            }
         }
 
         private void SearchDateTimeFunctions()
@@ -360,7 +383,8 @@ namespace ReportViewer.NET.Parsers
 
         }
 
-        private void SearchInspectionFunctions(string currentString,
+        private void SearchInspectionFunctions(
+            string currentString,
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
@@ -478,6 +502,7 @@ namespace ReportViewer.NET.Parsers
                     this.ArithmeticOperatorAggregator(prev, next, newExpr);
                     this.ComparisonOperatorAggregator(prev, next, newExpr, lastLogicalOperator, ref lastLogicalOperatorValue);
                     this.LogicalOperatorAggregator(prev, next, newExpr, lastLogicalOperatorValue, ref lastLogicalOperator);
+                    this.ConcatenationOperatorAggregator(prev, next, newExpr);
 
                     if (newExpr.Value == null)
                     {
@@ -607,6 +632,33 @@ namespace ReportViewer.NET.Parsers
             if (LogicalOperators.Contains(prev.Operator))
             {
                 newExpr.ResolvedType = typeof(bool);
+            }
+        }
+
+        private void ConcatenationOperatorAggregator(TablixExpression prev, TablixExpression next, TablixExpression newExpr)
+        {
+            if (ConcatenationOperators.Contains(next.Operator))
+            {
+                newExpr.Operator = next.Operator;
+                newExpr.Value = prev.Value;
+            }
+
+            switch (prev.Operator)
+            {
+                case TablixOperator.ConcatAnd:
+                    newExpr.Value = prev.Value.ToString() + next.Value.ToString();
+                    break;
+                case TablixOperator.ConcatPlus:
+                    if (int.TryParse(prev.Value.ToString(), out var prevInt) && int.TryParse(next.Value.ToString(), out var nextInt))
+                    {
+                        newExpr.Value = prevInt + nextInt;
+                    }
+                    else
+                    {
+                        newExpr.Value = prev.Value.ToString() + next.Value.ToString();
+                    }
+
+                    break;
             }
         }
 

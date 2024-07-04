@@ -8,7 +8,7 @@ namespace ReportViewer.NET.Parsers.BuiltInFields
 {
     internal class ExecutionTimeParser : BaseParser
     {
-        public static Regex ExecutionTimeRegex = new Regex("(\\bGlobals!ExecutionTime\\b)");
+        public static Regex ExecutionTimeRegex = new Regex("(\\bGlobals!ExecutionTime\\b)", RegexOptions.IgnoreCase);
 
         public ExecutionTimeParser(
             string currentString, 

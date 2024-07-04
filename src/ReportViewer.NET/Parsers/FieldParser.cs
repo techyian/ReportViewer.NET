@@ -8,8 +8,8 @@ namespace ReportViewer.NET.Parsers
 {
     public class FieldParser : BaseParser
     {
-        public static Regex FieldRegex = new Regex("(\\bFields!\\b(.*?)Value)");
-        public static Regex FieldDatasetRegex = new Regex("(\\bFields!\\b(.*?)\\))");
+        public static Regex FieldRegex = new Regex("(\\bFields!\\b(.*?)Value)", RegexOptions.IgnoreCase);
+        public static Regex FieldDatasetRegex = new Regex("(\\bFields!\\b(.*?)\\))", RegexOptions.IgnoreCase);
 
         public FieldParser(
             string currentString, 
