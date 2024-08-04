@@ -67,7 +67,13 @@
         }).done(function (data, textStatus, jqXHR) {
             $('.report-viewer').html(data.value);
 
-            $('.report-viewer input').on("focusout", function () {
+            $('.report-viewer input:not(.custom-control-input)').on("focusout", function () {
+                if ($(this).data('requiredparam')) {
+                    self.postReportParameters();
+                }
+            });
+
+            $('.report-viewer .custom-control-input').on("click", function () {
                 if ($(this).data('requiredparam')) {
                     self.postReportParameters();
                 }
