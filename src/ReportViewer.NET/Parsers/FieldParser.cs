@@ -81,6 +81,11 @@ namespace ReportViewer.NET.Parsers
             var match = FieldDatasetRegex.Match(this.CurrentString);
             var matchString = match.Value;
 
+            if (string.IsNullOrEmpty(match.Value))
+            {
+                return string.Empty;
+            }
+
             var fieldsIdx = matchString.IndexOf("Fields!");
             var fieldEnd = matchString.IndexOf('.', fieldsIdx);
             var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();

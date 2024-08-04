@@ -68,7 +68,9 @@
             $('.report-viewer').html(data.value);
 
             $('.report-viewer input').on("focusout", function () {
-                self.postReportParameters();
+                if ($(this).data('requiredparam')) {
+                    self.postReportParameters();
+                }
             });
 
             $('.report-viewer input[type="checkbox"]').on("change", function (event) {

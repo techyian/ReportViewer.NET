@@ -17,18 +17,20 @@ namespace ReportViewer.NET.DataObjects
         public List<string> Values { get; set; }
         public string DefaultValue { get; set; }
         public DataSetReference DataSetReference { get; set; }
+        public bool RequiredParam => !this.Nullable && string.IsNullOrEmpty(this.DefaultValue);
 
         public string Build(ReportParameter userProvidedParameter)
         {
             if (!string.IsNullOrEmpty(this.DataType))
             {
                 var nullable = this.Nullable ? "true" : "false";
+                var requiredParam = this.RequiredParam ? "true" : "false";
 
                 if (this.DataSetReference != null && this.DataSetReference.DataSet.DataSetResults != null)
                 {
                     var idx = 0;
                     var multiValue = this.MultiValue ? "true" : "false";
-
+                    
                     var sb = new StringBuilder();
                     sb.AppendLine("<div class=\"reportparam reportparam-list\">");
                     sb.AppendLine("<label>" + this.Prompt + @"</label>");
@@ -47,7 +49,7 @@ namespace ReportViewer.NET.DataObjects
                         {
                             sb.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
-                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""" checked>
+                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""" checked>
                                     <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField.ToLower()] + @"</label>
                                 </div>
                             ");
@@ -56,7 +58,7 @@ namespace ReportViewer.NET.DataObjects
                         {
                             sb.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
-                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""">
+                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""">
                                     <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField.ToLower()] + @"</label>
                                 </div>
                             ");
@@ -79,19 +81,19 @@ namespace ReportViewer.NET.DataObjects
                         case "String":
                             return @"<div class=""reportparam reportparam-string"">
                                     <label for=""" + this.Name + @""">" + this.Prompt + @"</label>
-                                    <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" /> 
+                                    <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" data-requiredparam=""" + requiredParam + @""" /> 
                                 </div> ";
                         case "DateTime":
                             return @"
                                 <div class=""reportparam reportparam-date date"">
                                         <label for=""" + this.Name + @""">" + this.Prompt + @"</label>                                        
-                                        <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" />
+                                        <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" data-requiredparam=""" + requiredParam + @""" />
                                 </div>
                                 ";
                         case "Boolean":
                             return @"<div class=""reportparam reportparam-boolean"">
                                     <div class=""custom-control custom-checkbox"">
-                                        <input type=""checkbox"" class=""custom-control-input"" id=""" + this.Name + @""" name=""" + this.Name + @""" value=""true"" " + check + @">
+                                        <input type=""checkbox"" class=""custom-control-input"" id=""" + this.Name + @""" name=""" + this.Name + @""" value=""true"" " + check + @" data-requiredparam=""" + requiredParam + @""">
                                         <label class=""custom-control-label pl-3"" for=""" + this.Name + @""">" + this.Prompt + @"</label>
                                     </div>
                                 </div> ";
