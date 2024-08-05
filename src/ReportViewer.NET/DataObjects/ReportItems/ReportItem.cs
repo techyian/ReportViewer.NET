@@ -20,10 +20,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             this.Report = report;
 
-            var topValue = element.Element(report.Namespace + "Top")?.Value;
-            var leftValue = element.Element(report.Namespace + "Left")?.Value;
-            var widthValue = element.Element(report.Namespace + "Width")?.Value;
-            var heightValue = element.Element(report.Namespace + "Height")?.Value;
+            var topValue = Style.ConvertUnit(element.Element(report.Namespace + "Top")?.Value);
+            var leftValue = Style.ConvertUnit(element.Element(report.Namespace + "Left")?.Value);
+            var widthValue = Style.ConvertUnit(element.Element(report.Namespace + "Width")?.Value);
+            var heightValue = Style.ConvertUnit(element.Element(report.Namespace + "Height")?.Value);
 
             if (!string.IsNullOrEmpty(topValue) && double.TryParse(topValue.Substring(0, topValue.Length - 2), out var top))
             {
@@ -64,13 +64,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     }
 
     public class ReportRow
-    {
-        public double MaxTop { get; set; }
-        public double MaxHeight { get; set; }
-        public double MaxLeft { get; set; }
-        public double MaxWidth { get; set; }
-        public double TotalWidth { get; set; }
-        public double TotalHeight { get; set; }
+    {        
+        public double RowWidth { get; set; }
+        public double RowHeight { get; set; }
         public List<ReportItem> RowItems { get; set; } = new List<ReportItem>();
     }
 }

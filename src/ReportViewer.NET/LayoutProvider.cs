@@ -147,41 +147,38 @@ namespace ReportViewer.NET
         {
             var currentRow = reportRows.Last();
 
-            if (currentRow.MaxTop == 0)
+            if (currentRow.RowHeight == 0)
             {
                 currentRow.RowItems.Add(reportItem);
-                currentRow.MaxTop = reportItem.Top;
-                currentRow.MaxHeight = reportItem.Height;
-                currentRow.MaxLeft = reportItem.Left;
-                currentRow.MaxWidth = reportItem.Width;
-                currentRow.TotalHeight = reportItem.Height;
-                currentRow.TotalWidth = reportItem.Width;
+
+                currentRow.RowWidth = reportItem.Width + reportItem.Left;
+                currentRow.RowHeight = reportItem.Height + reportItem.Top;
             }
             else
             {
-                if (reportItem.Top > currentRow.MaxTop + currentRow.MaxHeight)
+                if (reportItem.Top > currentRow.RowHeight)
                 {
                     var newRow = new ReportRow()
                     {
-                        MaxTop = reportItem.Top,
-                        MaxHeight = reportItem.Height,
-                        MaxLeft = reportItem.Left,
-                        MaxWidth = reportItem.Width,
-                        TotalHeight = reportItem.Height,
-                        TotalWidth = reportItem.Width
+                        RowWidth = reportItem.Width + reportItem.Left,
+                        RowHeight = reportItem.Height + reportItem.Top,                        
                     };
 
                     newRow.RowItems.Add(reportItem);
                     reportRows.Add(newRow);
                 }
                 else
-                {
-                    currentRow.MaxTop = reportItem.Top > currentRow.MaxTop ? reportItem.Top : currentRow.MaxTop;
-                    currentRow.MaxWidth = reportItem.Width > currentRow.MaxWidth ? reportItem.Width : currentRow.MaxWidth;
-                    currentRow.MaxLeft = reportItem.Left > currentRow.MaxLeft ? reportItem.Left : currentRow.MaxLeft;
-                    currentRow.MaxHeight = reportItem.Height > currentRow.MaxHeight ? reportItem.Height : currentRow.MaxHeight;
-                    currentRow.TotalWidth += reportItem.Width;
-                    currentRow.TotalHeight += reportItem.Height;
+                {                                        
+                    if (reportItem.Width + reportItem.Left > currentRow.RowWidth)
+                    {
+                        currentRow.RowWidth = reportItem.Width + reportItem.Left;
+                    }
+
+                    if (reportItem.Height + reportItem.Top > currentRow.RowHeight)
+                    {
+                        currentRow.RowHeight = reportItem.Height + reportItem.Top;
+                    }
+
                     currentRow.RowItems.Add(reportItem);
                 }
             }

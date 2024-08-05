@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
@@ -17,6 +17,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             : base(image, report)
         {
             this.Style.Top = "";
+            this.Style.Left = "";
+
             this.Source = image.Element(report.Namespace + "Source")?.Value;
             this.Value = image.Element(report.Namespace + "Value")?.Value;
             this.Sizing = image.Element(report.Namespace + "Sizing")?.Value;
@@ -30,14 +32,41 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             // TODO: Handle sizings?
             if (this.EmbeddedImage != null)
             {
+                var sb = new StringBuilder();
+
+                // Making some decisions here as to the positioning of images. This library is not using absolute positioning
+                // on elements, and images in particular fall foul to this depending on where they are positioned. Making the decision
+                // to left/center/right align based on the width of the image and the left property. If the left property is <= 25% of the width
+                // of the image then left align, <= 50% center align, <= 75 right align.
+                var align = "justify-content: start;";
+                var div = this.Width / 3;
+
+                if (this.Left > div && this.Left <= div * 2)
+                {
+                    align = "justify-content: middle;";
+                }
+
+                if (this.Left >= div * 3)
+                {
+                    align = "justify-content: end;";
+                }
+
+                sb.AppendLine($"<div style=\"display:inline-flex;flex-grow:1;{align}\">");
+
                 switch (this.EmbeddedImage.MimeType)
                 {
                     // TODO: Handle other mime types.
                     case "image/jpeg":
-                        return $"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />";
+                        sb.AppendLine($"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />");
+                        break;
                     case "image/png":
-                        return $"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />";
+                        sb.AppendLine($"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />");
+                        break;
                 }
+
+                sb.AppendLine("</div>");
+
+                return sb.ToString();
             }
 
             return string.Empty;

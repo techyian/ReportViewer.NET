@@ -19,7 +19,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string BackgroundColorExpressionValue { get; set; }
         public string VerticalAlign { get; set; }
         public string Top { get; set; }
-        public string Left { get; set; }
+        public string Left { get; set; }        
         public string Height { get; set; }
         public string Width { get; set; }
         public string ZIndex { get; set; }
@@ -100,10 +100,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.PaddingBottom = style?.Element(report.Namespace + "PaddingBottom")?.Value;
             this.BackgroundColor = style?.Element(report.Namespace + "BackgroundColor")?.Value;
             this.VerticalAlign = style?.Element(report.Namespace + "VerticalAlign")?.Value;
-            this.Top = style?.Element(report.Namespace + "Top")?.Value;
-            this.Left = style?.Element(report.Namespace + "Left")?.Value;
-            this.Height = style?.Element(report.Namespace + "Height")?.Value;
-            this.Width = style?.Element(report.Namespace + "Width")?.Value;
+            this.Top = ConvertUnit(style?.Element(report.Namespace + "Top")?.Value);
+            this.Left = ConvertUnit(style?.Element(report.Namespace + "Left")?.Value);
+            this.Height = ConvertUnit(style?.Element(report.Namespace + "Height")?.Value);
+            this.Width = ConvertUnit(style?.Element(report.Namespace + "Width")?.Value);
             this.ZIndex = style?.Element(report.Namespace + "ZIndex")?.Value;
             this.FontFamily = style?.Element(report.Namespace + "FontFamily")?.Value;
             this.FontWeight = style?.Element(report.Namespace + "FontWeight")?.Value;
@@ -175,10 +175,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
             }
                         
-            sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {this.Top};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Left) ? $"left: {this.Left};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Height) ? $"height: {this.Height};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {this.Width};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {ConvertUnit(this.Top)};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Left) ? $"left: {ConvertUnit(this.Left)};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Height) ? $"height: {ConvertUnit(this.Height)};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {ConvertUnit(this.Width)};" : "");
             sb.Append(!string.IsNullOrEmpty(this.ZIndex) ? $"z-index: {this.ZIndex};" : "");
             sb.Append(!string.IsNullOrEmpty(this.FontFamily) ? $"font-family: {this.FontFamily};" : "");
             sb.Append(!string.IsNullOrEmpty(this.FontWeight) ? $"font-weight: {this.FontWeight};" : "");
@@ -190,6 +190,61 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             return sb.ToString();
         }
+
+        public static string ConvertUnit(string current)
+        {
+            if (string.IsNullOrEmpty(current))
+            {
+                return string.Empty;
+            }
+
+            // Convert to mm as default.
+            if (current.EndsWith("mm") || current.EndsWith("%") || current.EndsWith("px"))
+            {
+                return current;
+            }
+
+            if (current.EndsWith("cm"))
+            {
+                var value = double.Parse(current.Substring(0, current.IndexOf("cm")));
+
+                return $"{value * 10}mm";
+            }
+
+            if (current.EndsWith("in"))
+            {
+                var value = double.Parse(current.Substring(0, current.IndexOf("in")));
+
+                return $"{value * 25.4}mm";
+                // 25.4
+            }
+
+            if (current.EndsWith("pt"))
+            {
+                var value = double.Parse(current.Substring(0, current.IndexOf("pt")));
+
+                return $"{value * 0.3527777778}mm";
+                // 0.3527777778
+            }
+
+            if (current.EndsWith("em"))
+            {
+                var value = double.Parse(current.Substring(0, current.IndexOf("em")));
+
+                return $"{value * 4.2175176}mm";
+                // 4.2175176
+            }
+
+            if (current.EndsWith("en"))
+            {
+                var value = double.Parse(current.Substring(0, current.IndexOf("en")));
+
+                return $"{value * 0.1757299018}mm";
+                // 0.1757299018
+            }
+
+            return string.Empty;
+        }
     }
 
     public class Border
@@ -197,5 +252,5 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Style { get; set; } = "None";
         public string Color { get; set; } = "transparent";
         public string Width { get; set; } = "0px";
-    }
+    }        
 }
