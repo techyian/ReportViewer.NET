@@ -51,7 +51,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     align = "justify-content: end;";
                 }
 
-                sb.AppendLine($"<div style=\"display:inline-flex;flex-grow:1;{align}\">");
+                sb.AppendLine($"<div style=\"display:inline-flex;{align}\">");
 
                 switch (this.EmbeddedImage.MimeType)
                 {
