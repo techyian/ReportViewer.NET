@@ -107,7 +107,7 @@ namespace ReportViewer.NET
             // Process rows into HTML.
             foreach (var reportRow in bodyReportRows) 
             {
-                sb.AppendLine("<div class=\"report-row\">");
+                sb.AppendLine($"<div class=\"report-row\" style=\"max-width={reportRow.RowWidth}mm\">");
 
                 foreach (var reportItem in reportRow.RowItems)
                 {
@@ -275,14 +275,13 @@ namespace ReportViewer.NET
                     var reportParamForDataset = reportParams.FirstOrDefault(p => p.Name == queryParam.Name.TrimStart('@'));
                     var nullableOrDefault = reportParamForDataset != null && (reportParamForDataset.Nullable || !string.IsNullOrEmpty(reportParamForDataset.DefaultValue));
                     invalidParameter = userProvidedParameters == null || !userProvidedParameters.Any(p => p.Name == queryParam.Name.TrimStart('@'));
+                    var userParam = userProvidedParameters?.FirstOrDefault(p => p.Name == queryParam.Name.TrimStart('@'));
 
-                    if (invalidParameter && !nullableOrDefault)
+                    if (invalidParameter || (!nullableOrDefault && string.IsNullOrEmpty(userParam.Value) && !userParam.Values.Any()))
                     {
                         break;
                     }
-
-                    var userParam = userProvidedParameters?.FirstOrDefault(p => p.Name == queryParam.Name.TrimStart('@'));
-
+                                        
                     this.HandleDynamicParameterInsert(dynamicParams, reportParamForDataset, userParam, dsQuery);
                 }
 
