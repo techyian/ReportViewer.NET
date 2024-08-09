@@ -177,7 +177,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         
             sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {ConvertUnit(this.Top)};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Left) ? $"left: {ConvertUnit(this.Left)};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Height) ? $"height: {ConvertUnit(this.Height)};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Height) ? $"min-height: {ConvertUnit(this.Height)};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {ConvertUnit(this.Width)};" : "");
             sb.Append(!string.IsNullOrEmpty(this.ZIndex) ? $"z-index: {this.ZIndex};" : "");
             sb.Append(!string.IsNullOrEmpty(this.FontFamily) ? $"font-family: {this.FontFamily};" : "");
