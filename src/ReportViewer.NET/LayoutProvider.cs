@@ -107,7 +107,7 @@ namespace ReportViewer.NET
             // Process rows into HTML.
             foreach (var reportRow in bodyReportRows) 
             {
-                sb.AppendLine($"<div class=\"report-row\" style=\"max-width={reportRow.RowWidth}mm\">");
+                sb.AppendLine($"<div class=\"report-row\" style=\"max-width:{reportRow.RowWidth}mm\">");
 
                 foreach (var reportItem in reportRow.RowItems)
                 {
@@ -117,7 +117,9 @@ namespace ReportViewer.NET
                         // The subreport should also be registered with the ReportViewer and any relevant data sources registered.
                         // The subreport should be registered before the parent.
                         var sr = (SubReport)reportItem;
+                        sb.AppendLine("<div class=\"sub-report-start\">");
                         sb.AppendLine((await this.PublishReportOutput(sr.GetSubReportRDL(), userProvidedParameters)).ToString());
+                        sb.AppendLine("</div>");
                     }
                     else
                     {

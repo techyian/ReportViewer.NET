@@ -65,11 +65,16 @@ body {
     margin-top: 0.75rem;
 }
 
-.report-row > div {
+.report-row > div:not(.sub-report-start) {
     display: flex;
 }
 
 .report-row div p {
+    width: 100%;
+}
+
+.sub-report-start {
+    display: block;
     width: 100%;
 }
 
