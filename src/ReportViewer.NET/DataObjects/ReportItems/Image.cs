@@ -33,13 +33,22 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             if (this.EmbeddedImage != null)
             {
                 var sb = new StringBuilder();
-
+                var isLastItem = false;
+                
+                for (var i = 0; i < this.ReportRow.RowItems.Count(); i++)
+                {
+                    if (object.ReferenceEquals(this.ReportRow.RowItems[i], this) && i == this.ReportRow.RowItems.Count() - 1)
+                    {
+                        isLastItem = true;
+                    }
+                }
+                                
                 // Making some decisions here as to the positioning of images. This library is not using absolute positioning
                 // on elements, and images in particular fall foul to this depending on where they are positioned. Making the decision
-                // to left/center/right align based on the width of the image and the left property. If the left property is <= 25% of the width
-                // of the image then left align, <= 50% center align, <= 75 right align.
+                // to left/center/right align based on the width of the row and the left property. If the left property is <= 25% of the width
+                // of the row then left align, <= 50% center align, <= 75 right align.
                 var align = "justify-content: start;";
-                var div = this.Width / 3;
+                var div = this.ReportRow.RowWidth / 3;
 
                 if (this.Left > div && this.Left <= div * 2)
                 {
@@ -51,8 +60,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     align = "justify-content: end;";
                 }
 
-                sb.AppendLine($"<div style=\"display:inline-flex;width:auto;{align}\">");
-
+                if (isLastItem)
+                {
+                    sb.AppendLine($"<div style=\"display:inline-flex;width:{this.ReportRow.RowWidth - this.Left}mm;{align}\">");
+                }
+                else
+                {
+                    sb.AppendLine($"<div style=\"display:inline-flex;width:auto;{align}\">");
+                }
+                
                 switch (this.EmbeddedImage.MimeType)
                 {
                     // TODO: Handle other mime types.

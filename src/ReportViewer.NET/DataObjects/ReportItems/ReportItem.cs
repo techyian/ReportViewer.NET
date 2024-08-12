@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
@@ -14,8 +13,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public double Width { get; set; }
         public double Height { get; set; }
         public bool Hidden { get; set; }
-        public string ToggleItem { get; set; }
-                
+        public string ToggleItem { get; set; }        
+        public ReportRow ReportRow { get; set; }
+        
         public ReportItem(XElement element, ReportRDL report)
         {
             this.Report = report;

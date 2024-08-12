@@ -150,8 +150,9 @@ namespace ReportViewer.NET
             var currentRow = reportRows.Last();
 
             if (currentRow.RowHeight == 0)
-            {
+            {                
                 currentRow.RowItems.Add(reportItem);
+                reportItem.ReportRow = currentRow;
 
                 currentRow.RowWidth = reportItem.Width + reportItem.Left;
                 currentRow.RowHeight = reportItem.Height + reportItem.Top;
@@ -159,7 +160,7 @@ namespace ReportViewer.NET
             else
             {
                 if (reportItem.Top > currentRow.RowHeight)
-                {
+                {                    
                     var newRow = new ReportRow()
                     {
                         RowWidth = reportItem.Width + reportItem.Left,
@@ -168,9 +169,10 @@ namespace ReportViewer.NET
 
                     newRow.RowItems.Add(reportItem);
                     reportRows.Add(newRow);
+                    reportItem.ReportRow = newRow;
                 }
                 else
-                {                                        
+                {
                     if (reportItem.Width + reportItem.Left > currentRow.RowWidth)
                     {
                         currentRow.RowWidth = reportItem.Width + reportItem.Left;
@@ -182,6 +184,7 @@ namespace ReportViewer.NET
                     }
 
                     currentRow.RowItems.Add(reportItem);
+                    reportItem.ReportRow = currentRow;
                 }
             }
 
