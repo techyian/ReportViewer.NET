@@ -19,7 +19,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TablixHierarchy TablixColumnHierarchy { get; set; }
         public TablixHierarchy TablixRowHierarchy { get; set; }
         public IEnumerable<ReportRDL> CurrentRegisteredReports { get; set; }
-        
+        public PageBreak PageBreak { get; set; }
+
         public Tablix(XElement tablix, IEnumerable<DataSet> datasets, ReportRDL report, IEnumerable<ReportRDL> currentRegisteredReports)
             : base(tablix, report)
         {
@@ -40,15 +41,52 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 this.DataSetReference.DataSet = datasets.FirstOrDefault(ds => ds.Name == this.DataSetReference.DataSetName);
             }
+
+            var pageBreak = tablix.Element(report.Namespace + "PageBreak")?.Element(report.Namespace + "BreakLocation")?.Value;
+
+            if (pageBreak != null)
+            {
+                switch (pageBreak.ToLower())
+                {
+                    case "start":
+                        this.PageBreak = PageBreak.Start;
+                        break;
+                    case "end":
+                        this.PageBreak = PageBreak.End;
+                        break;
+                    case "startandend":
+                        this.PageBreak = PageBreak.StartAndEnd;
+                        break;
+                    // Between can't be used for report items.
+                }
+            }
         }
 
         public override string Build()
         {
             var sb = new StringBuilder();
 
+            switch (this.PageBreak)
+            {
+                case PageBreak.Start:
+                case PageBreak.StartAndEnd:
+                    sb.AppendLine("<div class=\"reportitem-break-start\"></div>");
+                    break;                
+            }
+
             sb.AppendLine($"<table {this.Style?.Build()} class=\"reportviewer-table\" data-toggle=\"{this.ToggleItem}\">");
             sb.AppendLine(this.TablixBodyObj?.Build());
             sb.AppendLine("</table>");
+
+            switch (this.PageBreak)
+            {                
+                case PageBreak.StartAndEnd:
+                    sb.AppendLine("<div class=\"reportitem-break-start\"></div>");
+                    break;
+                case PageBreak.End:
+                    sb.AppendLine("<div class=\"reportitem-break-end\"></div>");
+                    break;
+            }
 
             return sb.ToString();
         }
@@ -93,7 +131,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             var tablixBody = string.Empty;
 
-            if (this.Tablix.TablixRowHierarchy.TablixMembers.Any(t => t.TablixHeader != null))
+            //if (this.Tablix.TablixRowHierarchy.TablixMembers.Any(t => t.TablixHeader != null))
+            if (this.Tablix.TablixRowHierarchy.TablixMembers.Any())
             {
                 tablixBody = this.BuildWithRowHierarchy();
             }
@@ -204,11 +243,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             sb.AppendLine("<tbody>");
 
             var rowIdx = 0;
-            var insertedKey = (false, "");
+            var insertedKey = new TablixHierarchyGroupStructure()
+            {
+                CurrentGroupPage = 1
+            };
             
             for (var i = 0; i < this.Tablix.TablixRowHierarchy.TablixMembers.Count; i++)
             {
-                rowIdx = this.ProcessTablixMembers(sb, null, null, this.Tablix.TablixRowHierarchy.TablixMembers[i], new List<TablixMember>(), rowIdx, ref insertedKey);
+                rowIdx = this.ProcessTablixMembers(sb, null, null, this.Tablix.TablixRowHierarchy.TablixMembers[i], new List<TablixMember>(), rowIdx, PageBreak.None, insertedKey);
             }
 
             sb.AppendLine("</tbody>");
@@ -236,7 +278,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             TablixMember tablixMember,
             List<TablixMember> prevTablixMembers,            
             int currentRowIndx,
-            ref (bool, string) insertedKey)
+            PageBreak pageBreak,
+            TablixHierarchyGroupStructure insertedKey)
         {            
             List<IDictionary<string, object>> dsr = dataSetResults ?? this.Tablix.DataSetReference?.DataSet?.DataSetResults;
             List<IGrouping<object, IDictionary<string, object>>> groupedResults = null;
@@ -262,14 +305,21 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 var fieldsIdx = tablixMember.TablixMemberGroup.GroupExpression.IndexOf("Fields!");
                 var fieldEnd = tablixMember.TablixMemberGroup.GroupExpression.IndexOf('.', fieldsIdx);
                 var fieldName = tablixMember.TablixMemberGroup.GroupExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
-
+                
                 groupedResults = dsr?.GroupBy(g => g[fieldName]).ToList();
+            }
+
+            if (tablixMember.TablixMemberGroup != null && pageBreak == PageBreak.None)
+            {
+                pageBreak = tablixMember.TablixMemberGroup.PageBreak;
             }
 
             if (groupedResults != null)
             {
                 // Starting a new grouping
                 var after = 0;
+
+                insertedKey.TotalPages = groupedResults.Count;
 
                 foreach (var groupedResult in groupedResults)
                 {
@@ -280,11 +330,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                     foreach (var childMember in tablixMember.TablixMembers)
                     {                        
-                        currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, ref insertedKey);                        
+                        currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, pageBreak, insertedKey);
                     }
 
                     prevTablixMembers = prevMembersBeforeGroup;
-                    insertedKey = (false, "");
+                    insertedKey.NewGroup();
+                    insertedKey.CurrentGroupPage = insertedKey.CurrentGroupPage + 1;
                     after = currentRowIndx;
                     currentRowIndx = before;
                 }
@@ -297,11 +348,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 foreach (var childMember in tablixMember.TablixMembers)
                 {                    
-                    currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupResults, childMember, prevTablixMembers, currentRowIndx, ref insertedKey);                    
+                    currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupResults, childMember, prevTablixMembers, currentRowIndx, pageBreak, insertedKey);                    
                 }
             }
             else
-            {
+            {                
                 var row = this.TablixRows[currentRowIndx];
                 var newKey = Guid.NewGuid().ToString().Split('-')[0];
 
@@ -314,6 +365,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 if (lastHeader != null && lastHeader.TablixHeader != null)
                 {
                     lastHeader.TablixHeader.GroupedResults = groupResults;
+                }
+
+                var membersWithToggleVisibility = prevTablixMembers.Where(m => m.Hidden);
+
+                if (membersWithToggleVisibility.Any(m => !this.Tablix.Report.RequestedVisible.Contains(m.Id)))
+                {
+                    sb.AppendLine(
+                        lastGroup != null ?
+                        $"<tr height=\"{row.Height}\" data-grouped-result=\"true\">" :
+                        $"<tr height=\"{row.Height}\" data-grouped-result=\"false\">"
+                    );
+
+                    return currentRowIndx++;
                 }
 
                 if (lastHeader != null && 
@@ -334,15 +398,35 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         {
                             row.Values = result;
 
+                            var dataPageBreak = "";
+                            var dataGroupResultsCount = $"data-tablepages=\"{insertedKey.TotalPages}\"";
+                            var dataPageNumber = $"data-rowtablepage=\"{insertedKey.CurrentGroupPage}\"";
+
+                            switch (pageBreak)
+                            {
+                                case PageBreak.Start:
+                                    dataPageBreak = "data-pagebreak-start";
+                                    break;
+                                case PageBreak.StartAndEnd:
+                                    dataPageBreak = "data-pagebreak-start data-pagebreak-end";
+                                    break;
+                                case PageBreak.End:
+                                    dataPageBreak = "data-pagebreak-end";
+                                    break;
+                                case PageBreak.Between:
+                                    dataPageBreak = "data-pagebreak-between";
+                                    break;
+                            }
+
                             sb.AppendLine(
-                                !insertedKey.Item1 ?
-                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start data-row-key=\"{newKey}\">" :
-                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-row-key=\"{insertedKey.Item2}\">"
+                                !insertedKey.InsertedKey ?
+                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start {dataPageBreak} {dataGroupResultsCount} {dataPageNumber} data-row-key=\"{newKey}\">" :
+                                $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-row-key=\"{insertedKey.KeyGuid}\">"
                             );
 
                             // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
                             // cell in the first column.
-                            if (!insertedKey.Item1)
+                            if (!insertedKey.InsertedKey)
                             {                                
                                 if (headersFoundInTablixMembers.Any())
                                 {
@@ -361,7 +445,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 }
                                 
                                 sb.AppendLine(row.Build());
-                                insertedKey = (true, newKey);
+                                insertedKey.InsertedKey = true;
+                                insertedKey.KeyGuid = newKey;
                             }
                             else
                             {                             
@@ -394,13 +479,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         foreach (var header in headersFoundInTablixMembers)
                         {
-                            if ((header.TablixHeader.ContainsRepeatExpression && !insertedKey.Item1) || !header.TablixHeader.ContainsRepeatExpression)
+                            if ((header.TablixHeader.ContainsRepeatExpression && !insertedKey.InsertedKey) || !header.TablixHeader.ContainsRepeatExpression)
                             {
                                 sb.AppendLine(header.TablixHeader.Build());
                             }                            
                         }
                     }
-                    else if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey.Item1) || !lastHeader.TablixHeader.ContainsRepeatExpression))
+                    else if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !insertedKey.InsertedKey) || !lastHeader.TablixHeader.ContainsRepeatExpression))
                     {
                         sb.AppendLine(lastHeader.TablixHeader.Build());
                     }
@@ -414,7 +499,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         
             return currentRowIndx;
         }
-
+                
         /// <summary>
         /// Recursive method which will find sub sort tablix members and apply the <see cref="TablixMemberSortComparer"/> class.
         /// </summary>
@@ -574,7 +659,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 continue;
                             }
 
-                            sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport).GetAwaiter().GetResult().Value);
+                            sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Body.Tablix.Report.RequestedVisible).GetAwaiter().GetResult().Value);
                         }
                         else
                         {
@@ -704,7 +789,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
     public class TablixMember
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public TablixHierarchy TablixHierarchy { get; set; }
         public TablixMemberGroup TablixMemberGroup { get; set; }
         public TablixMemberSort TablixMemberSort { get; set; }
@@ -712,10 +797,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public List<TablixMember> TablixMembers { get; set; }
         public dynamic Values { get; set; }
         public string KeepWithGroup { get; set; }
+        public bool Hidden { get; set; }
+        public string ToggleItem { get; set; }
         
         public TablixMember(XElement element, TablixHierarchy tablixHierarchy)
         {
-            this.Id = Guid.NewGuid();
+            this.Id = Guid.NewGuid().ToString().Split('-')[0];
             this.TablixHierarchy = tablixHierarchy;
             this.TablixMembers = new List<TablixMember>();
 
@@ -723,6 +810,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             var tablixSort = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "SortExpressions")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "SortExpression");
             var tablixHeader = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "TablixHeader");
             var tablixMemberElements = element.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMembers")?.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMember");
+            
+            var hidden = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Hidden")?.Value;
+            var toggleItem = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "ToggleItem")?.Value;
+
+            if (hidden != null && hidden == "true")
+            {
+                this.Hidden = true;
+            }
+
+            if (toggleItem != null)
+            {
+                this.ToggleItem = toggleItem;
+            }
 
             if (tablixGroup != null)
             {
@@ -795,12 +895,34 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TablixMember TablixMember { get; set; }
         public string Name { get; set; }
         public string GroupExpression { get; set; }
-        
+        public PageBreak PageBreak { get; set; }
+
         public TablixMemberGroup(TablixMember tablixMember, XElement element)
         {
             this.TablixMember = tablixMember;
             this.Name = element.Attribute("Name")?.Value;
             this.GroupExpression = element.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "GroupExpressions")?.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "GroupExpression")?.Value;
+            
+            var pageBreak = element.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "PageBreak")?.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "BreakLocation")?.Value;
+
+            if (pageBreak != null)
+            {
+                switch (pageBreak.ToLower())
+                {
+                    case "start":
+                        this.PageBreak = PageBreak.Start;
+                        break;
+                    case "end":
+                        this.PageBreak = PageBreak.End;
+                        break;
+                    case "startandend":
+                        this.PageBreak = PageBreak.StartAndEnd;
+                        break;
+                    case "between":
+                        this.PageBreak = PageBreak.Between;
+                        break;
+                }
+            }
         }
     }
 

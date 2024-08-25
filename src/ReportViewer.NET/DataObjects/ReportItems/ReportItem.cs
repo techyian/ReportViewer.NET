@@ -69,4 +69,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public double RowHeight { get; set; }
         public List<ReportItem> RowItems { get; set; } = new List<ReportItem>();
     }
+
+    public enum PageBreak
+    {
+        None,
+        Start,
+        End,
+        StartAndEnd,
+        Between        
+    }
 }

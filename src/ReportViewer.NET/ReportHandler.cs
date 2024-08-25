@@ -80,7 +80,7 @@ namespace ReportViewer.NET
             return layoutProvider.PublishReportParameters(rdl, userProvidedParameters);
         }
 
-        public Task<HtmlString> PublishReportOutput(string report, IEnumerable<ReportParameter> userProvidedParameters)
+        public Task<HtmlString> PublishReportOutput(string report, IEnumerable<ReportParameter> userProvidedParameters, IEnumerable<string> requestedVisible)
         {
             var rdl = _reportRdls.FirstOrDefault(r => r.Name == report);
 
@@ -91,7 +91,7 @@ namespace ReportViewer.NET
 
             var layoutProvider = new LayoutProvider();
 
-            return layoutProvider.PublishReportOutput(rdl, userProvidedParameters);
+            return layoutProvider.PublishReportOutput(rdl, userProvidedParameters, requestedVisible ?? Enumerable.Empty<string>());
         }
 
         private ReportRDL ParseXml(XDocument xml)
