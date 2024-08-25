@@ -40,9 +40,9 @@ namespace ReportViewer.NET.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] IEnumerable<ReportParameter> userProvidedParameters)
+        public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] IEnumerable<ReportParameter> userProvidedParameters, [FromBody] IEnumerable<string> requestedVisible)
         {
-            var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters);
+            var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters, requestedVisible);
 
             return Ok(reportHtml);
         }

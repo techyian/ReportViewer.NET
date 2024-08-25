@@ -7,12 +7,12 @@ namespace ReportViewer.NET.Web
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddScoped<IReportViewer, ReportViewer>(serviceProvider =>
+            builder.Services.AddScoped<IReportHandler, ReportHandler>(serviceProvider =>
             {
-                var reportViewer = new ReportViewer();
+                var reportViewer = new ReportHandler();
 
-                reportViewer.RegisterDataSource("TMS", "YOUR CONNECTION STRING");
-                reportViewer.RegisterRdl("RDL FILE PATH");
+                reportViewer.RegisterDataSource("DATA SOURCE NAME", "YOUR CONNECTION STRING");
+                reportViewer.RegisterRdlFromFile("RDL NAME", "RDL FILE PATH");
 
                 return reportViewer;
             });
