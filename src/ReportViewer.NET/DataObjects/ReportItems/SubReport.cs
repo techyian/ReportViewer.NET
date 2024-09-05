@@ -17,7 +17,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             return _subReportRdl;
         }
 
-        public override string Build()
+        public override string Build(ReportItem parent)
         {
             throw new NotImplementedException();
         }

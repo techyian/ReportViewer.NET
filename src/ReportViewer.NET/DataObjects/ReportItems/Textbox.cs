@@ -12,8 +12,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public bool KeepTogether { get; set; }
         public List<Paragraph> Paragraphs { get; set; }        
         public TablixCell Cell { get; set; }
-        public IEnumerable<DataSet> DataSets { get; set; }
-
+        
         private const string _expandSvg = @"
             <svg fill=""#000000"" version=""1.1"" id=""Capa_1"" xmlns=""http://www.w3.org/2000/svg"" xmlns:xlink=""http://www.w3.org/1999/xlink"" 
 	             width=""10px"" height=""10px"" viewBox=""0 0 45.402 45.402""
@@ -54,8 +53,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
         }
 
-        public override string Build()
+        public override string Build(ReportItem parent)
         {
+            this.NestedCopy(parent, this);
+
             var sb = new StringBuilder();
             
             if (this.Style.BackgroundColor != null && this.Style.BackgroundColor.StartsWith('='))
@@ -85,7 +86,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             sb.AppendLine(!string.IsNullOrEmpty(this.ToggleItem) ? $"<div {this.Style.Build()} data-toggle=\"{this.ToggleItem}\">" : $"<div {this.Style.Build()}>");
 
-            if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name))
+            if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name) ||
+                this.Report.HiddenTablixMembers.Any(r => r.ToggleItem == this.Name))
             {
                 sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
             }
@@ -94,7 +96,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 foreach (var p in this.Paragraphs)
                 {
-                    sb.AppendLine(p.Build());
+                    sb.AppendLine(p.Build(this));
                 }
             }
 
@@ -104,13 +106,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         }
     }
 
-    public class Paragraph
+    public class Paragraph : ReportItem
     {
-        public List<TextRun> TextRuns { get; set; }
-        public Style Style { get; set; }
+        public List<TextRun> TextRuns { get; set; }        
         public Textbox Textbox { get; set; }
 
         public Paragraph(Textbox textbox, XElement paragraph)
+            : base(paragraph, textbox.Report)
         {
             this.Textbox = textbox;
             this.Style = new Style(paragraph.Element(this.Textbox.Report.Namespace + "Style"), this.Textbox.Report);
@@ -127,8 +129,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
         }
 
-        public string Build()
+        public override string Build(ReportItem parent)
         {
+            this.NestedCopy(parent, this);
+
             var sb = new StringBuilder();
 
             sb.AppendLine($"<p {this.Style?.Build()}>");
@@ -137,7 +141,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 foreach (var tr in this.TextRuns)
                 {
-                    sb.AppendLine(tr.Build());
+                    sb.AppendLine(tr.Build(this));
                     sb.AppendLine("<span> </span>");
                 }
             }
@@ -148,10 +152,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         }
     }
 
-    public class TextRun
+    public class TextRun : ReportItem
     {        
-        public string Value { get; set; }
-        public Style Style { get; set; }
+        public string Value { get; set; }        
         public bool ContainsDataSetExpression { get; set; }
         public Paragraph Paragraph { get; set; }
         public string Format { get; set; }
@@ -159,6 +162,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         internal ExpressionParser Parser { get; set; }
 
         public TextRun(Paragraph paragraph, XElement textRun)
+            : base(textRun, paragraph.Report)
         {
             this.Paragraph = paragraph;
             this.Value = textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Value")?.Value;
@@ -167,8 +171,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Parser = new ExpressionParser();
         }
 
-        public string Build()
-        {            
+        public override string Build(ReportItem parent)
+        {
+            this.NestedCopy(parent, this);
+
             if (this.Value.StartsWith('='))
             {
                 TablixCell cell = this.Paragraph.Textbox.Cell;
@@ -178,14 +184,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     // We've come from a tablix cell.
                     if (cell.Row != null)
                     {
-                        var dataSetResults = cell.Row.GroupedResults?.Select(r => r).ToList() ?? cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                        var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
                         var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, cell.Row.Values, null, this.Format);
 
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }
                     else if (cell.Header != null)
                     {
-                        var dataSetResults = cell.Header.GroupedResults?.Select(r => r).ToList() ?? cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                        var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
                         var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, cell.Header.TablixMember.Values, null, this.Format);
 
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
@@ -194,7 +200,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 else
                 {
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, null, null, this.Paragraph.Textbox.DataSets, Format);
+                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, parent?.GroupedResults?.Select(r => r).ToList(), null, this.Paragraph.Textbox.DataSets, Format);
 
                     return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                 }

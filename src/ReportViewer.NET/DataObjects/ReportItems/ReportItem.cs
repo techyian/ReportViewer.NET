@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
@@ -15,7 +16,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public bool Hidden { get; set; }
         public string ToggleItem { get; set; }        
         public ReportRow ReportRow { get; set; }
-        
+        public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
+        public string DataSetName { get; set; }
+        public DataSetReference DataSetReference { get; set; }
+        public IEnumerable<DataSet> DataSets { get; set; }
+
         public ReportItem(XElement element, ReportRDL report)
         {
             this.Report = report;
@@ -60,7 +65,93 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }            
         }
 
-        public abstract string Build();
+        internal static IEnumerable<ReportItem> ParseElements(
+            IEnumerable<XElement> elements, 
+            ReportRDL report, 
+            IEnumerable<DataSet> datasets,
+            TablixCell cell
+        )
+        {
+            var reportItems = new List<ReportItem>();
+
+            if (elements != null)
+            {
+                foreach (XElement ri in elements)
+                {
+                    var textboxes = ri.Elements(report.Namespace + "Textbox");
+
+                    if (textboxes != null)
+                    {
+                        foreach (var textbox in textboxes)
+                        {
+                            reportItems.Add(new Textbox(cell, textbox, datasets, report));
+                        }
+                    }
+
+                    // Process other types.
+                    var subreports = ri.Elements(report.Namespace + "Subreport");
+
+                    if (subreports != null)
+                    {
+                        foreach (var sr in subreports)
+                        {
+                            var srPath = sr.Element(report.Namespace + "ReportName")?.Value;
+                            var srName = srPath.Split('/').Last();
+                            var registeredReport = report.CurrentRegisteredReports.First(r => r.Name == srName);
+                            var subReportParameters = sr.Element(report.Namespace + "Parameters").Elements(report.Namespace + "Parameter");
+
+                            // Append the parameter expression values to the registered report as these won't have been added during registration.
+                            foreach (var subReportParam in subReportParameters)
+                            {
+                                var paramName = subReportParam.Attribute("Name")?.Value;
+                                var registeredParam = registeredReport.ReportParameters.First(p => p.Name == paramName);
+                                registeredParam.Value = subReportParam.Value;
+                            }
+
+                            reportItems.Add(new SubReport(sr, report, report.CurrentRegisteredReports.First(r => r.Name == srName)));
+                        }
+                    }
+
+                    var tablixs = ri.Elements(report.Namespace + "Tablix");
+
+                    if (tablixs != null)
+                    {
+                        foreach (var tablix in tablixs)
+                        {
+                            reportItems.Add(new Tablix(tablix, datasets, report));
+                        }
+                    }
+
+                    var rectangles = ri.Elements(report.Namespace + "Rectangle");
+
+                    if (rectangles != null)
+                    {
+                        foreach (var r in rectangles)
+                        {
+                            reportItems.Add(new Rectangle(r, report, datasets));
+                        }
+                    }
+                }
+            }
+
+            return reportItems;
+        }
+
+        public void NestedCopy(ReportItem parent, ReportItem child)
+        {
+            // Is this ReportItem object nested within a Tablix group? If so, we want it to have visibility of data grouping that's been carried out by the outer hierarchy.
+            if (parent == null)
+            {
+                return;
+            }
+                
+            child.DataSetName = parent.DataSetName;
+            child.DataSetReference = parent.DataSetReference;
+            child.DataSets = parent.DataSets;
+            child.GroupedResults = parent.GroupedResults;
+        }
+
+        public abstract string Build(ReportItem parent);
     }
 
     public class ReportRow

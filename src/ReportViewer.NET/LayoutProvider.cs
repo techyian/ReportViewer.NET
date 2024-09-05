@@ -124,7 +124,7 @@ namespace ReportViewer.NET
                     }
                     else
                     {
-                        sb.AppendLine(reportItem.Build());
+                        sb.AppendLine(reportItem.Build(null));
                     }                    
                 }
                 
@@ -137,7 +137,7 @@ namespace ReportViewer.NET
 
                 foreach (var reportItem in reportRow.RowItems)
                 {                    
-                    sb.AppendLine(reportItem.Build());                    
+                    sb.AppendLine(reportItem.Build(null));                    
                 }
 
                 sb.AppendLine("</div>");

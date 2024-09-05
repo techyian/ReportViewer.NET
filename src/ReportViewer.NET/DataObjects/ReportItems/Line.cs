@@ -9,7 +9,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
         }
 
-        public override string Build()
+        public override string Build(ReportItem parent)
         {
             return $"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\"></div>";
         }

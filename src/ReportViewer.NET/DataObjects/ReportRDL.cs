@@ -17,7 +17,9 @@ namespace ReportViewer.NET.DataObjects
         public List<EmbeddedImage> EmbeddedImages { get; set; }
         public string ReportWidth { get; set; }
         public List<ReportItem> HiddenItems { get; set; } = new List<ReportItem>();
+        public List<TablixMember> HiddenTablixMembers { get; set; } = new List<TablixMember>();
         public List<ReportParameter> UserProvidedParameters { get; set; }
         public List<string> RequestedVisible { get; set; }
+        public List<ReportRDL> CurrentRegisteredReports { get; set; }
     }
 }

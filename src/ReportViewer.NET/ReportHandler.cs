@@ -103,6 +103,7 @@ namespace ReportViewer.NET
             IDictionary<string, string> namespaces = xpn.GetNamespacesInScope(XmlNamespaceScope.All);
 
             reportRdl.Namespace = namespaces[""];
+            reportRdl.CurrentRegisteredReports = _reportRdls;
 
             // Validate data sources.
             var dataSourceElements = xml.Root.Descendants(reportRdl.Namespace + "DataSources").Elements(reportRdl.Namespace + "DataSource");
@@ -118,8 +119,8 @@ namespace ReportViewer.NET
             var reportParameters = this.ProcessReportParameters(xml.Root, dataSets, reportRdl.Namespace);
             var embeddedImages = this.ProcessEmbeddedImages(xml.Root, reportRdl.Namespace);
 
-            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "Body").Descendants(reportRdl.Namespace + "ReportItems"), dataSets, embeddedImages, reportRdl);
-            var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "PageFooter").Descendants(reportRdl.Namespace + "ReportItems"), dataSets, embeddedImages, reportRdl);
+            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "Body").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
+            var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "PageFooter").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
 
             reportRdl.DataSources = _dataSources;
             reportRdl.DataSets = dataSets;
@@ -128,7 +129,7 @@ namespace ReportViewer.NET
             reportRdl.ReportFooterItems = reportFooterItems;
             reportRdl.EmbeddedImages = embeddedImages;
             reportRdl.ReportWidth = xml.Root.Descendants(reportRdl.Namespace + "ReportSections").Elements(reportRdl.Namespace + "ReportSection").Elements(reportRdl.Namespace + "Width").FirstOrDefault()?.Value;
-
+            
             return reportRdl;
         }
 
@@ -274,71 +275,9 @@ namespace ReportViewer.NET
             return reportParamList;
         }
 
-        private List<ReportItem> ProcessReportItems(IEnumerable<XElement> reportItemElements, IEnumerable<DataSet> datasets, IEnumerable<EmbeddedImage> embeddedImages, ReportRDL rdl)
+        private List<ReportItem> ProcessReportItems(IEnumerable<XElement> reportItemElements, IEnumerable<DataSet> datasets, ReportRDL rdl)
         {
-            var reportItemList = new List<ReportItem>();
-            
-            if (reportItemElements != null)
-            {
-                foreach (var ri in reportItemElements)
-                {
-                    var tablixElements = ri.Elements(rdl.Namespace + "Tablix");
-
-                    if (tablixElements != null)
-                    {
-                        foreach (var te in tablixElements)
-                        {
-                            reportItemList.Add(new Tablix(te, datasets, rdl, _reportRdls));
-                        }
-                    }
-
-                    var textboxElements = ri.Elements(rdl.Namespace + "Textbox");
-
-                    if (textboxElements != null)
-                    {
-                        foreach (var tb in textboxElements)
-                        {
-                            reportItemList.Add(new Textbox(tb, datasets, rdl));
-                        }
-                    }
-
-                    var imageElements = ri.Elements(rdl.Namespace + "Image");
-
-                    if (imageElements != null)
-                    {
-                        foreach (var img in imageElements)
-                        {
-                            reportItemList.Add(new Image(img, embeddedImages, rdl));
-                        }
-                    }
-
-                    var lineElements = ri.Elements(rdl.Namespace + "Line");
-
-                    if (lineElements != null)
-                    {
-                        foreach (var line in lineElements)
-                        {
-                            reportItemList.Add(new Line(line, rdl));
-                        }
-                    }
-
-                    // Subreports should be registered before the parent.
-                    var subReports = ri.Elements(rdl.Namespace + "Subreport");
-
-                    if (subReports != null)
-                    {
-                        foreach (var sr in subReports)
-                        {
-                            var srPath = sr.Element(rdl.Namespace + "ReportName")?.Value;
-                            var srName = srPath.Split('/').Last();
-
-                            reportItemList.Add(new SubReport(sr, rdl, _reportRdls.First(r => r.Name == srName)));
-                        }
-                    }
-                }
-            }
-
-            return reportItemList;
+            return ReportItem.ParseElements(reportItemElements, rdl, datasets, null).ToList();
         }
 
         private List<EmbeddedImage> ProcessEmbeddedImages(XElement root, XNamespace ns)

@@ -37,6 +37,21 @@ namespace ReportViewer.NET.Parsers
 
                     return (this.Values[fieldName].GetType(), this.Values[fieldName]);
                 }
+                else
+                {
+                    // Get first result from DataSetResults and parse requested field.
+                    var first = this.DataSetResults.First();
+
+                    if (first.ContainsKey(fieldName))
+                    {
+                        if (first[fieldName] == null)
+                        {
+                            return (typeof(object), null);
+                        }
+
+                        return (first[fieldName].GetType(), first[fieldName]);
+                    }                    
+                }
             }
             else
             {

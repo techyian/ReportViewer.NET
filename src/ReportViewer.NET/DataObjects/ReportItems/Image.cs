@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 
@@ -13,7 +12,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Sizing { get; set; }
         public EmbeddedImage EmbeddedImage { get; set; }
 
-        public Image(XElement image, IEnumerable<EmbeddedImage> embeddedImages, ReportRDL report)
+        public Image(XElement image, ReportRDL report)
             : base(image, report)
         {
             this.Style.Top = "";
@@ -24,10 +23,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Sizing = image.Element(report.Namespace + "Sizing")?.Value;
 
             // TODO: Handle other sources? 
-            this.EmbeddedImage = embeddedImages.FirstOrDefault(i => i.Name == this.Value);
+            this.EmbeddedImage = report.EmbeddedImages.FirstOrDefault(i => i.Name == this.Value);
         }
 
-        public override string Build()
+        public override string Build(ReportItem parent)
         {
             // TODO: Handle sizings?
             if (this.EmbeddedImage != null)
