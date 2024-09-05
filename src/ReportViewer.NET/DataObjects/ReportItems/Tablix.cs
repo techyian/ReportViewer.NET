@@ -556,11 +556,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         sb.AppendLine(row.Build());
                     }
                     sb.AppendLine("</tr>");
-
-                    if (tablixMember.TablixMemberGroup != null)
-                    {
-                        break;
-                    }
                 }
             }
             else
