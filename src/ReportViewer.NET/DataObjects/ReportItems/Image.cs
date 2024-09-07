@@ -12,8 +12,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Sizing { get; set; }
         public EmbeddedImage EmbeddedImage { get; set; }
 
-        public Image(XElement image, ReportRDL report)
-            : base(image, report)
+        public Image(XElement image, ReportRDL report, ReportItem parent)
+            : base(image, report, parent)
         {
             this.Style.Top = "";
             this.Style.Left = "";

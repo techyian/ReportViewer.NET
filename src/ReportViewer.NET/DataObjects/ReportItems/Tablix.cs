@@ -18,8 +18,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TablixHierarchy TablixRowHierarchy { get; set; }        
         public PageBreak PageBreak { get; set; }
 
-        public Tablix(XElement tablix, IEnumerable<DataSet> datasets, ReportRDL report)
-            : base(tablix, report)
+        public Tablix(XElement tablix, IEnumerable<DataSet> datasets, ReportRDL report, ReportItem parent)
+            : base(tablix, report, parent)  
         {
             this.DataSets = datasets;            
             this.TablixBodyObj = new TablixBody(this, tablix.Element(report.Namespace + "TablixBody"));
@@ -254,6 +254,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             for (var i = 0; i < this.Tablix.TablixRowHierarchy.TablixMembers.Count; i++)
             {
                 rowIdx = this.ProcessTablixMembers(sb, null, null, this.Tablix.TablixRowHierarchy.TablixMembers[i], new List<TablixMember>(), rowIdx, PageBreak.None, tablixHierarchyStructure);
+
+                // Need to reset grouped results, otherwise any aggregated results in the next member which needs to use non-grouped data will be incorrect.
+                if (this.Tablix.GroupedResults != null && !this.Tablix.Parents.Any(ri => ri.GetType() == typeof(Tablix)))
+                {
+                    this.Tablix.GroupedResults = null;
+                    this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = null;
+                }
             }
 
             sb.AppendLine("</tbody>");
@@ -323,9 +330,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = this.Tablix.DataSetReference.DataSet.DataSetResults.GroupBy(g => g[fieldName]).ToList();
                 }                
             }
-            else if (this.Tablix.GroupedResults != null)
+            else if (this.Tablix.GroupedResults != null && (this.Tablix.Parents.Any(ri => ri.GetType() == typeof(Tablix)) || prevTablixMembers.Any(tm => tm.TablixMemberGroup != null && tm.TablixMemberGroup.GroupExpression != null)))
             {
-                // Have we been provided with group results from further up the tree?
+                // Have we been provided with group results from further up the tree?                
                 this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = new List<IGrouping<object, IDictionary<string, object>>>() { this.Tablix.GroupedResults };
             }
 
@@ -353,9 +360,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                     if (tablixMember.TablixMembers.Any())
                     {
+                        currentRowIndx = this.ProcessGroupResults(currentRowIndx, tablixMember, prevTablixMembers, groupedResult, tablixHierarchyStructure, pageBreak, sb, dsr);
+
                         foreach (var childMember in tablixMember.TablixMembers)
-                        {                            
-                            currentRowIndx = this.ProcessGroupResults(currentRowIndx, childMember, prevTablixMembers, groupedResult, tablixHierarchyStructure, pageBreak, sb, dsr);
+                        {                                                       
                             currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, pageBreak, tablixHierarchyStructure);
                         }                                                
                     }
@@ -556,6 +564,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         sb.AppendLine(row.Build());
                     }
                     sb.AppendLine("</tr>");
+
+                    // I don't know if this is right or just plain hacky. If the current TablixMember is a group and has children then we know that this instance
+                    // just needs to be rendered once. However, if the TablixMember is a group and has a header that should be repeated then we should loop over the results.
+                    // Honestly, at this stage I'm just making this stuff up.
+                    if (tablixMember.ContainsReportItemWithSubGroup || (tablixMember.IsGroupHasMember && (tablixMember.TablixHeader == null || (tablixMember.TablixHeader != null && !tablixMember.TablixHeader.ContainsRepeatExpression))))
+                    {
+                        break;
+                    }
                 }
             }
             else
@@ -771,7 +787,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixCellContent = new List<ReportItem>();
 
             var cellContents = cell.Elements(this.Report.Namespace + "CellContents");
-            var reportItems = ReportItem.ParseElements(cellContents, report, this.Row.Body.Tablix.DataSets, this);
+            var reportItems = ReportItem.ParseElements(cellContents, report, this.Row.Body.Tablix.DataSets, this, this.Row.Body.Tablix);
 
             this.TablixCellContent.AddRange(reportItems);
         }
@@ -794,7 +810,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         foreach (var textbox in textboxes)
                         {
-                            this.TablixCellContent.Add(new Textbox(this, textbox, this.Header.TablixMember.TablixHierarchy.Tablix.DataSets, this.Report));
+                            this.TablixCellContent.Add(new Textbox(this, textbox, this.Header.TablixMember.TablixHierarchy.Tablix.DataSets, this.Report, this.Header.TablixMember.TablixHierarchy.Tablix));
                         }
                     }
                 }
@@ -849,6 +865,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public bool RepeatOnNewPage { get; set; }
         public bool KeepTogether { get; set; }
         public bool IsGroupHasMember => this.TablixMemberGroup != null && this.TablixMembers.Any();
+        public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
+        public bool ContainsReportItemWithSubGroup { get; set; }
 
         public TablixMember(XElement element, TablixHierarchy tablixHierarchy)
         {
@@ -867,6 +885,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.KeepWithGroup = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "KeepWithGroup")?.Value;
             this.KeepTogether = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "KeepTogether")?.Value == "true";
             this.RepeatOnNewPage = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "RepeatOnNewPage")?.Value == "true";
+            this.ContainsReportItemWithSubGroup = this.TablixHierarchy.Tablix.XElement.Element(this.TablixHierarchy.Tablix.Report.Namespace + "TablixBody").Descendants(this.TablixHierarchy.Tablix.Report.Namespace + "Group").Any();
 
             if (hidden != null && hidden == "true")
             {

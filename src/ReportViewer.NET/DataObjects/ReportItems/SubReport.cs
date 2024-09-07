@@ -7,7 +7,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {
         private ReportRDL _subReportRdl;
 
-        public SubReport(XElement element, ReportRDL report, ReportRDL subReportRdl) : base(element, report)
+        public SubReport(XElement element, ReportRDL report, ReportRDL subReportRdl, ReportItem parent) 
+            : base(element, report, parent)
         {
             _subReportRdl = subReportRdl;
         }

@@ -277,7 +277,7 @@ namespace ReportViewer.NET
 
         private List<ReportItem> ProcessReportItems(IEnumerable<XElement> reportItemElements, IEnumerable<DataSet> datasets, ReportRDL rdl)
         {
-            return ReportItem.ParseElements(reportItemElements, rdl, datasets, null).ToList();
+            return ReportItem.ParseElements(reportItemElements, rdl, datasets, null, null).ToList();
         }
 
         private List<EmbeddedImage> ProcessEmbeddedImages(XElement root, XNamespace ns)

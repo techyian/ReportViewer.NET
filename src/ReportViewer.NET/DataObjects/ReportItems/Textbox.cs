@@ -26,14 +26,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             </svg>
         ";
 
-        public Textbox(TablixCell cell, XElement textbox, IEnumerable<DataSet> dataSets, ReportRDL report)
-            : this(textbox, dataSets, report)
+        public Textbox(TablixCell cell, XElement textbox, IEnumerable<DataSet> dataSets, ReportRDL report, ReportItem parent)
+            : this(textbox, dataSets, report, parent)
         {
             Cell = cell;
         }
 
-        public Textbox(XElement textbox, IEnumerable<DataSet> dataSets, ReportRDL report)
-            : base(textbox, report)
+        public Textbox(XElement textbox, IEnumerable<DataSet> dataSets, ReportRDL report, ReportItem parent)
+            : base(textbox, report, parent)
         {
             this.DataSets = dataSets;
             this.Paragraphs = new List<Paragraph>();
@@ -112,7 +112,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public Textbox Textbox { get; set; }
 
         public Paragraph(Textbox textbox, XElement paragraph)
-            : base(paragraph, textbox.Report)
+            : base(paragraph, textbox.Report, textbox)
         {
             this.Textbox = textbox;
             this.Style = new Style(paragraph.Element(this.Textbox.Report.Namespace + "Style"), this.Textbox.Report);
@@ -162,7 +162,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         internal ExpressionParser Parser { get; set; }
 
         public TextRun(Paragraph paragraph, XElement textRun)
-            : base(textRun, paragraph.Report)
+            : base(textRun, paragraph.Report, paragraph)
         {
             this.Paragraph = paragraph;
             this.Value = textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Value")?.Value;

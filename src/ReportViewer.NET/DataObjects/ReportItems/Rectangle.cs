@@ -8,11 +8,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {
         public IEnumerable<ReportItem> ReportItems { get; set; }
 
-        internal Rectangle(XElement element, ReportRDL report, IEnumerable<DataSet> datasets) : base(element, report)
+        internal Rectangle(XElement element, ReportRDL report, IEnumerable<DataSet> datasets, ReportItem parent) : base(element, report, parent)
         {
             var reportItems = element.Elements(report.Namespace + "ReportItems");
 
-            this.ReportItems = ReportItem.ParseElements(reportItems, report, datasets, null);
+            // Using 'this' as parent may cause issues with aggregated grouping totals. Bear this in mind if issues occur.
+            this.ReportItems = ReportItem.ParseElements(reportItems, report, datasets, null, this);
         }
 
         public override string Build(ReportItem parent)

@@ -7,6 +7,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     public abstract class ReportItem
     {        
         public ReportRDL Report { get; set; }
+        public XElement XElement { get; set; }
         public string Name { get; set; }        
         public Style Style { get; set; }
         public double Top { get; set; }
@@ -20,10 +21,18 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string DataSetName { get; set; }
         public DataSetReference DataSetReference { get; set; }
         public IEnumerable<DataSet> DataSets { get; set; }
+        public List<ReportItem> Parents { get; set; } = new List<ReportItem>();
 
-        public ReportItem(XElement element, ReportRDL report)
+        public ReportItem(XElement element, ReportRDL report, ReportItem parent)
         {
             this.Report = report;
+            this.XElement = element;
+
+            if (parent != null)
+            {
+                this.Parents.AddRange(parent.Parents);
+                this.Parents.Add(parent);
+            }                        
 
             var topValue = Style.ConvertUnit(element.Element(report.Namespace + "Top")?.Value);
             var leftValue = Style.ConvertUnit(element.Element(report.Namespace + "Left")?.Value);
@@ -69,7 +78,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             IEnumerable<XElement> elements, 
             ReportRDL report, 
             IEnumerable<DataSet> datasets,
-            TablixCell cell
+            TablixCell cell,
+            ReportItem parent
         )
         {
             var reportItems = new List<ReportItem>();
@@ -84,7 +94,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         foreach (var textbox in textboxes)
                         {
-                            reportItems.Add(new Textbox(cell, textbox, datasets, report));
+                            reportItems.Add(new Textbox(cell, textbox, datasets, report, parent));
                         }
                     }
 
@@ -108,7 +118,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 registeredParam.Value = subReportParam.Value;
                             }
 
-                            reportItems.Add(new SubReport(sr, report, report.CurrentRegisteredReports.First(r => r.Name == srName)));
+                            reportItems.Add(new SubReport(sr, report, report.CurrentRegisteredReports.First(r => r.Name == srName), parent));
                         }
                     }
 
@@ -118,7 +128,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         foreach (var tablix in tablixs)
                         {
-                            reportItems.Add(new Tablix(tablix, datasets, report));
+                            reportItems.Add(new Tablix(tablix, datasets, report, parent));
                         }
                     }
 
@@ -128,7 +138,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         foreach (var r in rectangles)
                         {
-                            reportItems.Add(new Rectangle(r, report, datasets));
+                            reportItems.Add(new Rectangle(r, report, datasets, parent));
                         }
                     }
                 }
