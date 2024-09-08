@@ -439,19 +439,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 lastHeader.TablixHeader.GroupedResults = groupResults;
             }
 
-            var membersWithToggleVisibility = prevTablixMembers.Where(m => m.Hidden);
-
-            if (membersWithToggleVisibility.Any(m => !this.Tablix.Report.RequestedVisible.Contains(m.Id)))
-            {
-                sb.AppendLine(
-                    lastGroup != null ?
-                    $"<tr height=\"{row.Height}\" data-grouped-result=\"true\">" :
-                    $"<tr height=\"{row.Height}\" data-grouped-result=\"false\">"
-                );
-
-                return currentRowIndx + 1;
-            }
-
             if (lastHeader != null &&
                 lastHeader.TablixHeader != null &&
                 (lastHeader.TablixHeader.ContainsRepeatExpression || row.ContainsRepeatExpression) &&
@@ -498,7 +485,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     }
                 }
                 
-                sb.AppendLine(row.Build());
+                if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.RequestedVisible.Contains(tablixMember.Id)))
+                {
+                    sb.AppendLine(row.Build());
+                }
+                                
                 sb.AppendLine("</tr>");
             }
 
@@ -574,13 +565,20 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             sb.AppendLine(lastHeader.TablixHeader.Build());
                         }
 
-                        sb.AppendLine(row.Build());
+                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.RequestedVisible.Contains(tablixMember.Id)))
+                        {
+                            sb.AppendLine(row.Build());
+                        }
+                                                
                         tablixHierarchyStructure.InsertedKey = true;
                         tablixHierarchyStructure.KeyGuid = newKey;
                     }
                     else
                     {
-                        sb.AppendLine(row.Build());
+                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.RequestedVisible.Contains(tablixMember.Id)))
+                        {
+                            sb.AppendLine(row.Build());
+                        }                                                
                     }
                     sb.AppendLine("</tr>");
 
