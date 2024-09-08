@@ -409,6 +409,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             List<IDictionary<string, object>> dsr            
         )
         {
+            if (this.TablixRows.Count <= currentRowIndx)
+            {
+                // The TablixRowHierarchy structure does not seem to be robust and tally up with the number of rows expected, either that or my understanding 
+                // is wrong. For now putting this in to make sure it doesn't cry.
+                return currentRowIndx;
+            }
+
             var row = this.TablixRows[currentRowIndx];
             var newKey = Guid.NewGuid().ToString().Split('-')[0];
 
