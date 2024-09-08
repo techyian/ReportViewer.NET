@@ -200,7 +200,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 else
                 {
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, parent?.GroupedResults?.Select(r => r).ToList(), null, this.Paragraph.Textbox.DataSets, Format);
+                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, parent?.GroupedResults?.Select(r => r).ToList(), null, this.Paragraph.Textbox.DataSets, this.Format);
 
                     return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                 }

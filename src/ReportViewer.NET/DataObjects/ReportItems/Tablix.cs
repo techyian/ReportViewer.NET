@@ -1059,6 +1059,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {
         None,
         Count,
+        Sum,
         Field,
         Add,
         Subtract,
@@ -1087,6 +1088,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         Xor,
         AndAlso,
         OrElse,
-        Left
+        Left,
+        MonthName
     }
 }

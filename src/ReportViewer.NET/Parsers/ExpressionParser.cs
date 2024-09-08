@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers
 {
@@ -26,6 +25,11 @@ namespace ReportViewer.NET.Parsers
         private readonly TablixOperator[] ConcatenationOperators =
         {
             TablixOperator.ConcatAnd, TablixOperator.ConcatPlus
+        };
+
+        private readonly TablixOperator[] AggregateOperators =
+        {
+            TablixOperator.Count, TablixOperator.Sum
         };
 
         public dynamic ParseTablixExpressionString(
@@ -387,7 +391,7 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == TablixOperator.None || MonthNameParser.MonthNameRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var mnParser = new MonthNameParser(currentString, TablixOperator.Left, currentExpression, dataSetResults, values, dataSets);
+                var mnParser = new MonthNameParser(currentString, TablixOperator.MonthName, currentExpression, dataSetResults, values, dataSets);
                 mnParser.Parse();
                 proposedString = mnParser.GetProposedString();
             }
@@ -461,6 +465,15 @@ namespace ReportViewer.NET.Parsers
                 proposedString = countParser.GetProposedString();
             }
 
+            if (SumParser.SumRegex.IsMatch(currentString) &&
+                    (currentExpression.Operator == TablixOperator.None || SumParser.SumRegex.Match(currentString).Index < currentExpression.Index)
+                )
+            {
+                var sumParser = new SumParser(currentString, TablixOperator.Sum, currentExpression, dataSetResults, values, dataSets);
+                sumParser.Parse();
+                proposedString = sumParser.GetProposedString();
+            }
+                        
             if (FirstParser.FirstRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == TablixOperator.None || FirstParser.FirstRegex.Match(currentString).Index < currentExpression.Index)
                 )
@@ -507,11 +520,9 @@ namespace ReportViewer.NET.Parsers
                         newExpr.Value = $"{prev.Value}{next.Value}";
                     }
                     
-                    switch (next.Operator)
+                    if (AggregateOperators.Contains(next.Operator))
                     {
-                        case TablixOperator.Count:
-                            newExpr.Value = double.Parse(prev.Value?.ToString() ?? "");
-                            break;
+                        newExpr.Value = double.Parse(prev.Value?.ToString() ?? "");
                     }
 
                     this.ArithmeticOperatorAggregator(prev, next, newExpr);
@@ -705,6 +716,12 @@ namespace ReportViewer.NET.Parsers
             {
                 case TypeCode.DateTime:
                     finalExpression.Value = ((DateTime)finalExpression.Value).ToString(requestedFormat);
+                    return finalExpression;
+                case TypeCode.Int32:
+                    finalExpression.Value = int.Parse(finalExpression.Value.ToString()).ToString(requestedFormat);
+                    return finalExpression;
+                case TypeCode.Double:
+                    finalExpression.Value = double.Parse(finalExpression.Value.ToString()).ToString(requestedFormat);
                     return finalExpression;
             }
 
