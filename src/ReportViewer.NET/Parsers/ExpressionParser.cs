@@ -66,6 +66,7 @@ namespace ReportViewer.NET.Parsers
                 this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
                 this.SearchLogicalOperators(currentString, currentExpression, ref proposedString);
                 this.SearchTextFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
+                this.SearchDateTimeFunctions(currentString, currentExpression, dataSetResults, values, dataSets, ref proposedString);
 
                 if (FieldParser.FieldRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == TablixOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
@@ -373,9 +374,23 @@ namespace ReportViewer.NET.Parsers
             }
         }
 
-        private void SearchDateTimeFunctions()
+        private void SearchDateTimeFunctions(
+            string currentString,
+            TablixExpression currentExpression,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
+            IDictionary<string, object> values,
+            IEnumerable<DataObjects.DataSet> dataSets,
+            ref string proposedString
+        )
         {
-
+            if (MonthNameParser.MonthNameRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == TablixOperator.None || MonthNameParser.MonthNameRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var mnParser = new MonthNameParser(currentString, TablixOperator.Left, currentExpression, dataSetResults, values, dataSets);
+                mnParser.Parse();
+                proposedString = mnParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
