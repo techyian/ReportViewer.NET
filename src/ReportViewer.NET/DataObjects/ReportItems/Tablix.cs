@@ -366,6 +366,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     this.Tablix.GroupedResults = groupedResult;
 
+                    if (tablixMember.ToggleItem != null)
+                    {
+                        tablixMember.ToggleItemKey = string.Join('-', this.Tablix.GroupedResultsKeys);
+                    }
+
                     if (!this.Tablix.GroupedResultsKeys.Contains(groupedResult.Key.ToString().Replace(" ", "")))
                     {
                         this.Tablix.GroupedResultsKeys.Add(groupedResult.Key.ToString().Replace(" ", ""));
@@ -382,7 +387,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         {
                             currentRowIndx = this.ProcessResults(currentRowIndx, tablixMember, prevTablixMembers, groupedResult, tablixHierarchyStructure, pageBreak, sb, dsr);
                         }
-
+                        
                         foreach (var childMember in tablixMember.TablixMembers)
                         {                                                       
                             currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, pageBreak, tablixHierarchyStructure);
@@ -393,7 +398,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         currentRowIndx = this.ProcessResults(currentRowIndx, tablixMember, prevTablixMembers, groupedResult, tablixHierarchyStructure, pageBreak, sb, dsr);                        
                     }
 
-                    this.Tablix.GroupedResultsKeys.Remove(groupedResult.Key.ToString());
+                    this.Tablix.GroupedResultsKeys.Remove(groupedResult.Key.ToString().Replace(" ", ""));
 
                     prevTablixMembers = prevMembersBeforeGroup;
                     tablixHierarchyStructure.NewGroup();
@@ -415,6 +420,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
             else
             {
+                if (tablixMember.ToggleItem != null)
+                {
+                    tablixMember.ToggleItemKey = string.Join('-', this.Tablix.GroupedResultsKeys);
+                }
+
                 currentRowIndx = this.ProcessResults(currentRowIndx, tablixMember, prevTablixMembers, groupResults, tablixHierarchyStructure, pageBreak, sb, dsr);                
             }
                         
@@ -505,7 +515,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     }
                 }
                 
-                if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixHierarchyStructure.KeyGuid || ti == tablixMember.ToggleItem)))
+                if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey)))
                 {
                     tablixMember.Hidden = false;
                     sb.AppendLine(row.Build());
@@ -541,6 +551,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 foreach (var result in groupResults)
                 {
                     row.Values = result;
+                    row.KeyGuid = tablixHierarchyStructure.KeyGuid;
 
                     var dataPageBreak = "";
                     var dataGroupResultsCount = $"data-tablepages=\"{tablixHierarchyStructure.TotalPages}\"";
@@ -565,40 +576,64 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
                     // cell in the first column.
                     if (!tablixHierarchyStructure.InsertedKey)
-                    {
-                        sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start {dataPageBreak} {dataGroupResultsCount} {dataPageNumber} data-row-key=\"{newKey}\">");
-
-                        if (headersFoundInTablixMembers.Any())
+                    {                        
+                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey)))
                         {
-                            foreach (var header in headersFoundInTablixMembers)
+                            sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start {dataPageBreak} {dataGroupResultsCount} {dataPageNumber} data-row-key=\"{newKey}\">");
+
+                            if (headersFoundInTablixMembers.Any())
                             {
-                                header.Values = result;
-                                header.TablixHeader.IsKey = true;
-                                sb.AppendLine(header.TablixHeader.Build());
+                                foreach (var header in headersFoundInTablixMembers)
+                                {
+                                    header.Values = result;
+                                    header.TablixHeader.IsKey = true;
+                                    sb.AppendLine(header.TablixHeader.Build());
+                                }
                             }
-                        }
-                        else if (lastHeader != null)
-                        {
-                            lastHeader.Values = result;
-                            lastHeader.TablixHeader.IsKey = true;
-                            sb.AppendLine(lastHeader.TablixHeader.Build());
-                        }
+                            else if (lastHeader != null)
+                            {
+                                lastHeader.Values = result;
+                                lastHeader.TablixHeader.IsKey = true;
+                                sb.AppendLine(lastHeader.TablixHeader.Build());
+                            }
 
-                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixHierarchyStructure.KeyGuid || ti == tablixMember.ToggleItem)))
-                        {
-                            tablixMember.Hidden = false;
                             sb.AppendLine(row.Build());
-                        }
-                                                
-                        tablixHierarchyStructure.InsertedKey = true;
 
-                        sb.AppendLine("</tr>");
+                            sb.AppendLine("</tr>");
+                        }
+                        else
+                        {
+                            if (headersFoundInTablixMembers.Any())
+                            {
+                                sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start {dataPageBreak} {dataGroupResultsCount} {dataPageNumber} data-row-key=\"{newKey}\">");
+
+                                foreach (var header in headersFoundInTablixMembers)
+                                {
+                                    header.Values = result;
+                                    header.TablixHeader.IsKey = true;
+                                    sb.AppendLine(header.TablixHeader.Build());
+                                }
+
+                                sb.AppendLine("</tr>");
+                            }
+                            else if (lastHeader != null)
+                            {
+                                sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start {dataPageBreak} {dataGroupResultsCount} {dataPageNumber} data-row-key=\"{newKey}\">");
+
+                                lastHeader.Values = result;
+                                lastHeader.TablixHeader.IsKey = true;
+                                sb.AppendLine(lastHeader.TablixHeader.Build());
+
+                                sb.AppendLine("</tr>");
+                            }
+                        }                        
+                                                
+                        tablixHierarchyStructure.InsertedKey = true;                        
                     }
                     else
                     {
-                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixHierarchyStructure.KeyGuid || ti == tablixMember.ToggleItem)))
-                        {
-                            tablixMember.Hidden = false;
+                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey)))
+                        {                           
                             sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-row-key=\"{tablixHierarchyStructure.KeyGuid}\">");
                             sb.AppendLine(row.Build());
                             sb.AppendLine("</tr>");
@@ -687,6 +722,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public bool ContainsRepeatExpression { get; set; }
         public bool ContainsAggregatorExpression { get; set; }
         public dynamic Values { get; set; }
+        public string KeyGuid { get; set; }
         public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
 
         internal TablixRow(TablixBody body, XElement row)
@@ -902,6 +938,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string KeepWithGroup { get; set; }
         public bool Hidden { get; set; }
         public string ToggleItem { get; set; }
+        public string ToggleItemKey { get; set; }
         public bool RepeatOnNewPage { get; set; }
         public bool KeepTogether { get; set; }
         public bool IsGroupHasMember => this.TablixMemberGroup != null && this.TablixMembers.Any();

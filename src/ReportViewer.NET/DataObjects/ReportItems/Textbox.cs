@@ -94,7 +94,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name) ||
                     this.Report.HiddenTablixMembers.Any(r => r.ToggleItem == this.Name))
                 {
-                    sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
+                    if (this.Cell.Row != null)
+                    {
+                        sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Cell.Row.KeyGuid}\" data-toggler=\"true\">{_expandSvg}</button>");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
+                    }                                        
                 }
 
                 if (this.Paragraphs != null)
