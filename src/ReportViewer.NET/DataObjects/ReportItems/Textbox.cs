@@ -84,24 +84,30 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
             }
 
-            sb.AppendLine(!string.IsNullOrEmpty(this.ToggleItem) ? $"<div {this.Style.Build()} data-toggle=\"{this.ToggleItem}\">" : $"<div {this.Style.Build()}>");
-
-            if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name) ||
-                this.Report.HiddenTablixMembers.Any(r => r.ToggleItem == this.Name))
+            if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
             {
-                sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
-            }
+                this.Hidden = false;
+                this.Style.Hidden = false;
 
-            if (this.Paragraphs != null)
-            {
-                foreach (var p in this.Paragraphs)
+                sb.AppendLine(!string.IsNullOrEmpty(this.ToggleItem) ? $"<div {this.Style.Build()} data-toggle=\"{this.ToggleItem}\">" : $"<div {this.Style.Build()}>");
+
+                if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name) ||
+                    this.Report.HiddenTablixMembers.Any(r => r.ToggleItem == this.Name))
                 {
-                    sb.AppendLine(p.Build(this));
+                    sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
                 }
+
+                if (this.Paragraphs != null)
+                {
+                    foreach (var p in this.Paragraphs)
+                    {
+                        sb.AppendLine(p.Build(this));
+                    }
+                }
+
+                sb.AppendLine("</div>");
             }
-
-            sb.AppendLine("</div>");
-
+                        
             return sb.ToString();
         }
     }

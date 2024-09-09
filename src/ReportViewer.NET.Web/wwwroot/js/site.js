@@ -2,6 +2,8 @@
 
     var self = this;
 
+    self.toggleItemRequests = [];
+
     function constructReportParameters() {
         var eles = $('.report-viewer input');
         var dtoArr = [];
@@ -58,11 +60,14 @@
 
     self.postReportParameters = function () {
         var dtoArr = constructReportParameters();
+        var dto = {
+            Parameters: dtoArr            
+        };
 
         return $.ajax({
             method: 'POST',
             url: `/Home/ParameterViewer`,
-            data: JSON.stringify(dtoArr),
+            data: JSON.stringify(dto),
             contentType: 'application/json; charset=utf-8'
         }).done(function (data, textStatus, jqXHR) {
             $('.report-viewer').html(data.value);
@@ -108,36 +113,32 @@
 
     self.renderReport = function() {
         var dtoArr = constructReportParameters();
-
+        var dto = {
+            Parameters: dtoArr,
+            ToggleItemRequests: self.toggleItemRequests
+        };
+        
         return $.ajax({
             method: 'POST',
             url: `/Home/ReportViewer`,
-            data: JSON.stringify(dtoArr),
+            data: JSON.stringify(dto),
             contentType: 'application/json; charset=utf-8'
         }).done(function (data, textStatus, jqXHR) {
             $('.reportoutput-container').html(data.value);
 
             $('button[data-toggler="true"]').on('click', function () {
+                
                 var togglerName = $(this).data('toggler-name');
-                var closestRow = $(this).closest('tr');
-                var rowKey = $(closestRow).data('row-key');
-                var elementsToToggle = [];
+                var nameIdx = self.toggleItemRequests.indexOf(togglerName);
 
-                if (rowKey) {
-                    elementsToToggle = $('[data-row-key="' + rowKey + '"]').find('[data-toggle="' + togglerName + '"]');
+                if (nameIdx > -1) {
+                    self.toggleItemRequests.splice(nameIdx, 1);
                 }
                 else {
-                    elementsToToggle = $('[data-toggle="' + togglerName + '"]');
+                    self.toggleItemRequests.push(togglerName);
                 }
-                                
-                for (var i = 0; i < elementsToToggle.length; i++) {
-                    if ($(elementsToToggle[i]).is(":visible")) {
-                        $(elementsToToggle[i]).hide();
-                    }
-                    else {
-                        $(elementsToToggle[i]).show();
-                    }
-                }
+
+                self.renderReport();
             })
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error(errorThrown);

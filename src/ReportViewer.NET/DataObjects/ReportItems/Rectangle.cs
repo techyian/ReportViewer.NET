@@ -22,15 +22,21 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             var sb = new StringBuilder();
 
-            sb.AppendLine($"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\">");
-
-            foreach (var reportItem in this.ReportItems)
+            if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
             {
-                sb.AppendLine(reportItem.Build(this));
+                this.Hidden = false;
+                this.Style.Hidden = false;
+
+                sb.AppendLine($"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\">");
+
+                foreach (var reportItem in this.ReportItems)
+                {
+                    sb.AppendLine(reportItem.Build(this));
+                }
+
+                sb.AppendLine("</div>");
             }
-
-            sb.AppendLine("</div>");
-
+                                    
             return sb.ToString();
         }
     }

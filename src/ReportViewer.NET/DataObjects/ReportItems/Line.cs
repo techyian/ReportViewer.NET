@@ -11,7 +11,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         public override string Build(ReportItem parent)
         {
-            return $"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\"></div>";
+            if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
+            {
+                this.Hidden = false;
+                this.Style.Hidden = false;
+
+                return $"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\"></div>";
+            }
+
+            return string.Empty;
         }
     }
 }

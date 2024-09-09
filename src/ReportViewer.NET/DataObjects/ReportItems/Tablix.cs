@@ -76,10 +76,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     break;                
             }
 
-            sb.AppendLine($"<table {this.Style?.Build()} class=\"reportviewer-table\" data-toggle=\"{this.ToggleItem}\">");
-            sb.AppendLine(this.TablixBodyObj?.Build());
-            sb.AppendLine("</table>");
-
+            if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
+            {
+                this.Hidden = false;
+                this.Style.Hidden = false;
+                sb.AppendLine($"<table {this.Style?.Build()} class=\"reportviewer-table\" data-toggle=\"{this.ToggleItem}\">");
+                sb.AppendLine(this.TablixBodyObj?.Build());
+                sb.AppendLine("</table>");
+            }
+                        
             switch (this.PageBreak)
             {                
                 case PageBreak.StartAndEnd:
@@ -255,11 +260,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 rowIdx = this.ProcessTablixMembers(sb, null, null, this.Tablix.TablixRowHierarchy.TablixMembers[i], new List<TablixMember>(), rowIdx, PageBreak.None, tablixHierarchyStructure);
 
+                // Clear keys picked up from previous top level rows.
+                this.Tablix.GroupedResultsKeys.Clear();
+
                 // Need to reset grouped results, otherwise any aggregated results in the next member which needs to use non-grouped data will be incorrect.
                 if (this.Tablix.GroupedResults != null && !this.Tablix.Parents.Any(ri => ri.GetType() == typeof(Tablix)))
                 {
                     this.Tablix.GroupedResults = null;
-                    this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = null;
+                    this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = null;                    
                 }
             }
 
@@ -323,7 +331,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 if (this.Tablix.GroupedResults != null)
                 {
-                    this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = this.Tablix.GroupedResults.GroupBy(g => g[fieldName]).ToList();
+                    if (!this.Tablix.GroupedResultsKeys.Contains(this.Tablix.GroupedResults.Key.ToString().Replace(" ", "")))
+                    {
+                        this.Tablix.GroupedResultsKeys.Add(this.Tablix.GroupedResults.Key.ToString().Replace(" ", ""));
+                    }
+
+                    this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = this.Tablix.GroupedResults.GroupBy(g => g[fieldName]).ToList();                    
                 }
                 else
                 {
@@ -333,7 +346,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             else if (this.Tablix.GroupedResults != null && (this.Tablix.Parents.Any(ri => ri.GetType() == typeof(Tablix)) || prevTablixMembers.Any(tm => tm.TablixMemberGroup != null && tm.TablixMemberGroup.GroupExpression != null)))
             {
                 // Have we been provided with group results from further up the tree?                
-                this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = new List<IGrouping<object, IDictionary<string, object>>>() { this.Tablix.GroupedResults };
+                this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = new List<IGrouping<object, IDictionary<string, object>>>() { this.Tablix.GroupedResults };                                
             }
 
             if (tablixMember.TablixMemberGroup != null && pageBreak == PageBreak.None)
@@ -352,6 +365,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 foreach (var groupedResult in groupedResults)
                 {
                     this.Tablix.GroupedResults = groupedResult;
+
+                    if (!this.Tablix.GroupedResultsKeys.Contains(groupedResult.Key.ToString().Replace(" ", "")))
+                    {
+                        this.Tablix.GroupedResultsKeys.Add(groupedResult.Key.ToString().Replace(" ", ""));
+                    }
 
                     var before = currentRowIndx;
                     var prevMembersBeforeGroup = new List<TablixMember>(prevTablixMembers);
@@ -374,6 +392,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         currentRowIndx = this.ProcessResults(currentRowIndx, tablixMember, prevTablixMembers, groupedResult, tablixHierarchyStructure, pageBreak, sb, dsr);                        
                     }
+
+                    this.Tablix.GroupedResultsKeys.Remove(groupedResult.Key.ToString());
 
                     prevTablixMembers = prevMembersBeforeGroup;
                     tablixHierarchyStructure.NewGroup();
@@ -420,7 +440,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
 
             var row = this.TablixRows[currentRowIndx];
-            var newKey = Guid.NewGuid().ToString().Split('-')[0];
+            var newKey = this.Tablix.GroupedResultsKeys.Any() ? string.Join('-', this.Tablix.GroupedResultsKeys) : Guid.NewGuid().ToString().Split('-')[0];
 
             row.GroupedResults = groupResults;
 
@@ -485,8 +505,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     }
                 }
                 
-                if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.RequestedVisible.Contains(tablixMember.Id)))
+                if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixHierarchyStructure.KeyGuid || ti == tablixMember.ToggleItem)))
                 {
+                    tablixMember.Hidden = false;
                     sb.AppendLine(row.Build());
                 }
                                 
@@ -512,6 +533,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             if (groupResults != null)
             {
+                tablixHierarchyStructure.KeyGuid = newKey;
+
                 var groupRowCount = this.FindAllSubMembers(lastGroup, 0);
                                 
                 // We are displaying grouped results.                                
@@ -539,16 +562,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             break;
                     }
 
-                    sb.AppendLine(
-                        !tablixHierarchyStructure.InsertedKey ?
-                        $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start {dataPageBreak} {dataGroupResultsCount} {dataPageNumber} data-row-key=\"{newKey}\">" :
-                        $"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-row-key=\"{tablixHierarchyStructure.KeyGuid}\">"
-                    );
-
                     // With grouping, we only want to show the resolved expression value on the first row, all subsequent rows within this group will show an empty 
                     // cell in the first column.
                     if (!tablixHierarchyStructure.InsertedKey)
                     {
+                        sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-rowspan-start {dataPageBreak} {dataGroupResultsCount} {dataPageNumber} data-row-key=\"{newKey}\">");
+
                         if (headersFoundInTablixMembers.Any())
                         {
                             foreach (var header in headersFoundInTablixMembers)
@@ -565,22 +584,26 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             sb.AppendLine(lastHeader.TablixHeader.Build());
                         }
 
-                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.RequestedVisible.Contains(tablixMember.Id)))
+                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixHierarchyStructure.KeyGuid || ti == tablixMember.ToggleItem)))
                         {
+                            tablixMember.Hidden = false;
                             sb.AppendLine(row.Build());
                         }
                                                 
                         tablixHierarchyStructure.InsertedKey = true;
-                        tablixHierarchyStructure.KeyGuid = newKey;
+
+                        sb.AppendLine("</tr>");
                     }
                     else
                     {
-                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.RequestedVisible.Contains(tablixMember.Id)))
+                        if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixHierarchyStructure.KeyGuid || ti == tablixMember.ToggleItem)))
                         {
+                            tablixMember.Hidden = false;
+                            sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"true\" data-row-key=\"{tablixHierarchyStructure.KeyGuid}\">");
                             sb.AppendLine(row.Build());
+                            sb.AppendLine("</tr>");
                         }                                                
-                    }
-                    sb.AppendLine("</tr>");
+                    }                    
 
                     // I don't know if this is right or just plain hacky. If the current TablixMember is a group and has children then we know that this instance
                     // just needs to be rendered once. However, if the TablixMember is a group and has a header that should be repeated then we should loop over the results.
@@ -763,7 +786,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 continue;
                             }
 
-                            sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Body.Tablix.Report.RequestedVisible).GetAwaiter().GetResult().Value);
+                            sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Body.Tablix.Report.ToggleItemRequests).GetAwaiter().GetResult().Value);
                         }                        
                         else
                         {

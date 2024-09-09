@@ -22,6 +22,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public DataSetReference DataSetReference { get; set; }
         public IEnumerable<DataSet> DataSets { get; set; }
         public List<ReportItem> Parents { get; set; } = new List<ReportItem>();
+        public List<string> GroupedResultsKeys { get; set; } = new List<string>();
 
         public ReportItem(XElement element, ReportRDL report, ReportItem parent)
         {

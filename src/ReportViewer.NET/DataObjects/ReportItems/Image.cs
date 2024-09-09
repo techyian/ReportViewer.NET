@@ -58,29 +58,35 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     align = "justify-content: end;";
                 }
+                                
+                if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
+                {
+                    if (isLastItem)
+                    {
+                        sb.AppendLine($"<div style=\"display:inline-flex;width:{this.ReportRow.RowWidth - this.Left}mm;{align}\">");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"<div style=\"display:inline-flex;width:auto;{align}\">");
+                    }
 
-                if (isLastItem)
-                {
-                    sb.AppendLine($"<div style=\"display:inline-flex;width:{this.ReportRow.RowWidth - this.Left}mm;{align}\">");
-                }
-                else
-                {
-                    sb.AppendLine($"<div style=\"display:inline-flex;width:auto;{align}\">");
+                    this.Hidden = false;
+                    this.Style.Hidden = false;
+
+                    switch (this.EmbeddedImage.MimeType)
+                    {
+                        // TODO: Handle other mime types.
+                        case "image/jpeg":
+                            sb.AppendLine($"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />");
+                            break;
+                        case "image/png":
+                            sb.AppendLine($"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />");
+                            break;
+                    }
+
+                    sb.AppendLine("</div>");
                 }
                 
-                switch (this.EmbeddedImage.MimeType)
-                {
-                    // TODO: Handle other mime types.
-                    case "image/jpeg":
-                        sb.AppendLine($"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />");
-                        break;
-                    case "image/png":
-                        sb.AppendLine($"<img class=\"img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />");
-                        break;
-                }
-
-                sb.AppendLine("</div>");
-
                 return sb.ToString();
             }
 

@@ -73,10 +73,10 @@ namespace ReportViewer.NET
             return new HtmlString(sb.ToString());
         }
                 
-        public async Task<HtmlString> PublishReportOutput(ReportRDL report, IEnumerable<ReportParameter> userProvidedParameters, IEnumerable<string> requestedVisible)
+        public async Task<HtmlString> PublishReportOutput(ReportRDL report, IEnumerable<ReportParameter> userProvidedParameters, IEnumerable<string> toggleItemRequests)
         {
             report.UserProvidedParameters = userProvidedParameters.ToList();
-            report.RequestedVisible = requestedVisible.ToList();
+            report.ToggleItemRequests = toggleItemRequests.ToList();
 
             var reportBodyItems = report.ReportBodyItems;
             var reportFooterItems = report.ReportFooterItems;
@@ -119,7 +119,7 @@ namespace ReportViewer.NET
                         // The subreport should be registered before the parent.
                         var sr = (SubReport)reportItem;
                         sb.AppendLine("<div class=\"sub-report-start\">");
-                        sb.AppendLine((await this.PublishReportOutput(sr.GetSubReportRDL(), userProvidedParameters, requestedVisible)).ToString());
+                        sb.AppendLine((await this.PublishReportOutput(sr.GetSubReportRDL(), userProvidedParameters, toggleItemRequests)).ToString());
                         sb.AppendLine("</div>");
                     }
                     else
