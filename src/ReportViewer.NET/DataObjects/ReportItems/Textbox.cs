@@ -84,8 +84,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
             }
 
-            if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
-            {
+            if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem) || (this.Report.ToggleItemRequests.Contains(this.GroupedResults?.Key))))
+            {           
                 this.Hidden = false;
                 this.Style.Hidden = false;
 
@@ -94,12 +94,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 if (this.Report.HiddenItems.Any(r => r.ToggleItem == this.Name) ||
                     this.Report.HiddenTablixMembers.Any(r => r.ToggleItem == this.Name))
                 {
-                    if (this.Cell.Row != null)
+                    if (this.Cell != null)
                     {
-                        sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Cell.Row.KeyGuid}\" data-toggler=\"true\">{_expandSvg}</button>");
-                    }
+                        if (this.Cell.Row != null)
+                        {
+                            sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Cell.Row.KeyGuid}\" data-toggler=\"true\">{_expandSvg}</button>");
+                        }
+                        else if (this.Cell.Header != null)
+                        {
+                            sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Cell.Header.KeyGuid}\" data-toggler=\"true\">{_expandSvg}</button>");
+                        }
+                    }                                        
                     else
-                    {
+                    {                        
                         sb.AppendLine($"<button class=\"reportitem-expand\" data-toggler-name=\"{this.Name}\" data-toggler=\"true\">{_expandSvg}</button>");
                     }                                        
                 }
