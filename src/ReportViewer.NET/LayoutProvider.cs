@@ -150,6 +150,16 @@ namespace ReportViewer.NET
         {
             var currentRow = reportRows.Last();
 
+            if (reportItem is Rectangle)
+            {
+                var rect = (Rectangle)reportItem;
+
+                if (rect.ReportItems.Any())
+                {
+                    rect.ReportItems = rect.ReportItems.Order(new ReportItemComparer()).ToList();
+                }
+            }
+
             if (currentRow.RowHeight == 0)
             {                
                 currentRow.RowItems.Add(reportItem);
@@ -170,7 +180,7 @@ namespace ReportViewer.NET
 
                     newRow.RowItems.Add(reportItem);
                     reportRows.Add(newRow);
-                    reportItem.ReportRow = newRow;
+                    reportItem.ReportRow = newRow;                                        
                 }
                 else
                 {
@@ -189,10 +199,15 @@ namespace ReportViewer.NET
                 }
             }
 
+            await this.ProcessDataSetResultsForRows(report, reportItem, userProvidedParameters);                        
+        }
+
+        private async Task ProcessDataSetResultsForRows(ReportRDL report, ReportItem reportItem, IEnumerable<ReportParameter> userProvidedParameters)
+        {
             if (reportItem is Tablix)
             {
                 var tablix = (Tablix)reportItem;
-                                
+
                 if (tablix.DataSetReference != null)
                 {
                     // We potentially have calculated text which needs resolving from the Data Set.
@@ -212,10 +227,20 @@ namespace ReportViewer.NET
                     var ds = report.DataSets.Where(ds => ds.Name == dsName).FirstOrDefault();
 
                     if (!string.IsNullOrEmpty(dsName) && ds != null && ds.DataSetResults == null)
-                    {                        
+                    {
                         ds.DataSetResults = (await this.RunDataSetQuery(report, ds, report.ReportParameters, userProvidedParameters)).ToList();
                     }
-                }                                
+                }
+            }
+
+            if (reportItem is Rectangle)
+            {
+                var rect = (Rectangle)reportItem;
+
+                foreach (var child in rect.ReportItems)
+                {
+                    await this.ProcessDataSetResultsForRows(report, child, userProvidedParameters);
+                }
             }
         }
 

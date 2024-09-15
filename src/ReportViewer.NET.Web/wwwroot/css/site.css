@@ -98,7 +98,7 @@ body {
 }
 
 .report-row td div:not(.report-row) {
-    height: 100%;
+    min-height: 100%;
 }
 
 .reportitem-expand {
@@ -112,6 +112,10 @@ body {
 .reportviewer-table tbody td {
     padding: 0;
     height: 1px; /* Fix for div height in table cell */
+}
+
+.report-rectangle {
+    flex-wrap: wrap;
 }
 
 .custom-checkbox .custom-control-label::before {

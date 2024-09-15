@@ -389,7 +389,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         }
                         
                         foreach (var childMember in tablixMember.TablixMembers)
-                        {                                                       
+                        {
                             currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, pageBreak, tablixHierarchyStructure);
                         }                                                
                     }
@@ -446,7 +446,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 // The TablixRowHierarchy structure does not seem to be robust and tally up with the number of rows expected, either that or my understanding 
                 // is wrong. For now putting this in to make sure it doesn't cry.
-                return currentRowIndx;
+                currentRowIndx--;
             }
 
             var row = this.TablixRows[currentRowIndx];
@@ -884,7 +884,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             foreach (var member in tablixMemberElements)
             {
-                this.TablixMembers.Add(new TablixMember(member, this));
+                this.TablixMembers.Add(new TablixMember(member, this, tablixMemberElements.Count(), true));
             }
         }
 
@@ -897,7 +897,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             foreach (var member in tablixMemberElements)
             {
-                this.TablixMembers.Add(new TablixMember(member, this));
+                this.TablixMembers.Add(new TablixMember(member, this, tablixMemberElements.Count(), true));
             }
         }
     }
@@ -921,7 +921,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
         public bool ContainsReportItemWithSubGroup { get; set; }
 
-        public TablixMember(XElement element, TablixHierarchy tablixHierarchy)
+        public TablixMember(XElement element, TablixHierarchy tablixHierarchy, int outerTablixMembersCount, bool isRootMember)
         {
             this.Id = Guid.NewGuid().ToString().Split('-')[0];
             this.TablixHierarchy = tablixHierarchy;
@@ -973,13 +973,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     if (!member.IsEmpty)
                     {
-                        membersToProcess.Add(new TablixMember(member, this.TablixHierarchy));
-                    }                                        
+                        membersToProcess.Add(new TablixMember(member, this.TablixHierarchy, tablixMemberElements.Count(), false));
+                    }
                 }
 
-                if (membersToProcess.Any(tm => tm.TablixMemberGroup != null))
+                if (membersToProcess.Any(tm => tm.TablixMemberGroup != null) && 
+                    ((outerTablixMembersCount > 1 && isRootMember) || (!isRootMember)))
                 {
                     // Merge details from the <TablixMember> elements at same level into the tablix group member.
+                    // Also check whether our parent is a lonely root group member, if they are then process all the immediate children as separate rows.
                     var configsToMerge = membersToProcess.Where(tm => tm.TablixMemberGroup == null);
                     var groupMember = membersToProcess.Where(tm => tm.TablixMemberGroup != null).First();
 
@@ -1000,7 +1002,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         this.TablixMembers.Add(member);
                     }
-                }
+                }               
             }    
                         
             if (this.Hidden)

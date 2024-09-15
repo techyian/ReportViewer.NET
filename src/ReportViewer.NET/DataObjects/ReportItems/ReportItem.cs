@@ -156,10 +156,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 return;
             }
                 
-            child.DataSetName = parent.DataSetName;
-            child.DataSetReference = parent.DataSetReference;
-            child.DataSets = parent.DataSets;
-            child.GroupedResults = parent.GroupedResults;
+            child.DataSetName = parent.DataSetName != null ? parent.DataSetName : child.DataSetName;
+            child.DataSetReference = parent.DataSetReference != null ? parent.DataSetReference : child.DataSetReference;
+            child.DataSets = parent.DataSets != null ? parent.DataSets : child.DataSets;
+            child.GroupedResults = parent.GroupedResults != null ? parent.GroupedResults : child.GroupedResults;
         }
 
         public abstract string Build(ReportItem parent);
