@@ -771,5 +771,15 @@ namespace ReportViewer.NET.Parsers
 
             return sb.ToString();
         }
+
+        public static bool ContainsAggregatorExpression(string value)
+        {
+            return CountParser.CountRegex.IsMatch(value) || SumParser.SumRegex.IsMatch(value);
+        }
+
+        public static bool ContainsRepeatExpression(string value)
+        {
+            return !ContainsAggregatorExpression(value) && FieldParser.FieldRegex.IsMatch(value);
+        }
     }
 }
