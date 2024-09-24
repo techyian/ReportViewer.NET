@@ -32,17 +32,17 @@ namespace ReportViewer.NET.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ParameterViewer([FromQuery] string rdl, [FromBody] IEnumerable<ReportParameter> userProvidedParameters)
+        public async Task<IActionResult> ParameterViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
         {
-            var paramHtml = await _reportViewer.PublishReportParameters(rdl, userProvidedParameters);
+            var paramHtml = await _reportViewer.PublishReportParameters(rdl, userProvidedParameters.Parameters);
 
             return Ok(paramHtml);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] IEnumerable<ReportParameter> userProvidedParameters, [FromBody] IEnumerable<string> requestedVisible)
-        {
-            var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters, requestedVisible);
+        public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
+        {            
+            var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters.Parameters, userProvidedParameters.ToggleItemRequests);
 
             return Ok(reportHtml);
         }
