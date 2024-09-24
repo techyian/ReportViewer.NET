@@ -32,39 +32,39 @@ namespace ReportViewer.NET.Comparers
             if (yDic == null)
                 throw new ArgumentNullException(nameof(yDic));
 
-            if (!xDic.ContainsKey(_fieldName) || xDic[_fieldName] == null)
+            if (!xDic.TryGetValue(_fieldName, out var x)) 
             {
                 return 1;
             }
 
-            if (!yDic.ContainsKey(_fieldName) || yDic[_fieldName] == null)
+            if (!yDic.TryGetValue(_fieldName, out var y))
             {
                 return -1;
             }
 
-            Type fieldType = xDic[_fieldName].GetType();
+            Type fieldType = x.GetType();
 
             switch (Type.GetTypeCode(fieldType))
             {
                 case TypeCode.String:
-                    return string.Compare(xDic[_fieldName].ToString(), yDic[_fieldName].ToString());
+                    return string.Compare(x.ToString(), y.ToString());
                 case TypeCode.Int32:
-                    if ((int)xDic[_fieldName] < (int)yDic[_fieldName])
+                    if ((int)x < (int)y)
                     {
                         return -1;
                     }
-                    if ((int)xDic[_fieldName] == (int)yDic[_fieldName])
+                    if ((int)x == (int)y)
                     {
                         return 0;
                     }
-                    if ((int)xDic[_fieldName] > (int)yDic[_fieldName])
+                    if ((int)x > (int)y)
                     {
                         return 1;
                     }
 
                     return 0;
                 case TypeCode.DateTime:
-                    return ((DateTime)xDic[_fieldName]).CompareTo((DateTime)yDic[_fieldName]);
+                    return ((DateTime)x).CompareTo((DateTime)y);
             }
 
             return 0;

@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using ReportViewer.NET.DataObjects.ReportItems;
 using ReportViewer.NET.Comparers;
 using ReportViewer.NET.Parsers;
-using ReportViewer.NET.Extensions;
 
 namespace ReportViewer.NET
 {
@@ -318,13 +317,8 @@ namespace ReportViewer.NET
 
                 if (invalidParameter)
                 {
-                    // TODO: Report this to the user.                    
-                    foreach (IDictionary<string, object> dic in results)
-                    {
-                        dic.ChangeDapperKeys();
-                    }
-
-                    return results.Cast<IDictionary<string, object>>();
+                    // TODO: Report this to the user.
+                    return this.TransformDapperKeys(results);
                 }
 
                 // Run query and use field parameters.
@@ -355,12 +349,26 @@ namespace ReportViewer.NET
                 }
             }
 
+            return this.TransformDapperKeys(results);
+        }
+
+        private List<IDictionary<string, object>> TransformDapperKeys(IEnumerable<dynamic> results)
+        {
+            var dicList = new List<IDictionary<string, object>>();
+
             foreach (IDictionary<string, object> dic in results)
             {
-                dic.ChangeDapperKeys();
+                var dict = new Dictionary<string, object>();
+
+                foreach (KeyValuePair<string, object> kvp in dic)
+                {
+                    dict.Add(kvp.Key.Replace(' ', '_').ToLower(), kvp.Value);
+                }
+
+                dicList.Add(dict);
             }
 
-            return results.Cast<IDictionary<string, object>>();
+            return dicList;
         }
     }
 }

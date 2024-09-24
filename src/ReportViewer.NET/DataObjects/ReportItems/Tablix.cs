@@ -436,8 +436,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         {
             var dsr = this.Tablix.DataSetReference.DataSet.DataSetResults;
 
-            this.Tablix.DataSetReference.DataSet.DataSetResults = this.Sort(tablixMember, this.Tablix.DataSetReference.DataSet.DataSetResults).ToList();
-
+            if (this.Tablix.GroupedResults == null)
+            {
+                // Let's not sort the initial DataSetResults again as we're now grouping which will be sorted in the 
+                // Group method below.
+                this.Tablix.DataSetReference.DataSet.DataSetResults = this.Sort(tablixMember, this.Tablix.DataSetReference.DataSet.DataSetResults).ToList();
+            }
+            
             var groupedDs = this.Group(tablixMember, prevTablixMembers);
 
             if (groupedDs != null)
@@ -896,7 +901,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         private IEnumerable<IDictionary<string, object>> Sort(TablixMember tablixMember, IEnumerable<IDictionary<string, object>> dsr)
         {
-            if (tablixMember.TablixMemberSort != null && dsr != null)
+            if (tablixMember.TablixMemberSort != null && dsr != null && !tablixMember.TablixMemberSort.Sorted)
             {                
                 // Order dataset results by expression.                    
                 var fieldsIdx = tablixMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
@@ -906,6 +911,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 if (dsr != null)
                 {
+                    tablixMember.TablixMemberSort.Sorted = true;
+
                     return this.SortTablixMember(tablixMember, baseComparer, dsr.Order(baseComparer)).ToList();
                 }
             }
@@ -956,7 +963,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
                 else
                 {
-                    return this.Tablix.DataSetReference.DataSet.DataSetResults.GroupBy(g => g[fieldName]).ToList();
+                    return this.Sort(tablixMember, this.Tablix.DataSetReference.DataSet.DataSetResults).GroupBy(g => g[fieldName]).ToList();
                 }
             }
             else if (this.Tablix.GroupedResults != null && (this.Tablix.Parents.Any(ri => ri.GetType() == typeof(Tablix)) || prevTablixMembers.Any(tm => tm.TablixMemberGroup != null && tm.TablixMemberGroup.GroupExpression != null)))
@@ -1529,6 +1536,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {        
         public string SortExpression { get; set; }
         public TablixMember TablixMember { get; set; }
+        public bool Sorted { get; set; }
 
         public TablixMemberSort(TablixMember tablixMember, XElement element)
         {
