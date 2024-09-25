@@ -10,12 +10,12 @@ namespace ReportViewer.NET.Parsers
     internal class ExpressionParser
     {
         private readonly TablixOperator[] ArithmeticOperators = { TablixOperator.Add, TablixOperator.Subtract, TablixOperator.Multiply, TablixOperator.Divide };
-        
+
         private readonly TablixOperator[] ComparisonOperators = {
             TablixOperator.LessThan, TablixOperator.LessThanEqualTo, TablixOperator.GreaterThan, TablixOperator.GreaterThanEqualTo, TablixOperator.Equals,
             TablixOperator.NotEqual, TablixOperator.Like, TablixOperator.Is
         };
-        
+
         private readonly TablixOperator[] LogicalOperators =
         {
             TablixOperator.And, TablixOperator.Not, TablixOperator.Or, TablixOperator.Xor,
@@ -54,7 +54,7 @@ namespace ReportViewer.NET.Parsers
             DataObjects.DataSet activeDataset
         )
         {
-            string currentString = tablixText.TrimStart('=');
+            string currentString = tablixText.TrimStart('=').TrimStart();
             List<TablixExpression> expressions = new List<TablixExpression>();
 
             // TODO: Parse built in expressions, e.g. Globals.
@@ -144,7 +144,7 @@ namespace ReportViewer.NET.Parsers
                             expressions.Add(currentExpression);
 
                             break;
-                        }                        
+                        }
                     }
                 }
 
@@ -315,8 +315,8 @@ namespace ReportViewer.NET.Parsers
                 proposedString = currentString.Substring(idx + 4, currentString.Length - idx - 4).TrimStart();
             }
 
-            if (currentString.IndexOf("Is") > -1 && 
-                !WithinStringLiteral(currentString, currentString.IndexOf("Is")) &&                 
+            if (currentString.IndexOf("Is") > -1 &&
+                !WithinStringLiteral(currentString, currentString.IndexOf("Is")) &&
                 ((currentString.IndexOf("IsNothing") > -1 && currentString.IndexOf("Is") < currentString.IndexOf("IsNothing")) || currentString.IndexOf("IsNothing") == -1) &&
                 (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Is") < currentExpression.Index)
             )
@@ -334,7 +334,7 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             ref string proposedString
         )
-        {            
+        {
         }
 
         private void SearchLogicalOperators(
@@ -480,7 +480,7 @@ namespace ReportViewer.NET.Parsers
                 sumParser.Parse();
                 proposedString = sumParser.GetProposedString();
             }
-                        
+
             if (FirstParser.FirstRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == TablixOperator.None || FirstParser.FirstRegex.Match(currentString).Index < currentExpression.Index)
                 )
@@ -511,9 +511,9 @@ namespace ReportViewer.NET.Parsers
             // Last logical operator to be checked on boolean returning operator/function.
             TablixOperator lastLogicalOperator = TablixOperator.None;
             bool lastLogicalOperatorValue = false;
-                        
+
             if (expressions.Count() > 0)
-            {                
+            {
                 var final = expressions.Aggregate((prev, next) =>
                 {
                     var newExpr = new TablixExpression();
@@ -526,7 +526,7 @@ namespace ReportViewer.NET.Parsers
                         newExpr.ResolvedType = typeof(string);
                         newExpr.Value = $"{prev.Value}{next.Value}";
                     }
-                    
+
                     if (AggregateOperators.Contains(next.Operator))
                     {
                         newExpr.Value = double.Parse(prev.Value?.ToString() ?? "");
@@ -589,11 +589,11 @@ namespace ReportViewer.NET.Parsers
                 newExpr.Operator = next.Operator;
                 newExpr.Value = prev.Value;
             }
-                        
+
             switch (prev.Operator)
             {
                 case TablixOperator.LessThan:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") < double.Parse(next.Value?.ToString() ?? "");                    
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") < double.Parse(next.Value?.ToString() ?? "");
                     break;
                 case TablixOperator.LessThanEqualTo:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") <= double.Parse(next.Value?.ToString() ?? "");
@@ -701,14 +701,14 @@ namespace ReportViewer.NET.Parsers
             {
                 case TablixOperator.And:
                 case TablixOperator.AndAlso:
-                    return valueA && valueB;                    
+                    return valueA && valueB;
                 case TablixOperator.Not:
-                    return !valueA;                    
+                    return !valueA;
                 case TablixOperator.Or:
                 case TablixOperator.OrElse:
-                    return valueA || valueB;                    
+                    return valueA || valueB;
                 case TablixOperator.Xor:
-                    return valueA ^ valueB;                
+                    return valueA ^ valueB;
             }
 
             return valueA;
@@ -766,7 +766,7 @@ namespace ReportViewer.NET.Parsers
             var sb = new StringBuilder();
 
             for (var i = 0; i < currentString.Length; i++)
-            {                
+            {
                 sb.Append(currentString[i]);
 
                 if (i + 1 < currentString.Length && currentString[i + 1] == '"')
