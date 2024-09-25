@@ -322,7 +322,7 @@ namespace ReportViewer.NET
                 }
 
                 // Run query and use field parameters.
-                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName)?.ConnectionString;
+                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName || ds.DataSourceReference == dsQuery.DataSourceReference)?.ConnectionString;
 
                 if (!string.IsNullOrEmpty(connString))
                 {
@@ -335,7 +335,7 @@ namespace ReportViewer.NET
             else
             {
                 // We can run the query as no user fields are required.
-                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName)?.ConnectionString;
+                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName || ds.DataSourceReference == dsQuery.DataSourceReference)?.ConnectionString;
 
                 using (var conn = new SqlConnection(connString))
                 {

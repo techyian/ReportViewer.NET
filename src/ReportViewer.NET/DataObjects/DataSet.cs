@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ReportViewer.NET.DataObjects
 {
@@ -17,6 +16,7 @@ namespace ReportViewer.NET.DataObjects
     public class DataSetQuery
     {
         public string DataSourceName { get; set; }
+        public string DataSourceReference { get; set; }
         public List<DataSetQueryParameter> QueryParameters { get; set; }
         public string CommandType { get; set; }
         public string CommandText { get; set; }

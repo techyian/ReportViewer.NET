@@ -18,11 +18,13 @@ namespace ReportViewer.NET
 
         private List<ReportRDL> _reportRdls;
         private List<DataSource> _dataSources;
+        private List<DataSet> _sharedDataSets;
         
         public ReportHandler()
         {
             _reportRdls = new List<ReportRDL>();
             _dataSources = new List<DataSource>();
+            _sharedDataSets = new List<DataSet>();
         }
 
         public void RegisterRdlFromFile(string rdlName, string filePath)
@@ -61,9 +63,32 @@ namespace ReportViewer.NET
             }
         }
 
-        public void RegisterDataSource(string name, string connectionString)
+        public void RegisterDataSource(string name, string connectionString, string datasourceReference = null)
         {            
-            _dataSources.Add(new DataSource(name, connectionString));
+            _dataSources.Add(new DataSource(name, connectionString, datasourceReference));
+        }
+
+        public void RegisterSharedDataSet(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException("Requested file path does not exist.");
+            }
+
+            using (var sr = new StreamReader(filePath))
+            {
+                var xml = XDocument.Load(sr);
+
+                XPathNavigator xpn = xml.CreateNavigator();
+                xpn.MoveToFollowing(XPathNodeType.Element);
+                IDictionary<string, string> namespaces = xpn.GetNamespacesInScope(XmlNamespaceScope.All);
+
+                XNamespace ns = namespaces[""];
+                var datasetElements = xml.Root.Elements(ns + "DataSet");
+                var dataSets = this.ProcessDataSets(xml.Root, datasetElements, ns);
+
+                _sharedDataSets.AddRange(dataSets);
+            }
         }
 
         public Task<HtmlString> PublishReportParameters(string report, IEnumerable<ReportParameter> userProvidedParameters)
@@ -124,6 +149,9 @@ namespace ReportViewer.NET
 
             reportRdl.DataSources = _dataSources;
             reportRdl.DataSets = dataSets;
+
+            reportRdl.DataSets.AddRange(_sharedDataSets);
+
             reportRdl.ReportParameters = reportParameters;
             reportRdl.ReportBodyItems = reportBodyItems;
             reportRdl.ReportFooterItems = reportFooterItems;
@@ -155,6 +183,19 @@ namespace ReportViewer.NET
             {
                 var datasetObj = new DataSet();
 
+                var sds = ds.Element(ns + "SharedDataSet")?.Element(ns + "SharedDataSetReference")?.Value;
+
+                // Do we reference a shared dataset?
+                if (!string.IsNullOrEmpty(sds))
+                {
+                    if (!_sharedDataSets.Any(ds => ds.Name == sds))
+                    {
+                        throw new NullReferenceException("Required shared dataset not loaded.");
+                    }
+
+                    datasets.Add(_sharedDataSets.First(sds => sds.Name == sds.Name));
+                }
+
                 datasetObj.Name = ds.Attribute("Name").Value;
 
                 // Process Query
@@ -181,6 +222,7 @@ namespace ReportViewer.NET
                     }
 
                     datasetObj.Query.DataSourceName = queryElement.Element(ns + "DataSourceName")?.Value;
+                    datasetObj.Query.DataSourceReference = queryElement.Element(ns + "DataSourceReference")?.Value;
                     datasetObj.Query.CommandText = queryElement.Element(ns + "CommandText")?.Value;
                     datasetObj.Query.CommandType = queryElement.Element(ns + "CommandType")?.Value;
                 }
