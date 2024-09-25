@@ -142,6 +142,26 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             reportItems.Add(new Rectangle(r, report, datasets, parent));
                         }
                     }
+
+                    var imageElements = ri.Elements(report.Namespace + "Image");
+
+                    if (imageElements != null)
+                    {
+                        foreach (var img in imageElements)
+                        {
+                            reportItems.Add(new Image(img, report, parent));
+                        }
+                    }
+
+                    var lineElements = ri.Elements(report.Namespace + "Line");
+
+                    if (lineElements != null)
+                    {
+                        foreach (var line in lineElements)
+                        {
+                            reportItems.Add(new Line(line, report, parent));
+                        }
+                    }
                 }
             }
 

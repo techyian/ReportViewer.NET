@@ -34,6 +34,7 @@ namespace ReportViewer.NET.DataObjects
         public string DataField { get; set; }
         public Type? TypeName { get; set; }        
         public string Label { get; set; }
+        public string Value { get; set; }
     }
 
    
