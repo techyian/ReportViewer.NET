@@ -966,10 +966,18 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     return this.Sort(tablixMember, this.Tablix.DataSetReference.DataSet.DataSetResults).GroupBy(g => g[fieldName]).ToList();
                 }
             }
-            else if (this.Tablix.GroupedResults != null && (this.Tablix.Parents.Any(ri => ri.GetType() == typeof(Tablix)) || prevTablixMembers.Any(tm => tm.TablixMemberGroup != null && tm.TablixMemberGroup.GroupExpression != null)))
+            else if (this.Tablix.Parents.Any(ri => ri.GetType() == typeof(Tablix)) && !prevTablixMembers.Any(tm => tm.TablixMemberGroup != null && tm.TablixMemberGroup.GroupExpression != null))
             {
-                // Have we been provided with group results from further up the tree?                
-                return new List<IGrouping<object, IDictionary<string, object>>>() { this.SortGroup(tablixMember, this.Tablix.GroupedResults) };
+                // Reset grouped results to be that of parent tablix (if applicable) if we're not within a group.
+                var lastTablix = this.Tablix.Parents.Last(ri => ri.GetType() == typeof(Tablix));
+
+                if (lastTablix.GroupedResults != null)
+                {
+                    this.Tablix.GroupedResults = lastTablix.GroupedResults;
+
+                    // Have we been provided with group results from further up the tree?                
+                    return new List<IGrouping<object, IDictionary<string, object>>>() { this.SortGroup(tablixMember, this.Tablix.GroupedResults) };
+                }
             }
 
             return null;
@@ -1189,7 +1197,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         {
                             var expressionParser = new ExpressionParser();
                             var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                            var parsedValue = expressionParser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, null);
+                            var parsedValue = expressionParser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, this.Body.Tablix.DataSetReference?.DataSet, null);
 
                             if (parsedValue != null)
                             {

@@ -112,12 +112,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         private string BuildDatabaseImage(ReportItem parent)
         {
             var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
-            var parsedValue = _expressionParser.ParseTablixExpressionString(this.Value, dataSetResults, null, parent?.DataSets, null);
+            var parsedValue = _expressionParser.ParseTablixExpressionString(this.Value, dataSetResults, null, parent?.DataSets, parent?.DataSetReference?.DataSet, null);
             var b64 = string.Empty;
 
+            // TODO: Will this ever not be a byte[]?
             if (parsedValue is byte[])
             {
-                b64 = Convert.ToBase64String(parsedValue);
+                b64 = Convert.ToBase64String((byte[])parsedValue);
             }
                         
             switch (this.MIMEType)

@@ -69,18 +69,18 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     if (this.Cell.Row != null)
                     {
                         var dataSetResults = this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColorExpressionValue = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Row.Values, null, null);                                                
+                        this.Style.BackgroundColorExpressionValue = (expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Row.Values, null, this.Cell.Row.Body.Tablix.DataSetReference?.DataSet, null)).ToString();
                     }
                     else if (this.Cell.Header != null)
                     {
                         var dataSetResults = this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColorExpressionValue = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Header.TablixMember.Values, null, null);                                                
+                        this.Style.BackgroundColorExpressionValue = (expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Header.TablixMember.Values, null, this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet, null)).ToString();
                     }
                 }
                 else
                 {
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    this.Style.BackgroundColorExpressionValue = expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, null, null, this.Report.DataSets, null);
+                    this.Style.BackgroundColorExpressionValue = (expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, null, null, this.Report.DataSets, parent?.DataSetReference?.DataSet, null)).ToString();
                 }
             }
 
@@ -205,14 +205,28 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     if (cell.Row != null)
                     {
                         var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, cell.Row.Values, null, this.Format);
+                        var parsedValue = this.Parser.ParseTablixExpressionString(
+                            this.Value, 
+                            dataSetResults, 
+                            cell.Row.Values, 
+                            cell.Row.Body.Tablix.DataSets, 
+                            cell.Row.Body.Tablix.DataSetReference?.DataSet, 
+                            this.Format
+                        );
 
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }
                     else if (cell.Header != null)
                     {
                         var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, cell.Header.TablixMember.Values, null, this.Format);
+                        var parsedValue = this.Parser.ParseTablixExpressionString(
+                            this.Value, 
+                            dataSetResults, 
+                            cell.Header.TablixMember.Values, 
+                            cell.Header.TablixMember.TablixHierarchy.Tablix.DataSets, 
+                            cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet, 
+                            this.Format
+                        );
 
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }
@@ -222,7 +236,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
 
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, null, this.Paragraph.Textbox.DataSets, this.Format);
+                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, null, this.Paragraph.Textbox.DataSets, parent?.DataSetReference?.DataSet, this.Format);
 
                     return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                 }

@@ -17,8 +17,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values, 
-            IEnumerable<DataSet> dataSets
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, FirstRegex)
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FirstRegex)
         {
         }
 

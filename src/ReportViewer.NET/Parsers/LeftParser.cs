@@ -20,8 +20,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataSet> dataSets
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, LeftRegex)
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, LeftRegex)
         {
             _expressionParser = new ExpressionParser();
         }
@@ -87,7 +88,7 @@ namespace ReportViewer.NET.Parsers
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var stringExpression = (string)_expressionParser.ParseTablixExpressionString(stringGroups[0], this.DataSetResults, this.Values, this.DataSets, null);
+            var stringExpression = (string)_expressionParser.ParseTablixExpressionString(stringGroups[0], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
             var numChars = int.Parse(stringGroups[1]);
 
             this.CurrentExpression.Index = match.Index;

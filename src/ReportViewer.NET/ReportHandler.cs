@@ -235,18 +235,20 @@ namespace ReportViewer.NET
                     datasetObj.Fields = new List<DataSetField>();
 
                     foreach (var field in fieldElements)
-                    {
-                        var fieldName = field.Attribute("Name")?.Value;
+                    {                        
                         var typeName = field.Element(ReportDesigner + "TypeName")?.Value;
+                        
                         var fieldObj = new DataSetField()
                         {
-                            Name = fieldName,
-                            TypeName = !string.IsNullOrEmpty(typeName) ? Type.GetType(typeName) : default
+                            Name = field.Attribute("Name")?.Value,
+                            TypeName = !string.IsNullOrEmpty(typeName) ? Type.GetType(typeName) : default,
+                            DataField = field.Element(ns + "DataField")?.Value,
+                            Value = field.Element(ns + "Value")?.Value
                         };
                                                                         
-                        if (!string.IsNullOrEmpty(fieldName))
+                        if (!string.IsNullOrEmpty(fieldObj.Name))
                         {
-                            var reportParameterElement = reportParameterElements.FirstOrDefault(e => e.Attribute("Name")?.Value == fieldName);
+                            var reportParameterElement = reportParameterElements.FirstOrDefault(e => e.Attribute("Name")?.Value == fieldObj.Name);
 
                             if (reportParameterElement != null)
                             {

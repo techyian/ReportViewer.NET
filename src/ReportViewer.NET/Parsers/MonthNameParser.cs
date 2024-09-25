@@ -20,8 +20,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataSet> dataSets
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, MonthNameRegex)
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, MonthNameRegex)
         {
             _expressionParser = new ExpressionParser();
         }
@@ -46,7 +47,7 @@ namespace ReportViewer.NET.Parsers
             if (commaMatches.Count == 0)
             {
                 // No need to abbreviate, just return full month name.
-                monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, this.DataSetResults, this.Values, this.DataSets, null);
+                monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
 
                 this.CurrentExpression.Index = match.Index;
                 this.CurrentExpression.ResolvedType = typeof(string);
@@ -84,7 +85,7 @@ namespace ReportViewer.NET.Parsers
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, this.DataSetResults, this.Values, this.DataSets, null);
+            monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);

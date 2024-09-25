@@ -17,7 +17,7 @@ namespace ReportViewer.NET.Parsers.BuiltInFields
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values, 
             IEnumerable<DataSet> dataSets
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, ExecutionTimeRegex)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, null, ExecutionTimeRegex)
         {
         }
 

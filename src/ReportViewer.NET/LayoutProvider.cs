@@ -221,7 +221,7 @@ namespace ReportViewer.NET
 
                 if (!string.IsNullOrEmpty(expression))
                 {
-                    var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, textbox.DataSets);
+                    var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, textbox.DataSets, null);
                     var dsName = fieldParser.ExtractDataSetName();
                     var ds = report.DataSets.Where(ds => ds.Name == dsName).FirstOrDefault();
 
@@ -335,7 +335,10 @@ namespace ReportViewer.NET
             else
             {
                 // We can run the query as no user fields are required.
-                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName || ds.DataSourceReference == dsQuery.DataSourceReference)?.ConnectionString;
+                var connString = report.DataSources.FirstOrDefault(
+                    ds => ds.Name == dsQuery.DataSourceName || 
+                    (!string.IsNullOrEmpty(ds.DataSourceReference) && !string.IsNullOrEmpty(dsQuery.DataSourceReference) && ds.DataSourceReference == dsQuery.DataSourceReference)
+                )?.ConnectionString;
 
                 using (var conn = new SqlConnection(connString))
                 {
