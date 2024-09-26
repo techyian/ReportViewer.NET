@@ -14,7 +14,7 @@ namespace ReportViewer.NET.Parsers
         protected IEnumerable<IDictionary<string, object>> DataSetResults { get; set; }
         protected IDictionary<string, object> Values { get; set; }
         protected IEnumerable<DataSet> DataSets { get; set; }
-        protected DataSet ActiveDataset { get; set; }
+        protected DataSet ActiveDataset { get; set; }        
         protected Match RegexMatch { get; set; }
 
         private int _endIndx;
@@ -37,7 +37,7 @@ namespace ReportViewer.NET.Parsers
             this.DataSetResults = dataSetResults;
             this.Values = values;
             this.DataSets = dataSets;
-            this.ActiveDataset = activeDataset;
+            this.ActiveDataset = activeDataset;            
             this.RegexMatch = regex.Match(currentString);
 
             var group = this.RegexMatch.Groups[0];

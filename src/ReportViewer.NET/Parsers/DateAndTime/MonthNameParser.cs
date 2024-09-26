@@ -9,8 +9,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class MonthNameParser : BaseParser
     {
-        public static Regex MonthNameRegex = new Regex("(?:\\(*?)(?:MonthName?)(\\((.*?)\\)\\)*)", RegexOptions.IgnoreCase);
-        public static Regex CommaNotInParenRegex = new Regex(",(?![^(]*\\))");
+        public static Regex MonthNameRegex = RegexCommon.GenerateMultiParamParserRegex("MonthName");
 
         private ExpressionParser _expressionParser;
 
@@ -41,7 +40,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             // Remove the surrounding MonthName including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
             matchValue = matchValue.Substring(10, matchValue.Length - 11);
 
-            var commaMatches = CommaNotInParenRegex.Matches(matchValue);
+            var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(matchValue);
             var indexes = new List<int>();
 
             if (commaMatches.Count == 0)

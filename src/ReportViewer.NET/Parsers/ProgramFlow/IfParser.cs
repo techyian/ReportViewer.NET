@@ -9,15 +9,7 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
 {
     public class IfParser : BaseParser
     {
-        // Credit to: https://stackoverflow.com/a/35271017
-        // Ensures correct number of opening/closing braces are respected.
-        public static Regex IfRegex = new Regex("(?:\\(*?)(?i:IIF?)\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase);
-
-        // Credit to: https://stackoverflow.com/a/39565427
-        public static Regex CommaNotInParenRegex = new Regex(",(?![^(]*\\))");
-
-        // Credit to: https://stackoverflow.com/a/23667311
-        public static Regex TextInQuotesRegex = new Regex("\\\\\"|\"(?:\\\\\"|[^\"])*\"|(\\+)");
+        public static Regex IfRegex = RegexCommon.GenerateMultiParamParserRegex("IIF");
 
         private ExpressionParser _expressionParser;
 
@@ -48,7 +40,7 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
             // Remove the surrounding IIF including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
             matchValue = matchValue.Substring(4, matchValue.Length - 5);
 
-            var commaMatches = CommaNotInParenRegex.Matches(matchValue);
+            var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(matchValue);
             //var textInQuotesMatches = TextInQuotesRegex.Matches(matchValue);
             var indexes = new List<int>();
 

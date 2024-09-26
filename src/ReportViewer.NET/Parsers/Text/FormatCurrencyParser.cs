@@ -8,8 +8,8 @@ namespace ReportViewer.NET.Parsers.Text
 {
     internal class FormatCurrencyParser : BaseParser
     {
-        public static Regex FormatCurrencyRegex = new Regex("(?:\\(*?)(?i:FormatCurrency?)\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase);
-        
+        public static Regex FormatCurrencyRegex = RegexCommon.GenerateMultiParamParserRegex("FormatCurrency");
+
         private readonly ExpressionParser _expressionParser;
 
         public FormatCurrencyParser(

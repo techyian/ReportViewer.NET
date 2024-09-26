@@ -8,7 +8,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 {
     public class SumParser : BaseParser
     {
-        public static Regex SumRegex = new Regex("(?:\\(*?)(?:Sum?)(\\((.*?)\\)\\)*)", RegexOptions.IgnoreCase);
+        public static Regex SumRegex = RegexCommon.GenerateMultiParamParserRegex("Sum");
 
         public SumParser(
             string currentString,

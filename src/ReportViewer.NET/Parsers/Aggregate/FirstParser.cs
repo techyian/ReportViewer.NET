@@ -9,7 +9,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 {
     public class FirstParser : BaseParser
     {
-        public static Regex FirstRegex = new Regex("(?:\\(*?)(?:First?)(\\((.*?)\\)\\)*)", RegexOptions.IgnoreCase);
+        public static Regex FirstRegex = RegexCommon.GenerateParserRegex("First");
 
         public FirstParser(
             string currentString,

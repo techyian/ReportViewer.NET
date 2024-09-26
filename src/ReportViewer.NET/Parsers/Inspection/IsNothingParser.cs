@@ -8,7 +8,7 @@ namespace ReportViewer.NET.Parsers.Inspection
 {
     public class IsNothingParser : BaseParser
     {
-        public static Regex IsNothingRegex = new Regex("(?:\\(*?)(?i:IsNothing?)\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)", RegexOptions.IgnoreCase);
+        public static Regex IsNothingRegex = RegexCommon.GenerateMultiParamParserRegex("IsNothing");
 
         private ExpressionParser _expressionParser;
 

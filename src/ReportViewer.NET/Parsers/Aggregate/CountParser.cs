@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using ReportViewer.NET.DataObjects.ReportItems;
+﻿using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +8,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 {
     public class CountParser : BaseParser
     {
-        public static Regex CountRegex = new Regex("(?:\\(*?)(?:Count?)(\\((.*?)\\)\\)*)", RegexOptions.IgnoreCase);
+        public static Regex CountRegex = RegexCommon.GenerateParserRegex("Count");
 
         public CountParser(
             string currentString,

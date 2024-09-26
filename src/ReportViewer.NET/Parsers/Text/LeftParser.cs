@@ -9,8 +9,7 @@ namespace ReportViewer.NET.Parsers.Text
 {
     public class LeftParser : BaseParser
     {
-        public static Regex LeftRegex = new Regex("(?:\\(*?)(?:Left?)(\\((.*?)\\)\\)*)", RegexOptions.IgnoreCase);
-        public static Regex CommaNotInParenRegex = new Regex(",(?![^(]*\\))");
+        public static Regex LeftRegex = RegexCommon.GenerateMultiParamParserRegex("Left");
 
         private ExpressionParser _expressionParser;
 
@@ -40,7 +39,7 @@ namespace ReportViewer.NET.Parsers.Text
             // Remove the surrounding Left including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
             matchValue = matchValue.Substring(5, matchValue.Length - 6);
 
-            var commaMatches = CommaNotInParenRegex.Matches(matchValue);
+            var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(matchValue);
             //var textInQuotesMatches = TextInQuotesRegex.Matches(matchValue);
             var indexes = new List<int>();
 
