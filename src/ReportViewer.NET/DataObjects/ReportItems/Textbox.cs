@@ -69,18 +69,45 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     if (this.Cell.Row != null)
                     {
                         var dataSetResults = this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColorExpressionValue = (expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Row.Values, null, this.Cell.Row.Body.Tablix.DataSetReference?.DataSet, null)).ToString();
+                        this.Style.BackgroundColorExpressionValue = 
+                            (expressionParser.ParseTablixExpressionString(
+                                this.Style.BackgroundColor, 
+                                dataSetResults, 
+                                this.Cell.Row.Values, 
+                                this.Cell.Row.Body.Tablix.DataSets, 
+                                this.Cell.Row.Body.Tablix.DataSetReference?.DataSet, 
+                                null
+                            )
+                        ).ToString();
                     }
                     else if (this.Cell.Header != null)
                     {
                         var dataSetResults = this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColorExpressionValue = (expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, dataSetResults, this.Cell.Header.TablixMember.Values, null, this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet, null)).ToString();
+                        this.Style.BackgroundColorExpressionValue = 
+                            (expressionParser.ParseTablixExpressionString(
+                                this.Style.BackgroundColor, 
+                                dataSetResults, 
+                                this.Cell.Header.TablixMember.Values,
+                                this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSets, 
+                                this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet, 
+                                null
+                            )
+                        ).ToString();
                     }
                 }
                 else
                 {
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    this.Style.BackgroundColorExpressionValue = (expressionParser.ParseTablixExpressionString(this.Style.BackgroundColor, null, null, this.Report.DataSets, parent?.DataSetReference?.DataSet, null)).ToString();
+                    this.Style.BackgroundColorExpressionValue = 
+                        (expressionParser.ParseTablixExpressionString(
+                            this.Style.BackgroundColor, 
+                            null, 
+                            null, 
+                            this.Report.DataSets, 
+                            parent?.DataSetReference?.DataSet, 
+                            null
+                        )
+                    ).ToString();
                 }
             }
 
