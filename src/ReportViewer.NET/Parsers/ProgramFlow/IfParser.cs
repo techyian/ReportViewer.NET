@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers
+namespace ReportViewer.NET.Parsers.ProgramFlow
 {
     public class IfParser : BaseParser
     {
@@ -22,11 +22,11 @@ namespace ReportViewer.NET.Parsers
         private ExpressionParser _expressionParser;
 
         public IfParser(
-            string currentString, 
-            TablixOperator op, 
-            TablixExpression currentExpression, 
-            IEnumerable<IDictionary<string, object>> dataSetResults, 
-            IDictionary<string, object> values, 
+            string currentString,
+            TablixOperator op,
+            TablixExpression currentExpression,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
+            IDictionary<string, object> values,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, IfRegex)
@@ -42,7 +42,7 @@ namespace ReportViewer.NET.Parsers
         public override void Parse()
         {
             // 1. Extract boolean expression
-            var match = IfRegex.Match(this.CurrentString);
+            var match = IfRegex.Match(CurrentString);
             var matchValue = match.Value.Replace("\n", "").Replace("\t", "");
 
             // Remove the surrounding IIF including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
@@ -82,7 +82,7 @@ namespace ReportViewer.NET.Parsers
             {
                 return;
             }
-                                    
+
             // Let's split our string into its relevant groups.
             var stringGroups = new List<string>();
             var removed = 0;
@@ -96,13 +96,13 @@ namespace ReportViewer.NET.Parsers
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var booleanExpression = _expressionParser.ParseTablixExpressionString(stringGroups[0], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
-            var thenExpression = _expressionParser.ParseTablixExpressionString(stringGroups[1], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
-            var elseExpression = _expressionParser.ParseTablixExpressionString(stringGroups[2], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+            var booleanExpression = _expressionParser.ParseTablixExpressionString(stringGroups[0], DataSetResults, Values, DataSets, ActiveDataset, null);
+            var thenExpression = _expressionParser.ParseTablixExpressionString(stringGroups[1], DataSetResults, Values, DataSets, ActiveDataset, null);
+            var elseExpression = _expressionParser.ParseTablixExpressionString(stringGroups[2], DataSetResults, Values, DataSets, ActiveDataset, null);
 
-            this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = (bool)booleanExpression ? thenExpression : elseExpression;
+            CurrentExpression.Index = match.Index;
+            CurrentExpression.ResolvedType = typeof(string);
+            CurrentExpression.Value = (bool)booleanExpression ? thenExpression : elseExpression;
         }
     }
 }

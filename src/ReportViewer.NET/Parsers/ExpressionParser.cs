@@ -1,5 +1,10 @@
 ﻿using ReportViewer.NET.DataObjects.ReportItems;
+using ReportViewer.NET.Parsers.Aggregate;
 using ReportViewer.NET.Parsers.BuiltInFields;
+using ReportViewer.NET.Parsers.DateAndTime;
+using ReportViewer.NET.Parsers.Inspection;
+using ReportViewer.NET.Parsers.ProgramFlow;
+using ReportViewer.NET.Parsers.Text;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -378,6 +383,15 @@ namespace ReportViewer.NET.Parsers
                 var leftParser = new LeftParser(currentString, TablixOperator.Left, currentExpression, dataSetResults, values, dataSets, activeDataset);
                 leftParser.Parse();
                 proposedString = leftParser.GetProposedString();
+            }
+
+            if (FormatCurrencyParser.FormatCurrencyRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == TablixOperator.None || FormatCurrencyParser.FormatCurrencyRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var fcParser = new FormatCurrencyParser(currentString, TablixOperator.FormatCurrency, currentExpression, dataSetResults, values, dataSets, activeDataset);
+                fcParser.Parse();
+                proposedString = fcParser.GetProposedString();
             }
         }
 

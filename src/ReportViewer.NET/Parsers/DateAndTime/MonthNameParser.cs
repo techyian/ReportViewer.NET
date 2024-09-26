@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers
+namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class MonthNameParser : BaseParser
     {
@@ -35,23 +35,23 @@ namespace ReportViewer.NET.Parsers
         public override void Parse()
         {
             var monthNum = 1;
-            var match = MonthNameRegex.Match(this.CurrentString);
+            var match = MonthNameRegex.Match(CurrentString);
             var matchValue = match.Value.Replace("\n", "").Replace("\t", "");
 
             // Remove the surrounding MonthName including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
             matchValue = matchValue.Substring(10, matchValue.Length - 11);
-                        
+
             var commaMatches = CommaNotInParenRegex.Matches(matchValue);
             var indexes = new List<int>();
 
             if (commaMatches.Count == 0)
             {
                 // No need to abbreviate, just return full month name.
-                monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+                monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
 
-                this.CurrentExpression.Index = match.Index;
-                this.CurrentExpression.ResolvedType = typeof(string);
-                this.CurrentExpression.Value = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNum);
+                CurrentExpression.Index = match.Index;
+                CurrentExpression.ResolvedType = typeof(string);
+                CurrentExpression.Value = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNum);
 
                 return;
             }
@@ -85,18 +85,18 @@ namespace ReportViewer.NET.Parsers
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+            monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
 
-            this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
+            CurrentExpression.Index = match.Index;
+            CurrentExpression.ResolvedType = typeof(string);
 
             if (stringGroups.Count == 1 || stringGroups[1].ToLower() == "false")
             {
-                this.CurrentExpression.Value = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNum);                                
+                CurrentExpression.Value = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNum);
             }
             else
             {
-                this.CurrentExpression.Value = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(monthNum);
+                CurrentExpression.Value = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(monthNum);
             }
         }
     }

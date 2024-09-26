@@ -1598,6 +1598,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         AndAlso,
         OrElse,
         Left,
-        MonthName
+        MonthName,
+        FormatCurrency
     }
 }

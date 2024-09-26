@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers
+namespace ReportViewer.NET.Parsers.Inspection
 {
     public class IsNothingParser : BaseParser
     {
@@ -13,11 +13,11 @@ namespace ReportViewer.NET.Parsers
         private ExpressionParser _expressionParser;
 
         public IsNothingParser(
-            string currentString, 
-            TablixOperator op, 
-            TablixExpression currentExpression, 
-            IEnumerable<IDictionary<string, object>> dataSetResults, 
-            IDictionary<string, object> values, 
+            string currentString,
+            TablixOperator op,
+            TablixExpression currentExpression,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
+            IDictionary<string, object> values,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, IsNothingRegex)
@@ -32,14 +32,14 @@ namespace ReportViewer.NET.Parsers
 
         public override void Parse()
         {
-            var match = IsNothingRegex.Match(this.CurrentString);
-            var expression = this.CurrentString.Substring(10, this.CurrentString.Length - 11);
+            var match = IsNothingRegex.Match(CurrentString);
+            var expression = CurrentString.Substring(10, CurrentString.Length - 11);
 
-            var resolvedValue = _expressionParser.ParseTablixExpressionString(expression, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+            var resolvedValue = _expressionParser.ParseTablixExpressionString(expression, DataSetResults, Values, DataSets, ActiveDataset, null);
 
-            this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(bool);
-            this.CurrentExpression.Value = resolvedValue != null && !string.IsNullOrEmpty(((object)resolvedValue).ToString());
+            CurrentExpression.Index = match.Index;
+            CurrentExpression.ResolvedType = typeof(bool);
+            CurrentExpression.Value = resolvedValue != null && !string.IsNullOrEmpty(resolvedValue.ToString());
         }
     }
 }

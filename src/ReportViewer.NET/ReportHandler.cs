@@ -144,18 +144,18 @@ namespace ReportViewer.NET
             var reportParameters = this.ProcessReportParameters(xml.Root, dataSets, reportRdl.Namespace);
             var embeddedImages = this.ProcessEmbeddedImages(xml.Root, reportRdl.Namespace);
 
-            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "Body").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
-            var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "PageFooter").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
-
             reportRdl.DataSources = _dataSources;
+            reportRdl.ReportParameters = reportParameters;
+            reportRdl.EmbeddedImages = embeddedImages;
             reportRdl.DataSets = dataSets;
 
             reportRdl.DataSets.AddRange(_sharedDataSets);
 
-            reportRdl.ReportParameters = reportParameters;
+            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "Body").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
+            var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "PageFooter").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
+
             reportRdl.ReportBodyItems = reportBodyItems;
-            reportRdl.ReportFooterItems = reportFooterItems;
-            reportRdl.EmbeddedImages = embeddedImages;
+            reportRdl.ReportFooterItems = reportFooterItems;            
             reportRdl.ReportWidth = xml.Root.Descendants(reportRdl.Namespace + "ReportSections").Elements(reportRdl.Namespace + "ReportSection").Elements(reportRdl.Namespace + "Width").FirstOrDefault()?.Value;
             
             return reportRdl;

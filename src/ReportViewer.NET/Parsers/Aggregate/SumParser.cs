@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers
+namespace ReportViewer.NET.Parsers.Aggregate
 {
     public class SumParser : BaseParser
     {
@@ -26,9 +26,9 @@ namespace ReportViewer.NET.Parsers
         {
             fieldName = fieldName.ToLower();
 
-            if (this.DataSetResults != null)
+            if (DataSetResults != null)
             {
-                var results = this.DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);
+                var results = DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);
                 double total = 0;
 
                 foreach (var res in results)
@@ -40,7 +40,7 @@ namespace ReportViewer.NET.Parsers
             }
             else
             {
-                var dataSet = this.DataSets.FirstOrDefault(ds => ds.Name == dataSetName);
+                var dataSet = DataSets.FirstOrDefault(ds => ds.Name == dataSetName);
 
                 if (dataSet != null && dataSet.DataSetResults != null)
                 {
@@ -62,7 +62,7 @@ namespace ReportViewer.NET.Parsers
         public override void Parse()
         {
             // TODO: Handle other sum expressions not using fields??
-            var sumMatch = SumRegex.Match(this.CurrentString);
+            var sumMatch = SumRegex.Match(CurrentString);
             var sumValue = sumMatch.Value;
 
             if (FieldParser.FieldDatasetRegex.IsMatch(sumValue))
@@ -75,25 +75,25 @@ namespace ReportViewer.NET.Parsers
                 {
                     var dataSetEnd = fieldDataSetValue.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
                     var dataSetName = fieldDataSetValue.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
-                    this.CurrentExpression.DataSetName = dataSetName;
+                    CurrentExpression.DataSetName = dataSetName;
                 }
             }
 
             if (FieldParser.FieldRegex.IsMatch(sumValue))
             {
-                var match = FieldParser.FieldRegex.Match(this.CurrentString);
+                var match = FieldParser.FieldRegex.Match(CurrentString);
                 var matchString = match.Value;
 
                 var fieldsIdx = matchString.IndexOf("Fields!");
                 var fieldEnd = matchString.IndexOf('.', fieldsIdx);
                 var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
 
-                this.CurrentExpression.Field = fieldName;
+                CurrentExpression.Field = fieldName;
 
-                (Type, object) extractedValue = ExtractExpressionValue(fieldName, this.CurrentExpression.DataSetName);
+                (Type, object) extractedValue = ExtractExpressionValue(fieldName, CurrentExpression.DataSetName);
 
-                this.CurrentExpression.ResolvedType = extractedValue.Item1;
-                this.CurrentExpression.Value = extractedValue.Item2;
+                CurrentExpression.ResolvedType = extractedValue.Item1;
+                CurrentExpression.Value = extractedValue.Item2;
             }
         }
     }

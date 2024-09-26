@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers
+namespace ReportViewer.NET.Parsers.Text
 {
     public class LeftParser : BaseParser
     {
@@ -34,7 +34,7 @@ namespace ReportViewer.NET.Parsers
 
         public override void Parse()
         {
-            var match = LeftRegex.Match(this.CurrentString);
+            var match = LeftRegex.Match(CurrentString);
             var matchValue = match.Value.Replace("\n", "").Replace("\t", "");
 
             // Remove the surrounding Left including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
@@ -88,12 +88,12 @@ namespace ReportViewer.NET.Parsers
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var stringExpression = (string)_expressionParser.ParseTablixExpressionString(stringGroups[0], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+            var stringExpression = (string)_expressionParser.ParseTablixExpressionString(stringGroups[0], DataSetResults, Values, DataSets, ActiveDataset, null);
             var numChars = int.Parse(stringGroups[1]);
 
-            this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = numChars > stringExpression.Length ? stringExpression : stringExpression.Substring(0, numChars);
+            CurrentExpression.Index = match.Index;
+            CurrentExpression.ResolvedType = typeof(string);
+            CurrentExpression.Value = numChars > stringExpression.Length ? stringExpression : stringExpression.Substring(0, numChars);
         }
     }
 }
