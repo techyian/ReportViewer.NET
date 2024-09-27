@@ -4,9 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace ReportViewer.NET.DataObjects.ReportItems
@@ -1350,12 +1348,22 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.IsRootMember = isRootMember;
             this.HierarchyLevel = hierarchyLevel;
 
+            var expressionParser = new ExpressionParser(this.TablixHierarchy.Tablix.Report);
+
             var tablixGroup = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Group");
             var tablixSort = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "SortExpressions")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "SortExpression");
             var tablixHeader = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "TablixHeader");
             var tablixMemberElements = element.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMembers")?.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMember");
             
-            var hidden = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Hidden")?.Value;
+            var isHidden = expressionParser.ParseTablixExpressionString(
+                element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Hidden")?.Value,
+                null,
+                null,
+                this.TablixHierarchy.Tablix.Report.DataSets,
+                null,
+                null
+            );
+
             var toggleItem = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "ToggleItem")?.Value;
 
             this.KeepWithGroup = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "KeepWithGroup")?.Value;
@@ -1363,9 +1371,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.RepeatOnNewPage = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "RepeatOnNewPage")?.Value == "true";
             this.ContainsReportItemWithSubGroup = this.TablixHierarchy.Tablix.XElement.Element(this.TablixHierarchy.Tablix.Report.Namespace + "TablixBody").Descendants(this.TablixHierarchy.Tablix.Report.Namespace + "Group").Any();
 
-            if (hidden != null && hidden == "true")
+            if (isHidden is bool)
             {
-                this.Hidden = true;
+                this.Hidden = (bool)isHidden;
+            }
+            else
+            {
+                // Assume string?
+                this.Hidden = isHidden?.ToString() == "true";
             }
 
             if (toggleItem != null)
@@ -1568,6 +1581,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {
         None,
         Count,
+        CountDistinct,
         Sum,
         Field,
         Parameter,

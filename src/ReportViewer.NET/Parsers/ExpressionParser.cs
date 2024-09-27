@@ -1,5 +1,6 @@
 ﻿using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.DataObjects.ReportItems;
+using ReportViewer.NET.Extensions;
 using ReportViewer.NET.Parsers.Aggregate;
 using ReportViewer.NET.Parsers.BuiltInFields;
 using ReportViewer.NET.Parsers.DateAndTime;
@@ -54,6 +55,11 @@ namespace ReportViewer.NET.Parsers
             string requestedFormat
         )
         {
+            if (string.IsNullOrEmpty(tablixText))
+            {
+                return null;
+            }
+
             var expressions = RetrieveExpressionsFromString(tablixText, dataSetResults, values, dataSets, activeDataset);
 
             return ParseTablixExpressions(expressions, requestedFormat).Value;
@@ -242,11 +248,11 @@ namespace ReportViewer.NET.Parsers
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
-            if (currentString.IndexOf("Mod") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("Mod")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Mod") < currentExpression.Index)
+            if (currentString.IndexOfIgnore("Mod") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Mod")) &&
+                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Mod") < currentExpression.Index)
             )
             {
-                var idx = currentString.IndexOf("Mod");
+                var idx = currentString.IndexOfIgnore("Mod");
                 currentExpression.Index = idx;
                 currentExpression.Operator = TablixOperator.Mod;
 
@@ -337,24 +343,24 @@ namespace ReportViewer.NET.Parsers
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2).TrimStart();
             }
 
-            if (currentString.IndexOf("Like") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("Like")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Like") < currentExpression.Index)
+            if (currentString.IndexOfIgnore("Like") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Like")) &&
+                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Like") < currentExpression.Index)
             )
             {
-                var idx = currentString.IndexOf("Like");
+                var idx = currentString.IndexOfIgnore("Like");
                 currentExpression.Index = idx;
                 currentExpression.Operator = TablixOperator.Like;
 
                 proposedString = currentString.Substring(idx + 4, currentString.Length - idx - 4).TrimStart();
             }
 
-            if (currentString.IndexOf("Is") > -1 &&
-                !WithinStringLiteral(currentString, currentString.IndexOf("Is")) &&
-                ((currentString.IndexOf("IsNothing") > -1 && currentString.IndexOf("Is") < currentString.IndexOf("IsNothing")) || currentString.IndexOf("IsNothing") == -1) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Is") < currentExpression.Index)
+            if (currentString.IndexOfIgnore("Is") > -1 &&
+                !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Is")) &&
+                ((currentString.IndexOfIgnore("IsNothing") > -1 && currentString.IndexOfIgnore("Is") < currentString.IndexOfIgnore("IsNothing")) || currentString.IndexOfIgnore("IsNothing") == -1) &&
+                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Is") < currentExpression.Index)
             )
             {
-                var idx = currentString.IndexOf("Is");
+                var idx = currentString.IndexOfIgnore("Is");
                 currentExpression.Index = idx;
                 currentExpression.Operator = TablixOperator.Is;
 
@@ -376,24 +382,24 @@ namespace ReportViewer.NET.Parsers
             ref string proposedString
         )
         {
-            if (currentString.IndexOf("And") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("And")) &&
-                ((currentString.IndexOf("AndNot") > -1 && currentString.IndexOf("And") < currentString.IndexOf("AndNot")) || currentString.IndexOf("AndNot") == -1) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("And") < currentExpression.Index)
+            if (currentString.IndexOfIgnore("And") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("And")) &&
+                ((currentString.IndexOfIgnore("AndNot") > -1 && currentString.IndexOfIgnore("And") < currentString.IndexOfIgnore("AndNot")) || currentString.IndexOfIgnore("AndNot") == -1) &&
+                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("And") < currentExpression.Index)
             )
             {
-                var idx = currentString.IndexOf("And");
+                var idx = currentString.IndexOfIgnore("And");
                 currentExpression.Index = idx;
                 currentExpression.Operator = TablixOperator.And;
 
                 proposedString = currentString.Substring(idx + 3, currentString.Length - idx - 3).TrimStart();
             }
 
-            if (currentString.IndexOf("Not") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("Not")) &&
-                ((currentString.IndexOf("AndNot") > -1 && currentString.IndexOf("Not") < currentString.IndexOf("AndNot")) || currentString.IndexOf("AndNot") == -1) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("Not") < currentExpression.Index)
+            if (currentString.IndexOfIgnore("Not") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Not")) &&
+                ((currentString.IndexOfIgnore("AndNot") > -1 && currentString.IndexOfIgnore("Not") < currentString.IndexOfIgnore("AndNot")) || currentString.IndexOfIgnore("AndNot") == -1) &&
+                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Not") < currentExpression.Index)
             )
             {
-                var idx = currentString.IndexOf("Not");
+                var idx = currentString.IndexOfIgnore("Not");
                 currentExpression.Index = idx;
                 currentExpression.Operator = TablixOperator.Not;
 
@@ -524,6 +530,15 @@ namespace ReportViewer.NET.Parsers
                 var countParser = new CountParser(currentString, TablixOperator.Count, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
                 countParser.Parse();
                 proposedString = countParser.GetProposedString();
+            }
+
+            if (CountDistinctParser.CountDistinctRegex.IsMatch(currentString) &&
+                    (currentExpression.Operator == TablixOperator.None || CountDistinctParser.CountDistinctRegex.Match(currentString).Index < currentExpression.Index)
+                )
+            {
+                var countDistinctParser = new CountDistinctParser(currentString, TablixOperator.CountDistinct, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                countDistinctParser.Parse();
+                proposedString = countDistinctParser.GetProposedString();
             }
 
             if (SumParser.SumRegex.IsMatch(currentString) &&

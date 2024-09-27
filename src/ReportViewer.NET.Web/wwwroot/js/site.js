@@ -43,6 +43,9 @@
                     if (ele.is(':checked')) {
                         dto.Value = ele.val();
                     }
+                    else {
+                        dto.Value = 'false';
+                    }
                 }
             }
             else {

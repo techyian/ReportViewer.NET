@@ -7,11 +7,13 @@ using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers.Aggregate
 {
-    public class CountParser : BaseParser
+    public class CountDistinctParser : BaseParser
     {
-        public static Regex CountRegex = RegexCommon.GenerateParserRegex("Count");
+        public static Regex CountDistinctRegex = RegexCommon.GenerateParserRegex("CountDistinct");
 
-        public CountParser(
+        private string RequestedDataset { get; set; }
+
+        public CountDistinctParser(
             string currentString,
             TablixOperator op,
             TablixExpression currentExpression,
@@ -20,15 +22,15 @@ namespace ReportViewer.NET.Parsers.Aggregate
             IEnumerable<DataObjects.DataSet> dataSets,
             DataObjects.DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, CountRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, CountDistinctRegex, report)
         {
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
-        {            
+        {
             if (DataSetResults != null)
-            {
-                return (typeof(int), DataSetResults.Count());
+            {                
+                return (typeof(int), DataSetResults.Distinct().Count());
             }
             else
             {
@@ -36,7 +38,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 
                 if (dataSet != null && dataSet.DataSetResults != null)
                 {
-                    return (typeof(int), dataSet.DataSetResults.Count());
+                    return (typeof(int), dataSet.DataSetResults.Distinct().Count());
                 }
             }
 
@@ -44,9 +46,8 @@ namespace ReportViewer.NET.Parsers.Aggregate
         }
 
         public override void Parse()
-        {
-            // TODO: Handle other count expressions not using fields??
-            var countMatch = CountRegex.Match(CurrentString);
+        {            
+            var countMatch = CountDistinctRegex.Match(CurrentString);
             var countValue = countMatch.Value;
 
             if (FieldParser.FieldDatasetRegex.IsMatch(countValue))
