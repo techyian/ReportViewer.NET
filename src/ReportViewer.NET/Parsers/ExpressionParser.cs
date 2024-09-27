@@ -385,14 +385,14 @@ namespace ReportViewer.NET.Parsers
                 proposedString = leftParser.GetProposedString();
             }
 
-            //if (FormatCurrencyParser.FormatCurrencyRegex.IsMatch(currentString) &&
-            //    (currentExpression.Operator == TablixOperator.None || FormatCurrencyParser.FormatCurrencyRegex.Match(currentString).Index < currentExpression.Index)
-            //)
-            //{
-            //    var fcParser = new FormatCurrencyParser(currentString, TablixOperator.FormatCurrency, currentExpression, dataSetResults, values, dataSets, activeDataset);
-            //    fcParser.Parse();
-            //    proposedString = fcParser.GetProposedString();
-            //}
+            if (FormatCurrencyParser.FormatCurrencyRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == TablixOperator.None || FormatCurrencyParser.FormatCurrencyRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var fcParser = new FormatCurrencyParser(currentString, TablixOperator.FormatCurrency, currentExpression, dataSetResults, values, dataSets, activeDataset);
+                fcParser.Parse();
+                proposedString = fcParser.GetProposedString();
+            }
         }
 
         private void SearchDateTimeFunctions(

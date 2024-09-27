@@ -14,17 +14,15 @@ namespace ReportViewer.NET.Parsers
         {
             // Credit to: https://stackoverflow.com/a/35271017
             // Ensures correct number of opening/closing braces are respected.
-            var pattern = "(?:\\(*?)(?i:PARSERNAME?)\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)";
-            pattern = pattern.Replace("PARSERNAME", parserName);
-
+            var pattern = "(?:\\(*?)(?i:PARSERNAME?)\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)".Replace("PARSERNAME", parserName);
+            
             return new Regex(pattern, RegexOptions.IgnoreCase);
         }
 
         public static Regex GenerateParserRegex(string parserName)
         {
-            var pattern = "(?:\\(*?)(?:PARSERNAME?)(\\((.*?)\\)\\)*)";
-            pattern = pattern.Replace("PARSERNAME", parserName);
-
+            var pattern = "(?:\\(*?)(?:PARSERNAME?)(\\((.*?)\\)\\)*)".Replace("PARSERNAME", parserName);
+            
             return new Regex(pattern, RegexOptions.IgnoreCase);
         }
     }
