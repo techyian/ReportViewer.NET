@@ -519,7 +519,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     if (tablixMember.TablixMembers.Any())
                     {                        
                         // Do we have enough rows to print this member and its children?
-                        if (this.TablixRows.Count > currentRowIndx + tablixMember.TablixMembers.Count + 1)
+                        if (this.TablixRows.Count > currentRowIndx + tablixMember.TablixMembers.Count)
                         {
                             currentRowIndx = this.ProcessResults(currentRowIndx, tablixMember, prevTablixMembers, groupedResult, tablixHierarchyStructure, pageBreak, sb);
                         }
@@ -685,7 +685,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 this.Tablix.DataSetReference != null &&
                 this.Tablix.DataSetReference.DataSet.DataSetResults != null)
             {
-                this.ProcessTablixRowHierarchyMember(groupResults, tablixMember, lastGroup, lastHeader, row, tablixHierarchyStructure, headersFoundInTablixMembers, pageBreak, newKey, sb);
+                this.ProcessTablixRowHierarchyMember(
+                    groupResults, 
+                    tablixMember, 
+                    lastGroup, 
+                    lastHeader, 
+                    row, 
+                    tablixHierarchyStructure, 
+                    headersFoundInTablixMembers, 
+                    prevTablixMembers,
+                    pageBreak, 
+                    newKey, 
+                    sb
+                );
             }
             else if (lastGroup != null &&                    
                      this.Tablix.DataSetReference != null &&
@@ -693,7 +705,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 )
             {
-                this.ProcessTablixRowHierarchyMember(groupResults, tablixMember, lastGroup, lastHeader, row, tablixHierarchyStructure, headersFoundInTablixMembers, pageBreak, newKey, sb);
+                this.ProcessTablixRowHierarchyMember(
+                    groupResults, 
+                    tablixMember, 
+                    lastGroup, 
+                    lastHeader, 
+                    row, 
+                    tablixHierarchyStructure, 
+                    headersFoundInTablixMembers, 
+                    prevTablixMembers,
+                    pageBreak, 
+                    newKey, 
+                    sb
+                );
             }
             else
             {                
@@ -718,7 +742,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     sb.AppendLine(lastHeader.TablixHeader.Build(0, row.ContainsAggregatorExpression, row.ContainsRepeatExpression));
                 }
 
-                if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey)))
+                if ((!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))) && 
+                    !prevTablixMembers.Any(tm => tm.Hidden && !this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tm.ToggleItemKey)))
                 {                        
                     sb.AppendLine(row.Build());
                 }
@@ -781,6 +806,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             TablixRow row,
             TablixHierarchyGroupStructure tablixHierarchyStructure,
             IEnumerable<TablixMember> headersFoundInTablixMembers,
+            List<TablixMember> prevTablixMembers,
             PageBreak pageBreak,
             string newKey,
             StringBuilder sb
@@ -822,9 +848,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     var createRow = false;
                                                 
                     if (headersFoundInTablixMembers.Any() ||
-                        lastHeader != null ||
-                        !tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))
-                        )
+                        lastHeader != null ||                        
+                        ((!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))) &&
+                        !prevTablixMembers.Any(tm => tm.Hidden && !this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tm.ToggleItemKey)))
+                    )
                     {
                         createRow = true;
                     }
@@ -862,7 +889,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         createRow = true;
                     }
 
-                    if (!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey)))
+                    if ((!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))) &&
+                        !prevTablixMembers.Any(tm => tm.Hidden && !this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tm.ToggleItemKey)))
                     {                         
                         sb.AppendLine(row.Build());
                     }
