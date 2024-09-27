@@ -20,10 +20,11 @@ namespace ReportViewer.NET.Parsers.Text
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             IEnumerable<DataSet> dataSets,
-            DataSet activeDataset
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, LeftRegex)
+            DataSet activeDataset,
+            ReportRDL report
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, LeftRegex, report)
         {
-            _expressionParser = new ExpressionParser();
+            _expressionParser = new ExpressionParser(report);
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)

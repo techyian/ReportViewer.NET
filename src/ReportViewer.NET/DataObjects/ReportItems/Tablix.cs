@@ -113,7 +113,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Tablix = tablix;
             this.TablixColumns = new List<TablixColumn>();
             this.TablixRows = new List<TablixRow>();
-            this.Parser = new ExpressionParser();
+            this.Parser = new ExpressionParser(this.Tablix.Report);
 
             var columns = tablixBody.Elements(this.Tablix.Report.Namespace + "TablixColumns").Elements(this.Tablix.Report.Namespace + "TablixColumn");
             var rows = tablixBody.Elements(this.Tablix.Report.Namespace + "TablixRows").Elements(this.Tablix.Report.Namespace + "TablixRow");
@@ -1195,7 +1195,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         // Try to retrieve the parameter from the tablix row.
                         else
                         {
-                            var expressionParser = new ExpressionParser();
+                            var expressionParser = new ExpressionParser(this.Body.Tablix.Report);
                             var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
                             var parsedValue = expressionParser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, this.Body.Tablix.DataSetReference?.DataSet, null);
 
@@ -1570,10 +1570,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         Count,
         Sum,
         Field,
+        Parameter,
         Add,
         Subtract,
         Multiply,
         Divide,
+        Mod,
         String,
         If,
         IsArray,

@@ -31,7 +31,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             // TODO: Handle other sources?             
             this.EmbeddedImage = report.EmbeddedImages?.FirstOrDefault(i => i.Name == this.Value);
 
-            _expressionParser = new ExpressionParser();
+            _expressionParser = new ExpressionParser(report);
         }
 
         public override string Build(ReportItem parent)

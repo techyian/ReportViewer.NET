@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ReportViewer.NET.Parsers;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -66,7 +67,26 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Style.Height = heightValue;
             this.Style.Width = widthValue;
 
-            this.Hidden = this.Style.Hidden = element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "Hidden")?.Value == "true";
+            var expressionParser = new ExpressionParser(report);
+            var isHidden = expressionParser.ParseTablixExpressionString(
+                element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "Hidden")?.Value,
+                null,
+                null,
+                report.DataSets,
+                null,
+                null
+            );
+
+            if (isHidden is bool)
+            {
+                this.Hidden = this.Style.Hidden = (bool)isHidden;
+            }
+            else
+            {
+                // Assume string?
+                this.Hidden = this.Style.Hidden = isHidden?.ToString() == "true";
+            }
+                        
             this.ToggleItem = element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "ToggleItem")?.Value;
 
             if (this.Hidden)

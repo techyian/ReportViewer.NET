@@ -1,4 +1,5 @@
-﻿using ReportViewer.NET.DataObjects.ReportItems;
+﻿using ReportViewer.NET.DataObjects;
+using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +20,12 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values, 
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FieldRegex)
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
+            ReportRDL report
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FieldRegex, report)
         {
-            _expressionParser = new ExpressionParser();
+            _expressionParser = new ExpressionParser(report);
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)

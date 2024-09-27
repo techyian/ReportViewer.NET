@@ -1,4 +1,5 @@
-﻿using ReportViewer.NET.DataObjects.ReportItems;
+﻿using ReportViewer.NET.DataObjects;
+using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,8 +18,9 @@ namespace ReportViewer.NET.Parsers.Aggregate
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, CountRegex)
+            DataObjects.DataSet activeDataset,
+            ReportRDL report
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, CountRegex, report)
         {
         }
 

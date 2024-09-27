@@ -6,6 +6,7 @@ namespace ReportViewer.NET.DataObjects
 {
     public class ReportRDL
     {
+        public XDocument Xml { get; set; }
         public string Name { get; set; }
         public XNamespace Namespace { get; set; }
         public string ReportServerUrl { get; set; }

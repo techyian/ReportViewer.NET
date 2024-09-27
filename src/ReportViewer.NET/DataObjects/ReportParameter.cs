@@ -74,8 +74,11 @@ namespace ReportViewer.NET.DataObjects
                 else
                 {
                     var value = userProvidedParameter != null && !string.IsNullOrEmpty(userProvidedParameter.Value) ? userProvidedParameter.Value : "";
-                    var check = userProvidedParameter != null && !string.IsNullOrEmpty(userProvidedParameter.Value) ? "checked" : "";
-
+                    var check = userProvidedParameter != null && 
+                                !string.IsNullOrEmpty(userProvidedParameter.Value) && 
+                                this.DataType == "Boolean" && 
+                                userProvidedParameter.Value == "true" ? "checked" : "";
+                                        
                     switch (this.DataType)
                     {
                         case "String":

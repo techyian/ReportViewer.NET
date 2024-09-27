@@ -42,9 +42,11 @@ namespace ReportViewer.NET
             using (var sr = new StreamReader(filePath))
             {
                 var xml = XDocument.Load(sr);
-                var rdl = this.ParseXml(xml);
-
-                rdl.Name = rdlName;
+                var rdl = new ReportRDL()
+                {
+                    Name = rdlName,
+                    Xml = xml
+                };
 
                 _reportRdls.Add(rdl);
             }
@@ -55,12 +57,22 @@ namespace ReportViewer.NET
             using (var sr = new StringReader(rdlXml))
             {
                 var xml = XDocument.Load(sr);
-                var rdl = this.ParseXml(xml);
-
-                rdl.Name = rdlName;
+                var rdl = new ReportRDL()
+                {
+                    Name = rdlName,
+                    Xml = xml
+                };
 
                 _reportRdls.Add(rdl);
             }
+        }
+
+        public void LoadReport(string rdlName, ReportParameters userProvidedParameters)
+        {
+            var idx = _reportRdls.FindIndex(r => r.Name == rdlName);
+            var rdl = _reportRdls.First(r => r.Name == rdlName);
+            
+            _reportRdls[idx] = this.ParseXml(rdl.Xml, rdlName, userProvidedParameters);
         }
 
         public void RegisterDataSource(string name, string connectionString, string datasourceReference = null)
@@ -119,7 +131,7 @@ namespace ReportViewer.NET
             return layoutProvider.PublishReportOutput(rdl, userProvidedParameters, requestedVisible ?? Enumerable.Empty<string>());
         }
 
-        private ReportRDL ParseXml(XDocument xml)
+        private ReportRDL ParseXml(XDocument xml, string name, ReportParameters userProvidedParameters)
         {            
             var reportRdl = new ReportRDL();
                         
@@ -129,6 +141,8 @@ namespace ReportViewer.NET
 
             reportRdl.Namespace = namespaces[""];
             reportRdl.CurrentRegisteredReports = _reportRdls;
+            reportRdl.Name = name;
+            reportRdl.UserProvidedParameters = userProvidedParameters.Parameters;
 
             // Validate data sources.
             var dataSourceElements = xml.Root.Descendants(reportRdl.Namespace + "DataSources").Elements(reportRdl.Namespace + "DataSource");

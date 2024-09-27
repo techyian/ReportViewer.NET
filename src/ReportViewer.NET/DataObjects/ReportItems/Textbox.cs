@@ -61,7 +61,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             
             if (this.Style.BackgroundColor != null && this.Style.BackgroundColor.StartsWith('='))
             {
-                var expressionParser = new ExpressionParser();
+                var expressionParser = new ExpressionParser(this.Report);
 
                 if (this.Cell != null)
                 {
@@ -96,7 +96,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     }
                 }
                 else
-                {
+                {                    
                     // We've come from a standalone textbox. Try to find dataset for this field.
                     this.Style.BackgroundColorExpressionValue = 
                         (expressionParser.ParseTablixExpressionString(
@@ -212,10 +212,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             : base(textRun, paragraph.Report, paragraph)
         {
             this.Paragraph = paragraph;
-            this.Value = textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Value")?.Value;
-            this.Style = new Style(textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Style"), this.Paragraph.Textbox.Report);
-            this.Format = textRun.Element(this.Paragraph.Textbox.Report.Namespace + "Style").Element(this.Paragraph.Textbox.Report.Namespace + "Format")?.Value;
-            this.Parser = new ExpressionParser();
+            this.Value = textRun.Element(paragraph.Report.Namespace + "Value")?.Value;
+            this.Style = new Style(textRun.Element(paragraph.Report.Namespace + "Style"), paragraph.Report);
+            this.Format = textRun.Element(paragraph.Report.Namespace + "Style").Element(paragraph.Report.Namespace + "Format")?.Value;
+            this.Parser = new ExpressionParser(paragraph.Report);
         }
 
         public override string Build(ReportItem parent)

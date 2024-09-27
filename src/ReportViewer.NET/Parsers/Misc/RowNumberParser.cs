@@ -4,21 +4,22 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers.BuiltInFields
+namespace ReportViewer.NET.Parsers.Misc
 {
-    internal class ExecutionTimeParser : BaseParser
+    internal class RowNumberParser : BaseParser
     {
-        public static Regex ExecutionTimeRegex = new Regex("(\\bGlobals!ExecutionTime\\b)", RegexOptions.IgnoreCase);
+        public static Regex RowNumberRegex = RegexCommon.GenerateParserRegex("RowNumber");
 
-        public ExecutionTimeParser(
+        public RowNumberParser(
             string currentString, 
             TablixOperator op, 
             TablixExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values, 
-            IEnumerable<DataSet> dataSets,
+            IEnumerable<DataSet> dataSets, 
+            DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, null, ExecutionTimeRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, RowNumberRegex, report)
         {
         }
 
@@ -29,11 +30,7 @@ namespace ReportViewer.NET.Parsers.BuiltInFields
 
         public override void Parse()
         {
-            var match = ExecutionTimeRegex.Match(this.CurrentString);
-            
-            this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = DateTime.Now.ToString();
+            throw new NotImplementedException();
         }
     }
 }

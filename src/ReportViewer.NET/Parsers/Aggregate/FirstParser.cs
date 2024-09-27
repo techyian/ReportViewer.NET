@@ -18,8 +18,9 @@ namespace ReportViewer.NET.Parsers.Aggregate
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             IEnumerable<DataSet> dataSets,
-            DataSet activeDataset
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FirstRegex)
+            DataSet activeDataset,
+            ReportRDL report
+        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FirstRegex, report)
         {
         }
 

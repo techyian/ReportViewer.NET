@@ -55,7 +55,10 @@ namespace ReportViewer.NET
                     )
                    )
                 {
-                    invalidParameter = true;
+                    if (reportParam.DataType != "Boolean")
+                    {
+                        invalidParameter = true;
+                    }
                 }
             }
                         
@@ -221,7 +224,7 @@ namespace ReportViewer.NET
 
                 if (!string.IsNullOrEmpty(expression))
                 {
-                    var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, textbox.DataSets, null);
+                    var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, textbox.DataSets, null, report);
                     var dsName = fieldParser.ExtractDataSetName();
                     var ds = report.DataSets.Where(ds => ds.Name == dsName).FirstOrDefault();
 
