@@ -19,6 +19,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string ToggleItem { get; set; }        
         public ReportRow ReportRow { get; set; }
         public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
+        public dynamic Values { get; set; }
         public string DataSetName { get; set; }
         public DataSetReference DataSetReference { get; set; }
         public IEnumerable<DataSet> DataSets { get; set; }
@@ -200,6 +201,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             child.DataSetReference = parent.DataSetReference != null ? parent.DataSetReference : child.DataSetReference;
             child.DataSets = parent.DataSets != null ? parent.DataSets : child.DataSets;
             child.GroupedResults = parent.GroupedResults != null ? parent.GroupedResults : child.GroupedResults;
+            child.Values = parent.Values != null ? parent.Values : child.Values;
         }
 
         public abstract string Build(ReportItem parent);

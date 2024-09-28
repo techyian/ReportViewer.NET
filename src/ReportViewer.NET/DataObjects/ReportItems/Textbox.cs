@@ -227,7 +227,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 TablixCell cell = this.Paragraph.Textbox.Cell;
 
                 if (cell != null)
-                {
+                {                    
                     // We've come from a tablix cell.
                     if (cell.Row != null)
                     {
@@ -263,7 +263,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
 
                     // We've come from a standalone textbox. Try to find dataset for this field.
-                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, null, this.Paragraph.Textbox.DataSets, parent?.DataSetReference?.DataSet, this.Format);
+                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, this.Paragraph.Textbox.DataSets, parent?.DataSetReference?.DataSet, this.Format);
 
                     return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                 }

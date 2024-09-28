@@ -128,7 +128,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 foreach (var r in rows)
                 {
-                    this.TablixRows.Add(new TablixRow(this, r));
+                    this.TablixRows.Add(new TablixRow(this, r, this.Tablix));
                 }
             }
         }
@@ -175,7 +175,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         row.Values = result;
 
                         sb.AppendLine($"<tr height=\"{row.Height}\">");
-                        sb.AppendLine(row.Build());
+                        sb.AppendLine(row.Build(this.Tablix));
                         sb.AppendLine("</tr>");
                     }
                     
@@ -183,7 +183,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 else
                 {
                     sb.AppendLine($"<tr height=\"{row.Height}\">");
-                    sb.AppendLine(row.Build());
+                    sb.AppendLine(row.Build(this.Tablix));
                     sb.AppendLine("</tr>");
                 }
             }
@@ -745,7 +745,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 if ((!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))) && 
                     !prevTablixMembers.Any(tm => tm.Hidden && !this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tm.ToggleItemKey)))
                 {                        
-                    sb.AppendLine(row.Build());
+                    sb.AppendLine(row.Build(this.Tablix));
                 }
 
                 sb.AppendLine("</tr>");                            
@@ -892,7 +892,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     if ((!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))) &&
                         !prevTablixMembers.Any(tm => tm.Hidden && !this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tm.ToggleItemKey)))
                     {                         
-                        sb.AppendLine(row.Build());
+                        sb.AppendLine(row.Build(this.Tablix));
                     }
                           
                     if (createRow)
@@ -919,7 +919,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     row.Values = result;
 
                     sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"false\">");
-                    sb.AppendLine(row.Build());
+                    sb.AppendLine(row.Build(this.Tablix));
                     sb.AppendLine("</tr>");
                 }
             }
@@ -1062,21 +1062,18 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         }
     }
 
-    public class TablixRow
-    {
-        public string Height { get; set; }
+    public class TablixRow : ReportItem
+    {        
         public List<TablixCell> TablixCells { get; set; }
         public TablixBody Body { get; set; }
         public bool ContainsRepeatExpression { get; set; }
-        public bool ContainsAggregatorExpression { get; set; }
-        public dynamic Values { get; set; }
+        public bool ContainsAggregatorExpression { get; set; }        
         public string KeyGuid { get; set; }
-        public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
-
-        internal TablixRow(TablixBody body, XElement row)
+        
+        internal TablixRow(TablixBody body, XElement row, ReportItem parent)
+            : base(row, body.Tablix.Report, parent)
         {
-            this.Body = body;
-            this.Height = row.Element(this.Body.Tablix.Report.Namespace + "Height")?.Value;
+            this.Body = body;     
             this.TablixCells = new List<TablixCell>();
 
             var cells = row.Elements(this.Body.Tablix.Report.Namespace + "TablixCells").Elements(this.Body.Tablix.Report.Namespace + "TablixCell");
@@ -1101,8 +1098,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
         }
 
-        public string Build()
+        public override string Build(ReportItem parent)
         {
+            this.NestedCopy(parent, this);
+
             var sb = new StringBuilder();
             
             if (this.TablixCells != null)
@@ -1246,7 +1245,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
                 else
                 {
-                    sb.AppendLine(content.Build(this.Body.Tablix));
+                    sb.AppendLine(content.Build(this));
                 }
             }
         }

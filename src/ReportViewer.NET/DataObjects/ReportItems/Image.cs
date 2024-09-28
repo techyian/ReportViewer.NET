@@ -36,6 +36,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         public override string Build(ReportItem parent)
         {
+            this.NestedCopy(parent, this);
+
             // TODO: Handle sizings?            
             var sb = new StringBuilder();
             var isLastItem = false;
@@ -112,7 +114,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         private string BuildDatabaseImage(ReportItem parent)
         {
             var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
-            var parsedValue = _expressionParser.ParseTablixExpressionString(this.Value, dataSetResults, null, parent?.DataSets, parent?.DataSetReference?.DataSet, null);
+            var parsedValue = _expressionParser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, parent?.DataSets, parent?.DataSetReference?.DataSet, null);
             var b64 = string.Empty;
 
             // TODO: Will this ever not be a byte[]?
