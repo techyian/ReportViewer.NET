@@ -12,6 +12,6 @@ namespace ReportViewer.NET
         void LoadReport(string rdlName, ReportParameters userProvidedParameters);
         void RegisterDataSource(string name, string connectionString, string datasourceReference = null);
         Task<HtmlString> PublishReportParameters(string report, IEnumerable<ReportParameter> userProvidedParameters);
-        Task<HtmlString> PublishReportOutput(string report, IEnumerable<ReportParameter> userProvidedParameters, IEnumerable<string> requestedVisible);
+        Task<HtmlString> PublishReportOutput(string report, ReportParameters parameters);
     }
 }

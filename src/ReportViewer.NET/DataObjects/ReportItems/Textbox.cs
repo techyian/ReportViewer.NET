@@ -195,6 +195,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             sb.AppendLine("</p>");
 
+            this.Values = null;
+
             return sb.ToString();
         }
     }
@@ -241,6 +243,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             this.Format
                         );
 
+                        this.Values = null;
+
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }
                     else if (cell.Header != null)
@@ -255,6 +259,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             this.Format
                         );
 
+                        this.Values = null;
+
                         return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                     }
                 }
@@ -264,6 +270,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                     // We've come from a standalone textbox. Try to find dataset for this field.
                     var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, this.Paragraph.Textbox.DataSets, parent?.DataSetReference?.DataSet, this.Format);
+
+                    this.Values = null;
 
                     return $"<span {this.Style?.Build()}>{parsedValue}</span>";
                 }

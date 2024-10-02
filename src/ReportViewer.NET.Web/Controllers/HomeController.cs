@@ -34,6 +34,7 @@ namespace ReportViewer.NET.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ParameterViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
         {
+            _reportViewer.LoadReport(rdl, userProvidedParameters);
             var paramHtml = await _reportViewer.PublishReportParameters(rdl, userProvidedParameters.Parameters);
 
             return Ok(paramHtml);
@@ -42,7 +43,8 @@ namespace ReportViewer.NET.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
         {            
-            var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters.Parameters, userProvidedParameters.ToggleItemRequests);
+            _reportViewer.LoadReport(rdl, userProvidedParameters);
+            var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters);
 
             return Ok(reportHtml);
         }

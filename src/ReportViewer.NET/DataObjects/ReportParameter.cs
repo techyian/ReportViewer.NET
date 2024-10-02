@@ -84,19 +84,19 @@ namespace ReportViewer.NET.DataObjects
                         case "String":
                             return @"<div class=""reportparam reportparam-string"">
                                     <label for=""" + this.Name + @""">" + this.Prompt + @"</label>
-                                    <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" data-requiredparam=""" + requiredParam + @""" /> 
+                                    <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" data-datatype=""string"" data-requiredparam=""" + requiredParam + @""" /> 
                                 </div> ";
                         case "DateTime":
                             return @"
                                 <div class=""reportparam reportparam-date date"">
                                         <label for=""" + this.Name + @""">" + this.Prompt + @"</label>                                        
-                                        <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" data-requiredparam=""" + requiredParam + @""" />
+                                        <input type=""text"" id=""" + this.Name + @""" name=""" + this.Name + @""" data-nullable=""" + nullable + @""" value=""" + value + @""" data-datatype=""datetime"" data-requiredparam=""" + requiredParam + @""" />
                                 </div>
                                 ";
                         case "Boolean":
                             return @"<div class=""reportparam reportparam-boolean"">
                                     <div class=""custom-control custom-checkbox"">
-                                        <input type=""checkbox"" class=""custom-control-input"" id=""" + this.Name + @""" name=""" + this.Name + @""" value=""true"" " + check + @" data-requiredparam=""" + requiredParam + @""">
+                                        <input type=""checkbox"" class=""custom-control-input"" id=""" + this.Name + @""" name=""" + this.Name + @""" value=""true"" " + check + @" data-datatype=""boolean"" data-requiredparam=""" + requiredParam + @""">
                                         <label class=""custom-control-label pl-3"" for=""" + this.Name + @""">" + this.Prompt + @"</label>
                                     </div>
                                 </div> ";

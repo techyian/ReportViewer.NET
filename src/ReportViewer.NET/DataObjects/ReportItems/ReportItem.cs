@@ -35,7 +35,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.Parents.AddRange(parent.Parents);
                 this.Parents.Add(parent);
-            }                        
+            }
+
+            this.Name = element.Attribute("Name")?.Value;
 
             var topValue = Style.ConvertUnit(element.Element(report.Namespace + "Top")?.Value);
             var leftValue = Style.ConvertUnit(element.Element(report.Namespace + "Left")?.Value);
@@ -201,7 +203,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             child.DataSetReference = parent.DataSetReference != null ? parent.DataSetReference : child.DataSetReference;
             child.DataSets = parent.DataSets != null ? parent.DataSets : child.DataSets;
             child.GroupedResults = parent.GroupedResults != null ? parent.GroupedResults : child.GroupedResults;
-            child.Values = parent.Values != null ? parent.Values : child.Values;
+            child.Values = child.Values ?? parent.Values; // Favour child values, fallback on parent if null.
         }
 
         public abstract string Build(ReportItem parent);

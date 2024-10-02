@@ -117,7 +117,7 @@ namespace ReportViewer.NET
             return layoutProvider.PublishReportParameters(rdl, userProvidedParameters);
         }
 
-        public Task<HtmlString> PublishReportOutput(string report, IEnumerable<ReportParameter> userProvidedParameters, IEnumerable<string> requestedVisible)
+        public Task<HtmlString> PublishReportOutput(string report, ReportParameters parameters)
         {
             var rdl = _reportRdls.FirstOrDefault(r => r.Name == report);
 
@@ -128,7 +128,7 @@ namespace ReportViewer.NET
 
             var layoutProvider = new LayoutProvider();
 
-            return layoutProvider.PublishReportOutput(rdl, userProvidedParameters, requestedVisible ?? Enumerable.Empty<string>());
+            return layoutProvider.PublishReportOutput(rdl, parameters.Parameters, parameters.ToggleItemRequests ?? Enumerable.Empty<string>(), parameters.Metadata);
         }
 
         private ReportRDL ParseXml(XDocument xml, string name, ReportParameters userProvidedParameters)
@@ -143,6 +143,7 @@ namespace ReportViewer.NET
             reportRdl.CurrentRegisteredReports = _reportRdls;
             reportRdl.Name = name;
             reportRdl.UserProvidedParameters = userProvidedParameters.Parameters;
+            reportRdl.Metadata = userProvidedParameters.Metadata ?? new List<ReportMetadata>();
 
             // Validate data sources.
             var dataSourceElements = xml.Root.Descendants(reportRdl.Namespace + "DataSources").Elements(reportRdl.Namespace + "DataSource");

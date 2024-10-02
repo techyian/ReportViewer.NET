@@ -22,5 +22,6 @@ namespace ReportViewer.NET.DataObjects
         public List<ReportParameter> UserProvidedParameters { get; set; }
         public List<string> ToggleItemRequests { get; set; }
         public List<ReportRDL> CurrentRegisteredReports { get; set; }
+        public List<ReportMetadata> Metadata { get; set; } = new List<ReportMetadata>();
     }
 }

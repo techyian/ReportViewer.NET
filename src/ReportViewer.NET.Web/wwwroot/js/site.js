@@ -3,6 +3,7 @@
     var self = this;
 
     self.toggleItemRequests = [];
+    self.metadata = [];
 
     function constructReportParameters() {
         var eles = $('.report-viewer input');
@@ -17,6 +18,7 @@
             var multiValue = ele.data('multivalue');
             var nullable = ele.data('nullable');
             var eleType = ele.attr('type');
+            var dataType = ele.data('datatype');
             var dto = null;
 
             if (keys.indexOf(eleName) === -1) {
@@ -43,7 +45,7 @@
                     if (ele.is(':checked')) {
                         dto.Value = ele.val();
                     }
-                    else {
+                    else if (dataType && dataType === 'boolean') {
                         dto.Value = 'false';
                     }
                 }
@@ -118,7 +120,8 @@
         var dtoArr = constructReportParameters();
         var dto = {
             Parameters: dtoArr,
-            ToggleItemRequests: self.toggleItemRequests
+            ToggleItemRequests: self.toggleItemRequests,
+            Metadata: self.metadata
         };
         
         return $.ajax({
@@ -130,7 +133,7 @@
             $('.reportoutput-container').html(data.value);
 
             $('button[data-toggler="true"]').on('click', function () {
-                
+
                 var togglerName = $(this).data('toggler-name');
                 var nameIdx = self.toggleItemRequests.indexOf(togglerName);
 
@@ -142,10 +145,38 @@
                 }
 
                 self.renderReport();
-            })
+            });
+
+            $('.report-viewer .reportviewer-table-pager button[data-direction="prev"]').on('click', function (event) {
+                self.changePage($(this).data('tablename'), 'prev');
+            });
+
+            $('.report-viewer .reportviewer-table-pager button[data-direction="next"]').on('click', function (event) {
+                self.changePage($(this).data('tablename'), 'next');
+            });
         }).fail(function (jqXHR, textStatus, errorThrown) {
             console.error(errorThrown);
         });
+    }
+
+    self.changePage = function (name, dir) {
+        const idx = self.metadata.findIndex((obj) => {
+            return obj.Key === 'key_tablixpage' && obj.ObjectName === name;
+        });
+
+        if (idx > -1) {
+            self.metadata[idx].Value = dir === 'prev' ? (parseInt(self.metadata[idx].Value) - 1).toString() : (parseInt(self.metadata[idx].Value) + 1).toString()
+        }
+        else {
+            // Table starts at page 1.            
+            self.metadata.push({
+                Key: 'key_tablixpage',
+                ObjectName: name,
+                Value: dir === 'prev' ? '1' : '2'
+            });
+        }
+
+        self.renderReport();
     }
 
     return {        

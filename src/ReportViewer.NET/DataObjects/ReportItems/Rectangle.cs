@@ -88,20 +88,24 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 continue;
                             }
 
-                            sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Report.ToggleItemRequests).GetAwaiter().GetResult().Value);
+                            sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Report.ToggleItemRequests, this.Report.Metadata).GetAwaiter().GetResult().Value);
                         }
                         else
                         {
                             sb.AppendLine(reportItem.Build(this));
                         }
-                    }
 
+                        reportItem.Values = null;
+                    }
+                                        
                     sb.AppendLine("</div>");
                 }
 
                 sb.AppendLine("</div>");
             }
-                                    
+
+            this.Values = null;
+
             return sb.ToString();
         }
 

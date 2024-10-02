@@ -93,7 +93,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     
                 sb.AppendLine("</div>");
             }
-                
+
+            this.Values = null;
+
             return sb.ToString();
         }
 
