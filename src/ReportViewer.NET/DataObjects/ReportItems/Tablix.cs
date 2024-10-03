@@ -90,7 +90,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 var bodyObj = this.TablixBodyObj?.Build();
 
-                if (this.TotalTopLevelGroupCount > 1)
+                if (this.TotalTopLevelGroupCount > 1 && this.PageBreak != PageBreak.None)
                 {
                     sb.AppendLine("<div style=\"display: block; width: 100%;\">");
                     sb.AppendLine("<div class=\"reportviewer-table-pager\">");
@@ -505,7 +505,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     if (this.Tablix.RequestedTablixPage == -1 || 
                         prevTablixMembers.Any(tm => tm.TablixMemberGroup != null) || 
                         groupIdx + 1 == this.Tablix.RequestedTablixPage ||
-                        lastTablix?.GroupedResults != null)
+                        lastTablix?.GroupedResults != null || 
+                        this.Tablix.PageBreak == PageBreak.None)
                     {
                         this.Tablix.GroupedResults = groupedResult;
 
@@ -569,6 +570,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             {
                                 currentRowIndx = this.ProcessTablixMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentRowIndx, pageBreak, tablixHierarchyStructure);
 
+                                // Next member might not be group. This prevents polluting NestedCopy with Tablix's grouped results and will ensure 
+                                // child GroupedResults calculated by "Group" method is accurate.
+                                this.Tablix.GroupedResults = null;
+
                                 prevTablixMembers.Remove(childMember);
                             }
                         }
@@ -619,7 +624,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
             }
             else
-            {
+            {                
                 if (tablixMember.ToggleItem != null)
                 {
                     tablixMember.ToggleItemKey = string.Join('-', this.Tablix.GroupedResultsKeys);
@@ -1049,6 +1054,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     return new List<IGrouping<object, IDictionary<string, object>>>() { this.SortGroup(tablixMember, this.Tablix.GroupedResults) };
                 }
             }
+            //else if (prevTablixMembers.Any(tm => tm.TablixMemberGroup != null && tm.TablixMemberGroup.GroupExpression != null))
+            //{
+            //    var lastTm = prevTablixMembers.Last(tm => tm.TablixMemberGroup != null && tm.TablixMemberGroup.GroupExpression != null);
+
+            //    return this.Group(lastTm, null);
+            //}
 
             return null;
         }
