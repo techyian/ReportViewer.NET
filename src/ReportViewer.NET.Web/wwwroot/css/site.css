@@ -102,11 +102,12 @@ body {
 }
 
 .reportitem-expand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     height: 20px;
     width: 20px;
     margin-right: 0.25rem;
+    float: left;
 }
 
 .reportviewer-table tbody td {
@@ -116,6 +117,10 @@ body {
 
 .report-rectangle {
     flex-wrap: wrap;
+}
+
+.reportviewer-table-pager {
+    margin-bottom: 1rem;
 }
 
 .custom-checkbox .custom-control-label::before {

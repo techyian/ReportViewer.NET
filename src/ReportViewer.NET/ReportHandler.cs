@@ -230,8 +230,8 @@ namespace ReportViewer.NET
                         {
                             datasetObj.Query.QueryParameters.Add(new DataSetQueryParameter
                             {
-                                Name = qp.Attribute("Name")?.Value                                
-                                // TODO: Add default value.
+                                Name = qp.Attribute("Name")?.Value,
+                                Value = qp.Element(ns + "Value")?.Value ?? string.Empty
                             });
                         }
                     }

@@ -181,19 +181,16 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.NestedCopy(parent, this);
 
             var sb = new StringBuilder();
+                        
+            sb.AppendLine(this.TextRuns.Any(tr => tr.MarkupType == "HTML") ? $"<span {this.Style?.Build()}>" : $"<p {this.Style?.Build()}>");
 
-            sb.AppendLine($"<p {this.Style?.Build()}>");
-
-            if (this.TextRuns != null)
+            foreach (var tr in this.TextRuns)
             {
-                foreach (var tr in this.TextRuns)
-                {
-                    sb.AppendLine(tr.Build(this));
-                    sb.AppendLine("<span> </span>");
-                }
+                sb.AppendLine(tr.Build(this));
+                sb.AppendLine("<span> </span>");
             }
-
-            sb.AppendLine("</p>");
+            
+            sb.AppendLine(this.TextRuns.Any(tr => tr.MarkupType == "HTML") ? "</span>" : "</p>");
 
             this.Values = null;
 
@@ -207,6 +204,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public bool ContainsDataSetExpression { get; set; }
         public Paragraph Paragraph { get; set; }
         public string Format { get; set; }
+        public string MarkupType { get; set; }
 
         internal ExpressionParser Parser { get; set; }
 
@@ -217,6 +215,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Value = textRun.Element(paragraph.Report.Namespace + "Value")?.Value;
             this.Style = new Style(textRun.Element(paragraph.Report.Namespace + "Style"), paragraph.Report);
             this.Format = textRun.Element(paragraph.Report.Namespace + "Style").Element(paragraph.Report.Namespace + "Format")?.Value;
+            this.MarkupType = textRun.Element(paragraph.Report.Namespace + "MarkupType")?.Value ?? string.Empty;
+
             this.Parser = new ExpressionParser(paragraph.Report);
         }
 

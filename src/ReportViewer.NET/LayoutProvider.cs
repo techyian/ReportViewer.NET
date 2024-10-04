@@ -146,6 +146,8 @@ namespace ReportViewer.NET
                 sb.AppendLine("</div>");
             }
 
+            var html = new HtmlString(sb.ToString());
+
             return new HtmlString(sb.ToString());
         }
 
@@ -306,15 +308,27 @@ namespace ReportViewer.NET
                 foreach (var queryParam in dataSet.Query.QueryParameters)
                 {
                     // Find user provided value for field.
-                    var reportParamForDataset = reportParams.FirstOrDefault(p => p.Name == queryParam.Name.TrimStart('@'));
+                    var reportParamForDataset = reportParams.FirstOrDefault(
+                        p => p.Name == queryParam.Name.TrimStart('@') || 
+                        (queryParam.Value.StartsWith("=Parameters!") && p.Name == this.ExtractParameterNameFromDataSetQueryParameter(queryParam.Value)));
+
                     var nullableOrDefault = reportParamForDataset != null && (reportParamForDataset.Nullable || !string.IsNullOrEmpty(reportParamForDataset.DefaultValue));
-                    invalidParameter = userProvidedParameters == null || !userProvidedParameters.Any(p => p.Name == queryParam.Name.TrimStart('@'));
-                    var userParam = userProvidedParameters?.FirstOrDefault(p => p.Name == queryParam.Name.TrimStart('@'));
+                    invalidParameter = userProvidedParameters == null || !userProvidedParameters.Any(
+                        p => p.Name == queryParam.Name.TrimStart('@') ||
+                        (queryParam.Value.StartsWith("=Parameters!") && p.Name == this.ExtractParameterNameFromDataSetQueryParameter(queryParam.Value))
+                    );
+                    var userParam = userProvidedParameters?.FirstOrDefault(
+                        p => p.Name == queryParam.Name.TrimStart('@') ||
+                        (queryParam.Value.StartsWith("=Parameters!") && p.Name == this.ExtractParameterNameFromDataSetQueryParameter(queryParam.Value))
+                    );
 
                     if (invalidParameter || (!nullableOrDefault && string.IsNullOrEmpty(userParam.Value) && !userParam.Values.Any()))
                     {
                         break;
                     }
+
+                    // Overwrite name from QueryParameter if needed. They might not be the same.
+                    reportParamForDataset.Name = queryParam.Name.TrimStart('@');
                                         
                     this.HandleDynamicParameterInsert(dynamicParams, reportParamForDataset, userParam, dsQuery);
                 }
@@ -326,7 +340,10 @@ namespace ReportViewer.NET
                 }
 
                 // Run query and use field parameters.
-                var connString = report.DataSources.FirstOrDefault(ds => ds.Name == dsQuery.DataSourceName || ds.DataSourceReference == dsQuery.DataSourceReference)?.ConnectionString;
+                var connString = report.DataSources.FirstOrDefault(
+                    ds => ds.Name == dsQuery.DataSourceName ||
+                    (!string.IsNullOrEmpty(ds.DataSourceReference) && !string.IsNullOrEmpty(dsQuery.DataSourceReference) && ds.DataSourceReference == dsQuery.DataSourceReference)
+                )?.ConnectionString;
 
                 if (!string.IsNullOrEmpty(connString))
                 {
@@ -357,6 +374,17 @@ namespace ReportViewer.NET
             }
 
             return this.TransformDapperKeys(results);
+        }
+
+        private string ExtractParameterNameFromDataSetQueryParameter(string parameterName)
+        {
+            if (!parameterName.StartsWith("=Parameters!"))
+            {
+                return string.Empty;
+            }
+
+            // This probably isn't robust enough so look into a better solution if not appropriate.
+            return parameterName.Replace("=Parameters!", "").Replace(".Value", "");
         }
 
         private List<IDictionary<string, object>> TransformDapperKeys(IEnumerable<dynamic> results)
