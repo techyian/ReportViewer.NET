@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Xml.Linq;
 
-namespace ReportViewer.NET.DataObjects.ReportItems
+namespace ReportViewer.NET.DataObjects
 {
     public class Style
     {
