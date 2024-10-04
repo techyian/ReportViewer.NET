@@ -32,6 +32,11 @@ namespace ReportViewer.NET.Parsers
                 return (typeof(object), null);
             }
 
+            if (DateTime.TryParse(parameter.Value, out var dttValue))
+            {
+                return (typeof(DateTime), dttValue);
+            }
+
             if (bool.TryParse(parameter.Value, out var bValue))
             {
                 return (typeof(bool), bValue);
