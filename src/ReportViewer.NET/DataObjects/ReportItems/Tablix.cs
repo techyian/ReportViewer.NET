@@ -1554,7 +1554,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixMember = tablixMember;
             this.Size = element.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "Size")?.Value;
             this.TablixHeaderContent = new TablixCell(this, element, this.TablixMember.TablixHierarchy.Tablix.Report);
-
+                        
             this.ContainsAggregatorExpression = ExpressionParser.ContainsAggregatorExpression(element?.Value ?? string.Empty);
             this.ContainsRepeatExpression = ExpressionParser.ContainsRepeatExpression(element?.Value ?? string.Empty);
         }
@@ -1574,9 +1574,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     rowCount += this.AdditionalMemberCount;
                 }
 
+                var widthValue = Style.ConvertUnit(this.Size);
+                var cellStyle = !string.IsNullOrEmpty(widthValue) ? $"style=\"width:{widthValue}\"" : "";
                 var rowSpan = rowCount > 0 ? $"rowspan=\"{rowCount}\"" : "";
 
-                sb.AppendLine(!this.InsertedKey ? $"<td data-group-key {rowSpan}>" : "<td>");
+                sb.AppendLine(!this.InsertedKey ? $"<td {cellStyle} data-group-key {rowSpan}>" : "<td>");
                 foreach (var cell in this.TablixHeaderContent.TablixCellContent)
                 {
                     sb.AppendLine(cell.Build(this.TablixMember.TablixHierarchy.Tablix));
