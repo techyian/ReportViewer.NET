@@ -166,9 +166,11 @@ namespace ReportViewer.NET
 
             reportRdl.DataSets.AddRange(_sharedDataSets);
 
-            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "Body").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
+            var reportHeaderItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "PageHeader").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
+            var reportBodyItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "Body").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);            
             var reportFooterItems = this.ProcessReportItems(xml.Root.Descendants(reportRdl.Namespace + "PageFooter").Elements(reportRdl.Namespace + "ReportItems"), dataSets, reportRdl);
 
+            reportRdl.ReportHeaderItems = reportHeaderItems;
             reportRdl.ReportBodyItems = reportBodyItems;
             reportRdl.ReportFooterItems = reportFooterItems;            
             reportRdl.ReportWidth = xml.Root.Descendants(reportRdl.Namespace + "ReportSections").Elements(reportRdl.Namespace + "ReportSection").Elements(reportRdl.Namespace + "Width").FirstOrDefault()?.Value;

@@ -81,9 +81,14 @@ namespace ReportViewer.NET
             report.ToggleItemRequests = toggleItemRequests.ToList();
             report.Metadata = metadata.ToList();
 
+            var reportHeaderItems = report.ReportHeaderItems;
             var reportBodyItems = report.ReportBodyItems;
             var reportFooterItems = report.ReportFooterItems;
             var sb = new StringBuilder();
+            var headerReportRows = new List<ReportRow>()
+            {
+                new ReportRow()
+            };
             var bodyReportRows = new List<ReportRow>()
             {
                 new ReportRow()
@@ -92,9 +97,16 @@ namespace ReportViewer.NET
             {
                 new ReportRow()
             };
-
+            
+            reportHeaderItems = reportHeaderItems.Order(new ReportItemComparer()).ToList();
             reportBodyItems = reportBodyItems.Order(new ReportItemComparer()).ToList();
             reportFooterItems = reportFooterItems.Order(new ReportItemComparer()).ToList();
+
+            // Build rows for header items.
+            foreach (var reportItem in reportHeaderItems)
+            {
+                await this.BuildReportRows(report, headerReportRows, reportItem, userProvidedParameters);
+            }
 
             // Build rows for body items.
             foreach (var reportItem in reportBodyItems)
@@ -109,6 +121,18 @@ namespace ReportViewer.NET
             }
 
             // Process rows into HTML.
+            foreach (var reportRow in headerReportRows)
+            {
+                sb.AppendLine("<div class=\"report-row\">");
+
+                foreach (var reportItem in reportRow.RowItems)
+                {
+                    sb.AppendLine(reportItem.Build(null));
+                }
+
+                sb.AppendLine("</div>");
+            }
+
             foreach (var reportRow in bodyReportRows) 
             {
                 sb.AppendLine($"<div class=\"report-row\" style=\"max-width:{reportRow.RowWidth}mm\">");
@@ -301,6 +325,11 @@ namespace ReportViewer.NET
             
             bool invalidParameter = false;
 
+            var connString = report.DataSources.FirstOrDefault(
+                    ds => ds.Name == dsQuery.DataSourceName ||
+                    (!string.IsNullOrEmpty(ds.DataSourceReference) && !string.IsNullOrEmpty(dsQuery.DataSourceReference) && ds.DataSourceReference == dsQuery.DataSourceReference)
+                )?.ConnectionString;
+
             if (dataSet?.Query.QueryParameters != null && dataSet.Query.QueryParameters.Count > 0)
             {
                 var dynamicParams = new DynamicParameters();
@@ -339,12 +368,7 @@ namespace ReportViewer.NET
                     return this.TransformDapperKeys(results);
                 }
 
-                // Run query and use field parameters.
-                var connString = report.DataSources.FirstOrDefault(
-                    ds => ds.Name == dsQuery.DataSourceName ||
-                    (!string.IsNullOrEmpty(ds.DataSourceReference) && !string.IsNullOrEmpty(dsQuery.DataSourceReference) && ds.DataSourceReference == dsQuery.DataSourceReference)
-                )?.ConnectionString;
-
+                // Run query and use field parameters.                
                 if (!string.IsNullOrEmpty(connString))
                 {
                     using (var conn = new SqlConnection(connString))
@@ -356,11 +380,6 @@ namespace ReportViewer.NET
             else
             {
                 // We can run the query as no user fields are required.
-                var connString = report.DataSources.FirstOrDefault(
-                    ds => ds.Name == dsQuery.DataSourceName || 
-                    (!string.IsNullOrEmpty(ds.DataSourceReference) && !string.IsNullOrEmpty(dsQuery.DataSourceReference) && ds.DataSourceReference == dsQuery.DataSourceReference)
-                )?.ConnectionString;
-
                 using (var conn = new SqlConnection(connString))
                 {
                     try
