@@ -133,7 +133,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
             else
             {
-                if (reportItem.Top > currentRow.RowHeight)
+                if (reportItem.Top >= currentRow.RowHeight)
                 {
                     var newRow = new ReportRow()
                     {

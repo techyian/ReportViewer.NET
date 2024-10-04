@@ -7,6 +7,11 @@ namespace ReportViewer.NET.Comparers
     {
         public int Compare(ReportItem x, ReportItem y)
         {
+            if (x?.Top == 0 || y?.Top == 0)
+            {
+                return -1;
+            }
+
             if (x?.Top == y?.Top && x?.Left < y?.Left)
             {
                 return -1;

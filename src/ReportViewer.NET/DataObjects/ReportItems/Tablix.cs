@@ -523,18 +523,21 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         if (tablixMember.TablixHeader != null)
                         {
                             var currentRow = this.TablixRows[currentRowIndx];
-                            var prevHeader = prevTablixMembers.LastOrDefault(t => t.TablixHeader != null);
+                            var prevHeaders = prevTablixMembers.Where(t => t.TablixHeader != null);
 
-                            if (prevHeader != null)
+                            if (prevHeaders.Any())
                             {
-                                // Here we are wanting to apply the group count of the current grouping to the previous header so we can accurately 
-                                // state rowcount against the row.
-                                prevHeader.TablixHeader.GroupCount = groupedResults.Count;
-                                prevHeader.TablixHeader.AdditionalMemberCount = prevHeader.TablixMembers.Count;
-
-                                if (prevHeader.IsRootMember && prevHeader.TablixMembers.Count > 0)
+                                foreach (var ph in prevHeaders)
                                 {
-                                    prevHeader.TablixHeader.AdditionalMemberCount--;
+                                    // Here we are wanting to apply the group count of the current grouping to the previous header so we can accurately 
+                                    // state rowcount against the row.
+                                    ph.TablixHeader.GroupCount = groupedResults.Count > ph.TablixHeader.GroupCount ? groupedResults.Count : ph.TablixHeader.GroupCount;
+                                    ph.TablixHeader.AdditionalMemberCount = ph.TablixMembers.Count;
+
+                                    if (ph.TablixMembers.Count > 0)
+                                    {
+                                        ph.TablixHeader.AdditionalMemberCount--;
+                                    }
                                 }
                             }
 
@@ -561,7 +564,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         if (tablixMember.TablixMembers.Any())
                         {
                             // Do we have enough rows to print this member and its children?
-                            if (this.TablixRows.Count > currentRowIndx + tablixMember.TablixMembers.Count)
+                            if (this.TablixRows.Count > currentRowIndx + tablixMember.TablixMembers.Count && !tablixMember.TablixMembers.Any(tm => tm.TablixHeader != null))
                             {
                                 currentRowIndx = this.ProcessResults(currentRowIndx, tablixMember, prevTablixMembers, groupedResult, tablixHierarchyStructure, pageBreak, sb);
                             }
