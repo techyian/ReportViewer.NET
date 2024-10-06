@@ -83,16 +83,21 @@ public class HomeController : Controller, IReportViewerController
 
 ## Element compatibility
 
-| Element     | Status     | Comments                   |
-| -------     | ------     | --------                   |
-| Page Header | Complete   |                            |    
-| Page Footer | Complete   |                            |    
-| Textbox     | Complete   |                            |    
-| Paragraph   | Complete   |                            |    
-| Textrun     | Complete   |                            |    
+| Element     | Status     | Comments                      |
+| -------     | ------     | --------                      |
+| Page Header | Complete   |                               |    
+| Page Footer | Complete   |                               |    
+| Textbox     | Complete   |                               |    
+| Paragraph   | Complete   |                               |    
+| Textrun     | Complete   |                               |    
 | Style       | Partial    | Most common features are working. |    
 | ActionInfo  | Partial    | Only hyperlinks currently working. |    
 | Tablix      | Complete?  | Groups, sorting, TablixRowHierarchy, TablixColumnHierarchy appear working. Standard/matrix tables look pretty accurate from local testing.      |    
+| Rectangle   | Complete   |                               |    
+| Line        | Complete   |                               |    
+| Image       | Partial    | JPEG/PNG currently supported  |    
+| Sub Report  | Complete   |                               |    
+
 
 ## Built-in field compatibility
 | Field                          | Status        | Comments                   |
