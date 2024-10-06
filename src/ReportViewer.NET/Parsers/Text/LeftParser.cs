@@ -10,9 +10,7 @@ namespace ReportViewer.NET.Parsers.Text
     public class LeftParser : BaseParser
     {
         public static Regex LeftRegex = RegexCommon.GenerateMultiParamParserRegex("Left");
-
-        private ExpressionParser _expressionParser;
-
+                
         public LeftParser(
             string currentString,
             TablixOperator op,
@@ -23,8 +21,7 @@ namespace ReportViewer.NET.Parsers.Text
             DataSet activeDataset,
             ReportRDL report
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, LeftRegex, report)
-        {
-            _expressionParser = new ExpressionParser(report);
+        {        
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
@@ -88,7 +85,7 @@ namespace ReportViewer.NET.Parsers.Text
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var stringExpression = (string)_expressionParser.ParseTablixExpressionString(stringGroups[0], DataSetResults, Values, DataSets, ActiveDataset, null);
+            var stringExpression = (string)this.Report.Parser.ParseTablixExpressionString(stringGroups[0], DataSetResults, Values, DataSets, ActiveDataset, null);
             var numChars = int.Parse(stringGroups[1]);
 
             CurrentExpression.Index = match.Index;

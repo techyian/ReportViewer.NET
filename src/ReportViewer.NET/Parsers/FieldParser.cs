@@ -12,8 +12,6 @@ namespace ReportViewer.NET.Parsers
         public static Regex FieldRegex = new Regex("(\\bFields!\\b(.*?)\\.Value)", RegexOptions.IgnoreCase);
         public static Regex FieldDatasetRegex = new Regex("(\\bFields!\\b(.*?)\\))", RegexOptions.IgnoreCase);
 
-        private readonly ExpressionParser _expressionParser;
-
         public FieldParser(
             string currentString, 
             TablixOperator op, 
@@ -24,8 +22,7 @@ namespace ReportViewer.NET.Parsers
             DataSet activeDataset,
             ReportRDL report
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FieldRegex, report)
-        {
-            _expressionParser = new ExpressionParser(report);
+        {            
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
@@ -36,7 +33,7 @@ namespace ReportViewer.NET.Parsers
             if (this.ActiveDataset != null && this.ActiveDataset.Fields.Any(f => !string.IsNullOrEmpty(f.Name) && f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)))
             {
                 var calcField = this.ActiveDataset.Fields.First(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)).Value;
-                var resolvedValue = _expressionParser.ParseTablixExpressionString(calcField, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(calcField, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
 
                 return (resolvedValue.GetType(), resolvedValue);
             }
@@ -45,7 +42,7 @@ namespace ReportViewer.NET.Parsers
                 var ds = this.DataSets.First(ds => ds.Fields.Any(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)));
                 var calcField = ds.Fields.First(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)).Value;
 
-                var resolvedValue = _expressionParser.ParseTablixExpressionString(calcField, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(calcField, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
                 
                 return (resolvedValue.GetType(), resolvedValue);
             }

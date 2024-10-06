@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Xml.Linq;
 using ReportViewer.NET.DataObjects.ReportItems;
+using ReportViewer.NET.Parsers;
 
 namespace ReportViewer.NET.DataObjects
 {
@@ -24,5 +25,11 @@ namespace ReportViewer.NET.DataObjects
         public List<string> ToggleItemRequests { get; set; }
         public List<ReportRDL> CurrentRegisteredReports { get; set; }
         public List<ReportMetadata> Metadata { get; set; } = new List<ReportMetadata>();
+        public ExpressionParser Parser { get; private set; }
+
+        public ReportRDL()
+        {
+            this.Parser = new ExpressionParser(this);
+        }
     }
 }

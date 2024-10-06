@@ -12,8 +12,6 @@ namespace ReportViewer.NET.Parsers.Text
     {
         public static Regex FormatCurrencyRegex = RegexCommon.GenerateMultiParamParserRegex("FormatCurrency");
 
-        private readonly ExpressionParser _expressionParser;
-
         public FormatCurrencyParser(
             string currentString,
             TablixOperator op,
@@ -24,8 +22,7 @@ namespace ReportViewer.NET.Parsers.Text
             DataSet activeDataset,
             ReportRDL report
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FormatCurrencyRegex, report)
-        {
-            _expressionParser = new ExpressionParser(report);
+        {            
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
@@ -66,7 +63,7 @@ namespace ReportViewer.NET.Parsers.Text
             // Then grab the last of the string.
             stringGroups.Add(fcValue.Substring(removed, fcValue.Length - removed));
 
-            var parsedExpression = _expressionParser.ParseTablixExpressionString(stringGroups[0], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+            var parsedExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[0], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
 
             this.CurrentExpression.Index = fcMatch.Index;
             this.CurrentExpression.ResolvedType = typeof(string);

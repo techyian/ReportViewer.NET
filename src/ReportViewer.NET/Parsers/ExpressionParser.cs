@@ -14,7 +14,7 @@ using System.Text;
 
 namespace ReportViewer.NET.Parsers
 {
-    internal class ExpressionParser
+    public class ExpressionParser
     {
         private readonly TablixOperator[] ArithmeticOperators = { TablixOperator.Add, TablixOperator.Subtract, TablixOperator.Multiply, TablixOperator.Divide, TablixOperator.Mod };
 

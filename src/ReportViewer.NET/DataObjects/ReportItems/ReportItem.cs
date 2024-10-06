@@ -7,14 +7,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 {    
     public abstract class ReportItem
     {        
-        public ReportRDL Report { get; set; }
-        public XElement XElement { get; set; }
+        public ReportRDL Report { get; private set; }
+        public XElement XElement { get; private set; }
         public string Name { get; set; }        
         public Style Style { get; set; }
-        public double Top { get; set; }
-        public double Left { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
+        public double Top { get; private set; }
+        public double Left { get; private set; }
+        public double Width { get; private set; }
+        public double Height { get; private set; }
         public bool Hidden { get; set; }
         public string ToggleItem { get; set; }        
         public ReportRow ReportRow { get; set; }
@@ -25,7 +25,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public IEnumerable<DataSet> DataSets { get; set; }
         public List<ReportItem> Parents { get; set; } = new List<ReportItem>();
         public List<string> GroupedResultsKeys { get; set; } = new List<string>();
-
+        
         public ReportItem(XElement element, ReportRDL report, ReportItem parent)
         {
             this.Report = report;
@@ -69,9 +69,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Style.Left = leftValue;
             this.Style.Height = heightValue;
             this.Style.Width = widthValue;
-
-            var expressionParser = new ExpressionParser(report);
-            var isHidden = expressionParser.ParseTablixExpressionString(
+                        
+            var isHidden = report.Parser.ParseTablixExpressionString(
                 element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "Hidden")?.Value,
                 null,
                 null,

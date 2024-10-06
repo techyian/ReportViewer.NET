@@ -11,8 +11,6 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
     {
         public static Regex IfRegex = RegexCommon.GenerateMultiParamParserRegex("IIF");
 
-        private ExpressionParser _expressionParser;
-
         public IfParser(
             string currentString,
             TablixOperator op,
@@ -24,7 +22,6 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
             ReportRDL report
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, IfRegex, report)
         {
-            _expressionParser = new ExpressionParser(report);
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
@@ -89,9 +86,9 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var booleanExpression = _expressionParser.ParseTablixExpressionString(stringGroups[0], DataSetResults, Values, DataSets, ActiveDataset, null);
-            var thenExpression = _expressionParser.ParseTablixExpressionString(stringGroups[1], DataSetResults, Values, DataSets, ActiveDataset, null);
-            var elseExpression = _expressionParser.ParseTablixExpressionString(stringGroups[2], DataSetResults, Values, DataSets, ActiveDataset, null);
+            var booleanExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[0], DataSetResults, Values, DataSets, ActiveDataset, null);
+            var thenExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[1], DataSetResults, Values, DataSets, ActiveDataset, null);
+            var elseExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[2], DataSetResults, Values, DataSets, ActiveDataset, null);
 
             CurrentExpression.Index = match.Index;
             CurrentExpression.ResolvedType = typeof(string);

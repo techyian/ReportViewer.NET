@@ -66,10 +66,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 }
                                 // Try to retrieve the parameter from the tablix row.
                                 else
-                                {
-                                    var expressionParser = new ExpressionParser(this.Report);
+                                {                                    
                                     var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.DataSetReference?.DataSet?.DataSetResults;
-                                    var parsedValue = expressionParser.ParseTablixExpressionString(p.Value, dataSetResults, null, this.DataSets, this.DataSetReference?.DataSet, null);
+                                    var parsedValue = this.Report.Parser.ParseTablixExpressionString(p.Value, dataSetResults, null, this.DataSets, this.DataSetReference?.DataSet, null);
 
                                     if (parsedValue != null)
                                     {

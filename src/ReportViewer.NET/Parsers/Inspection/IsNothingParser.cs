@@ -10,8 +10,6 @@ namespace ReportViewer.NET.Parsers.Inspection
     {
         public static Regex IsNothingRegex = RegexCommon.GenerateMultiParamParserRegex("IsNothing");
 
-        private ExpressionParser _expressionParser;
-
         public IsNothingParser(
             string currentString,
             TablixOperator op,
@@ -23,7 +21,6 @@ namespace ReportViewer.NET.Parsers.Inspection
             ReportRDL report
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, IsNothingRegex, report)
         {
-            _expressionParser = new ExpressionParser(report);
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
@@ -36,7 +33,7 @@ namespace ReportViewer.NET.Parsers.Inspection
             var match = IsNothingRegex.Match(CurrentString);
             var expression = CurrentString.Substring(10, CurrentString.Length - 11);
 
-            var resolvedValue = _expressionParser.ParseTablixExpressionString(expression, DataSetResults, Values, DataSets, ActiveDataset, null);
+            var resolvedValue = this.Report.Parser.ParseTablixExpressionString(expression, DataSetResults, Values, DataSets, ActiveDataset, null);
 
             CurrentExpression.Index = match.Index;
             CurrentExpression.ResolvedType = typeof(bool);

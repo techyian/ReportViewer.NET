@@ -1,4 +1,5 @@
 ﻿using ReportViewer.NET.Parsers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,11 +9,16 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 {
     public class Textbox : ReportItem
     {   
-        public bool CanGrow { get; set; }
-        public bool KeepTogether { get; set; }
-        public List<Paragraph> Paragraphs { get; set; }        
-        public TablixCell Cell { get; set; }
-        
+        public bool CanGrow { get; private set; }
+        public bool KeepTogether { get; private set; }
+        public List<Paragraph> Paragraphs { get; private set; }        
+        public TablixCell Cell { get; private set; }
+        public ActionInfo ActionInfo { get; private set; }
+
+        public Func<string, IEnumerable<IDictionary<string, object>>, string, object> TablixCellRowExpression { get; private set; }
+        public Func<string, IEnumerable<IDictionary<string, object>>, string, object> TablixCellHeaderExpression { get; private set; }
+        public Func<string, IEnumerable<IDictionary<string, object>>, ReportItem, string, object> StandaloneExpression { get; private set; }
+
         private const string _expandSvg = @"
             <svg fill=""#000000"" version=""1.1"" id=""Capa_1"" xmlns=""http://www.w3.org/2000/svg"" xmlns:xlink=""http://www.w3.org/1999/xlink"" 
 	             width=""10px"" height=""10px"" viewBox=""0 0 45.402 45.402""
@@ -51,6 +57,40 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     this.Paragraphs.Add(new Paragraph(this, p));
                 }
             }
+
+            var ai = textbox.Element(report.Namespace + "ActionInfo");
+
+            if (ai != null)
+            {
+                this.ActionInfo = new ActionInfo(ai, report);
+            }
+
+            this.TablixCellRowExpression = (value, datasetResults, format) => report.Parser.ParseTablixExpressionString(
+                value,
+                datasetResults,
+                this.Cell.Row.Values,
+                this.Cell.Row.Body.Tablix.DataSets,
+                this.Cell.Row.Body.Tablix.DataSetReference?.DataSet,
+                format
+            );
+
+            this.TablixCellHeaderExpression = (value, datasetResults, format) => report.Parser.ParseTablixExpressionString(
+                value,
+                datasetResults,
+                this.Cell.Header.TablixMember.Values,
+                this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSets,
+                this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet,
+                format
+            );
+
+            this.StandaloneExpression = (value, datasetResults, parent, format) => report.Parser.ParseTablixExpressionString(
+                value,
+                datasetResults,
+                null,
+                this.Report.DataSets,
+                parent?.DataSetReference?.DataSet,
+                format
+            );
         }
 
         public override string Build(ReportItem parent)
@@ -61,54 +101,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             
             if (this.Style.BackgroundColor != null && this.Style.BackgroundColor.StartsWith('='))
             {
-                var expressionParser = new ExpressionParser(this.Report);
-
-                if (this.Cell != null)
-                {
-                    // We've come from a tablix cell.
-                    if (this.Cell.Row != null)
-                    {
-                        var dataSetResults = this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColorExpressionValue = 
-                            (expressionParser.ParseTablixExpressionString(
-                                this.Style.BackgroundColor, 
-                                dataSetResults, 
-                                this.Cell.Row.Values, 
-                                this.Cell.Row.Body.Tablix.DataSets, 
-                                this.Cell.Row.Body.Tablix.DataSetReference?.DataSet, 
-                                null
-                            )
-                        ).ToString();
-                    }
-                    else if (this.Cell.Header != null)
-                    {
-                        var dataSetResults = this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        this.Style.BackgroundColorExpressionValue = 
-                            (expressionParser.ParseTablixExpressionString(
-                                this.Style.BackgroundColor, 
-                                dataSetResults, 
-                                this.Cell.Header.TablixMember.Values,
-                                this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSets, 
-                                this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet, 
-                                null
-                            )
-                        ).ToString();
-                    }
-                }
-                else
-                {                    
-                    // We've come from a standalone textbox. Try to find dataset for this field.
-                    this.Style.BackgroundColorExpressionValue = 
-                        (expressionParser.ParseTablixExpressionString(
-                            this.Style.BackgroundColor, 
-                            null, 
-                            null, 
-                            this.Report.DataSets, 
-                            parent?.DataSetReference?.DataSet, 
-                            null
-                        )
-                    ).ToString();
-                }
+                this.Style.BackgroundColorExpressionValue = this.GetExpression(this.Style.BackgroundColor, null, parent);               
             }
 
             if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem) || (this.Report.ToggleItemRequests.Contains(this.GroupedResults?.Key))))
@@ -138,17 +131,71 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     }                                        
                 }
 
-                if (this.Paragraphs != null)
+                if (this.ActionInfo != null && this.ActionInfo.Action != null)
                 {
-                    foreach (var p in this.Paragraphs)
+                    var actionType = Enum.GetName(typeof(ActionType), this.ActionInfo.Action.Type);
+                    
+                    switch (this.ActionInfo.Action.Type)
                     {
-                        sb.AppendLine(p.Build(this));
+                        case ActionType.Hyperlink:
+                            var exValue = this.GetExpression(this.ActionInfo.Action.Hyperlink, null, parent);
+                            sb.AppendLine($"<a href=\"{exValue}\" target=\"_blank\" data-aitype=\"{actionType}\">");
+                            break;
+                        // TODO: Other action types.
                     }
+                                        
+                    sb.AppendLine(this.BuildParagraphs());
+                    sb.AppendLine("</a>");
                 }
-
+                else
+                {
+                    sb.AppendLine(this.BuildParagraphs());
+                }
+                                
                 sb.AppendLine("</div>");
             }
                         
+            return sb.ToString();
+        }
+
+        public string GetExpression(string value, string format, ReportItem parent)
+        {
+            if (this.Cell != null)
+            {
+                // We've come from a tablix cell.
+                if (this.Cell.Row != null)
+                {
+                    var dataSetResults = this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                    return this.TablixCellRowExpression(value, dataSetResults, format).ToString();
+                }
+                else if (this.Cell.Header != null)
+                {
+                    var dataSetResults = this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                    return this.TablixCellHeaderExpression(value, dataSetResults, format).ToString();
+                }
+            }
+            else
+            {
+                var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
+
+                return this.StandaloneExpression(value, dataSetResults, parent, format).ToString();
+            }
+
+            return string.Empty;
+        }
+
+        private string BuildParagraphs()
+        {
+            var sb = new StringBuilder();
+
+            if (this.Paragraphs != null)
+            {
+                foreach (var p in this.Paragraphs)
+                {
+                    sb.AppendLine(p.Build(this));
+                }
+            }
+
             return sb.ToString();
         }
     }
@@ -206,8 +253,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string Format { get; set; }
         public string MarkupType { get; set; }
 
-        internal ExpressionParser Parser { get; set; }
-
         public TextRun(Paragraph paragraph, XElement textRun)
             : base(textRun, paragraph.Report, paragraph)
         {
@@ -216,8 +261,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Style = new Style(textRun.Element(paragraph.Report.Namespace + "Style"), paragraph.Report);
             this.Format = textRun.Element(paragraph.Report.Namespace + "Style").Element(paragraph.Report.Namespace + "Format")?.Value;
             this.MarkupType = textRun.Element(paragraph.Report.Namespace + "MarkupType")?.Value ?? string.Empty;
-
-            this.Parser = new ExpressionParser(paragraph.Report);
         }
 
         public override string Build(ReportItem parent)
@@ -228,53 +271,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 TablixCell cell = this.Paragraph.Textbox.Cell;
 
-                if (cell != null)
-                {                    
-                    // We've come from a tablix cell.
-                    if (cell.Row != null)
-                    {
-                        var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        var parsedValue = this.Parser.ParseTablixExpressionString(
-                            this.Value, 
-                            dataSetResults, 
-                            cell.Row.Values, 
-                            cell.Row.Body.Tablix.DataSets, 
-                            cell.Row.Body.Tablix.DataSetReference?.DataSet, 
-                            this.Format
-                        );
+                var parsedValue = this.Paragraph.Textbox.GetExpression(this.Value, this.Format, parent);
 
-                        this.Values = null;
-
-                        return $"<span {this.Style?.Build()}>{parsedValue}</span>";
-                    }
-                    else if (cell.Header != null)
-                    {
-                        var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                        var parsedValue = this.Parser.ParseTablixExpressionString(
-                            this.Value, 
-                            dataSetResults, 
-                            cell.Header.TablixMember.Values, 
-                            cell.Header.TablixMember.TablixHierarchy.Tablix.DataSets, 
-                            cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet, 
-                            this.Format
-                        );
-
-                        this.Values = null;
-
-                        return $"<span {this.Style?.Build()}>{parsedValue}</span>";
-                    }
-                }
-                else
-                {
-                    var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
-
-                    // We've come from a standalone textbox. Try to find dataset for this field.
-                    var parsedValue = this.Parser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, this.Paragraph.Textbox.DataSets, parent?.DataSetReference?.DataSet, this.Format);
-
-                    this.Values = null;
-
-                    return $"<span {this.Style?.Build()}>{parsedValue}</span>";
-                }
+                return $"<span {this.Style?.Build()}>{parsedValue}</span>";               
             }
 
             return $"<span {this.Style?.Build()}>{this.Value}</span>";

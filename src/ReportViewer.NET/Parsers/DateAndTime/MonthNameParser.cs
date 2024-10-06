@@ -11,8 +11,6 @@ namespace ReportViewer.NET.Parsers.DateAndTime
     {
         public static Regex MonthNameRegex = RegexCommon.GenerateMultiParamParserRegex("MonthName");
 
-        private ExpressionParser _expressionParser;
-
         public MonthNameParser(
             string currentString,
             TablixOperator op,
@@ -23,8 +21,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             DataSet activeDataset,
             ReportRDL report
         ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, MonthNameRegex, report)
-        {
-            _expressionParser = new ExpressionParser(report);
+        {            
         }
 
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
@@ -47,7 +44,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             if (commaMatches.Count == 0)
             {
                 // No need to abbreviate, just return full month name.
-                monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
+                monthNum = (int)this.Report.Parser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
 
                 CurrentExpression.Index = match.Index;
                 CurrentExpression.ResolvedType = typeof(string);
@@ -85,7 +82,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            monthNum = (int)_expressionParser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
+            monthNum = (int)this.Report.Parser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
 
             CurrentExpression.Index = match.Index;
             CurrentExpression.ResolvedType = typeof(string);

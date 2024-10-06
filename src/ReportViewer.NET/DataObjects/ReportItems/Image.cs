@@ -8,15 +8,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 {
     public class Image : ReportItem
     {
-        public string Source { get; set; }
+        public string Source { get; private set; }
         // This is the "name" of the image we're looking for
-        public string Value { get; set; }
-        public string Sizing { get; set; }
-        public string MIMEType { get; set; }
-        public EmbeddedImage EmbeddedImage { get; set; }
-
-        private readonly ExpressionParser _expressionParser;
-
+        public string Value { get; private set; }
+        public string Sizing { get; private set; }
+        public string MIMEType { get; private set; }
+        public EmbeddedImage EmbeddedImage { get; private set; }
+                
         public Image(XElement image, ReportRDL report, ReportItem parent)
             : base(image, report, parent)
         {
@@ -30,8 +28,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             // TODO: Handle other sources?             
             this.EmbeddedImage = report.EmbeddedImages?.FirstOrDefault(i => i.Name == this.Value);
-
-            _expressionParser = new ExpressionParser(report);
         }
 
         public override string Build(ReportItem parent)
@@ -116,7 +112,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         private string BuildDatabaseImage(ReportItem parent)
         {
             var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
-            var parsedValue = _expressionParser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, parent?.DataSets, parent?.DataSetReference?.DataSet, null);
+            var parsedValue = this.Report.Parser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, parent?.DataSets, parent?.DataSetReference?.DataSet, null);
             var b64 = string.Empty;
 
             // TODO: Will this ever not be a byte[]?

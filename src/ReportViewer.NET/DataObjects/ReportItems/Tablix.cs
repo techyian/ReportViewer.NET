@@ -11,10 +11,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 {    
     public class Tablix : ReportItem
     {           
-        public TablixBody TablixBodyObj { get; set; }
-        public TablixHierarchy TablixColumnHierarchy { get; set; }
-        public TablixHierarchy TablixRowHierarchy { get; set; }        
-        public PageBreak PageBreak { get; set; }
+        public TablixBody TablixBodyObj { get; private set; }
+        public TablixHierarchy TablixColumnHierarchy { get; private set; }
+        public TablixHierarchy TablixRowHierarchy { get; private set; }        
+        public PageBreak PageBreak { get; private set; }
         public int TotalTopLevelGroupCount { get; set; }
         public int RequestedTablixPage { get; set; } = 1;
 
@@ -129,16 +129,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public List<TablixRow> TablixRows { get; set; }
         public Tablix Tablix { get; set; }        
         public int TotalTablixRowHeaders { get; set; }
-        
-        internal ExpressionParser Parser { get; set; }
-
+                
         internal TablixBody(Tablix tablix, XElement tablixBody)
         {
             this.Tablix = tablix;
             this.TablixColumns = new List<TablixColumn>();
             this.TablixRows = new List<TablixRow>();
-            this.Parser = new ExpressionParser(this.Tablix.Report);
-
+            
             var columns = tablixBody.Elements(this.Tablix.Report.Namespace + "TablixColumns").Elements(this.Tablix.Report.Namespace + "TablixColumn");
             var rows = tablixBody.Elements(this.Tablix.Report.Namespace + "TablixRows").Elements(this.Tablix.Report.Namespace + "TablixRow");
 
@@ -1280,10 +1277,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         }
                         // Try to retrieve the parameter from the tablix row.
                         else
-                        {
-                            var expressionParser = new ExpressionParser(this.Body.Tablix.Report);
+                        {                            
                             var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                            var parsedValue = expressionParser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, this.Body.Tablix.DataSetReference?.DataSet, null);
+                            var parsedValue = this.Body.Tablix.Report.Parser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, this.Body.Tablix.DataSetReference?.DataSet, null);
 
                             if (parsedValue != null)
                             {
@@ -1435,15 +1431,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixMembers = new List<TablixMember>();
             this.IsRootMember = isRootMember;
             this.HierarchyLevel = hierarchyLevel;
-
-            var expressionParser = new ExpressionParser(this.TablixHierarchy.Tablix.Report);
-
+                        
             var tablixGroup = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Group");
             var tablixSort = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "SortExpressions")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "SortExpression");
             var tablixHeader = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "TablixHeader");
             var tablixMemberElements = element.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMembers")?.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMember");
             
-            var isHidden = expressionParser.ParseTablixExpressionString(
+            var isHidden = this.TablixHierarchy.Tablix.Report.Parser.ParseTablixExpressionString(
                 element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Hidden")?.Value,
                 null,
                 null,
