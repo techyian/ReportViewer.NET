@@ -36,6 +36,8 @@ builder.Services.AddScoped<IReportHandler, ReportHandler>(serviceProvider =>
     // If you have sub-reports, make sure that the child reports are registered first before the parent 
     // and ensure the names match correctly.
     reportViewer.RegisterRdlFromFile("REPORT NAME", "FULL REPORT FILEPATH AND FILENAME");
+    
+    return reportViewer;
 });
 ```
 
