@@ -97,6 +97,12 @@ public class HomeController : Controller, IReportViewerController
 | Line        | Complete   |                               |    
 | Image       | Partial    | JPEG/PNG currently supported  |    
 | Sub Report  | Complete   |                               |    
+| Chart       | Not started|                               |
+| Gauge       | Not started|                               |
+| Map         | Not started|                               |
+| Data Bar    | Not started|                               |
+| Sparkline   | Not started|                               |
+| Indicator   | Not started|                               |
 
 
 ## Built-in field compatibility
