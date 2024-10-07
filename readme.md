@@ -295,3 +295,9 @@ public class HomeController : Controller, IReportViewerController
 | Misc          | MultiLookup       | Not started   |                            |
 | Misc          | Previous          | Not started   |                            |
 | Misc          | RowNumber         | Not started   |                            |
+
+
+
+## License
+
+ReportViewer.NET is made available under the MIT license.
