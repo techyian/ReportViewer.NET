@@ -164,12 +164,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 // We've come from a tablix cell.
                 if (this.Cell.Row != null)
                 {
-                    var dataSetResults = this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                    var dataSetResults =
+                        this.GroupedResults?.Select(r => r).ToList() ??
+                        this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? 
+                        this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
+
                     return this.TablixCellRowExpression(value, dataSetResults, format).ToString();
                 }
                 else if (this.Cell.Header != null)
                 {
-                    var dataSetResults = this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
+                    var dataSetResults =
+                        this.GroupedResults?.Select(r => r).ToList() ??
+                        this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? 
+                        this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
                     return this.TablixCellHeaderExpression(value, dataSetResults, format).ToString();
                 }
             }

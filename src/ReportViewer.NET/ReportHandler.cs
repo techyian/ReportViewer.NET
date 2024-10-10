@@ -297,7 +297,8 @@ namespace ReportViewer.NET
                     Nullable = rp.Element(ns + "Nullable")?.Value == "true",
                     Prompt = rp.Element(ns + "Prompt")?.Value,
                     MultiValue = rp.Element(ns + "MultiValue")?.Value == "true",
-                    DefaultValue = rp.Element(ns + "DefaultValue")?.Element(ns + "Values")?.Element(ns + "Value")?.Value
+                    DefaultValue = rp.Element(ns + "DefaultValue")?.Element(ns + "Values")?.Element(ns + "Value")?.Value,
+                    ParameterValues = new List<ParameterValue>()
                 };
 
                 if (!string.IsNullOrEmpty(reportParamObj.DataType))
@@ -328,6 +329,20 @@ namespace ReportViewer.NET
                     };
 
                     reportParamObj.DataSetReference.DataSet = datasets.FirstOrDefault(ds => ds.Name == reportParamObj.DataSetReference.DataSetName);
+                }
+
+                var pvs = rp.Element(ns + "ValidValues")?.Element(ns + "ParameterValues")?.Elements(ns + "ParameterValue");
+
+                if (pvs != null)
+                {
+                    foreach (var pv in pvs)
+                    {
+                        reportParamObj.ParameterValues.Add(new ParameterValue
+                        {
+                            Label = pv.Element(ns + "Label")?.Value,
+                            Value = pv.Element(ns + "Label")?.Value
+                        });
+                    }
                 }
 
                 reportParamList.Add(reportParamObj);

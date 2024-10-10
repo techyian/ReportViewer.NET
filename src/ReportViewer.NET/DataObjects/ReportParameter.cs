@@ -18,6 +18,7 @@ namespace ReportViewer.NET.DataObjects
         public string DefaultValue { get; set; }
         public DataSetReference DataSetReference { get; set; }
         public bool RequiredParam => !this.Nullable && string.IsNullOrEmpty(this.DefaultValue);
+        public List<ParameterValue> ParameterValues { get; set; }
 
         public string Build(ReportParameter userProvidedParameter)
         {
@@ -64,6 +65,52 @@ namespace ReportViewer.NET.DataObjects
                             ");
                         }
                         
+                        idx++;
+                    }
+
+                    sb.AppendLine("</div>");
+
+                    return sb.ToString();
+                }
+                else if (this.ParameterValues != null && this.ParameterValues.Any())
+                {
+                    // Select list
+                    var idx = 0;
+                    var multiValue = this.MultiValue ? "true" : "false";
+
+                    var sb = new StringBuilder();
+                    sb.AppendLine("<div class=\"reportparam reportparam-list\">");
+                    sb.AppendLine("<label>" + this.Prompt + @"</label>");
+
+                    foreach (var pv in ParameterValues)
+                    {
+                        //var name = this.MultiValue ? this.Name + "[]" : this.Name;
+                        var elementId = $"{this.Name}-{idx}";
+
+                        if (userProvidedParameter != null &&
+                            (
+                             (this.MultiValue && userProvidedParameter.Values != null && userProvidedParameter.Values.Any(p => p == pv.Value)) ||
+                             (!this.MultiValue && userProvidedParameter.Value == pv.Value)
+                            )
+                        )
+                        {
+                            sb.AppendLine(@"                                
+                                <div class=""custom-control custom-checkbox"">
+                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + pv.Value + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""" checked>
+                                    <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + pv.Value + @"</label>
+                                </div>
+                            ");
+                        }
+                        else
+                        {
+                            sb.AppendLine(@"                                
+                                <div class=""custom-control custom-checkbox"">
+                                    <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + pv.Value + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""">
+                                    <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + pv.Value + @"</label>
+                                </div>
+                            ");
+                        }
+
                         idx++;
                     }
 
