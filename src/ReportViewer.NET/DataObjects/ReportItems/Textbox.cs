@@ -85,7 +85,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.StandaloneExpression = (value, datasetResults, parent, format) => report.Parser.ParseTablixExpressionString(
                 value,
                 datasetResults,
-                null,
+                this.Values,
                 this.Report.DataSets,
                 parent?.DataSetReference?.DataSet,
                 format
@@ -153,6 +153,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 
                 sb.AppendLine("</div>");
             }
+
+            this.Values = null;
                         
             return sb.ToString();
         }
@@ -169,7 +171,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         this.Cell.Row.GroupedResults?.Select(r => r).ToList() ?? 
                         this.Cell.Row.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
 
-                    return this.TablixCellRowExpression(value, dataSetResults, format).ToString();
+                    return this.TablixCellRowExpression(value, dataSetResults, format)?.ToString();
                 }
                 else if (this.Cell.Header != null)
                 {
@@ -177,14 +179,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         this.GroupedResults?.Select(r => r).ToList() ??
                         this.Cell.Header.GroupedResults?.Select(r => r).ToList() ?? 
                         this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                    return this.TablixCellHeaderExpression(value, dataSetResults, format).ToString();
+                    return this.TablixCellHeaderExpression(value, dataSetResults, format)?.ToString();
                 }
             }
             else
             {
                 var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
 
-                return this.StandaloneExpression(value, dataSetResults, parent, format).ToString();
+                return this.StandaloneExpression(value, dataSetResults, parent, format)?.ToString();
             }
 
             return string.Empty;
@@ -279,8 +281,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 var parsedValue = this.Paragraph.Textbox.GetExpression(this.Value, this.Format, parent);
 
+                this.Values = null;
+
                 return $"<span {this.Style?.Build()}>{parsedValue}</span>";               
             }
+
+            this.Values = null;
 
             return $"<span {this.Style?.Build()}>{this.Value}</span>";
         }                

@@ -105,6 +105,7 @@ public class HomeController : Controller, IReportViewerController
 | Data Bar    | Not started|                               |
 | Sparkline   | Not started|                               |
 | Indicator   | Not started|                               |
+| User Sort   | Not started|                               |
 
 
 ## Built-in field compatibility

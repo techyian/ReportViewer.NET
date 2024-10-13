@@ -145,6 +145,20 @@ namespace ReportViewer.NET
             reportRdl.UserProvidedParameters = userProvidedParameters.Parameters;
             reportRdl.Metadata = userProvidedParameters.Metadata ?? new List<ReportMetadata>();
 
+            // Recursively load sub-reports before loading this one.
+            var subreports = xml.Root.Descendants(reportRdl.Namespace + "Subreport");
+
+            if (subreports != null)
+            {
+                foreach (var sr in subreports)
+                {
+                    var srPath = sr.Element(reportRdl.Namespace + "ReportName")?.Value;
+                    var srName = srPath.Split('/').Last();
+
+                    this.LoadReport(srName, new ReportParameters());
+                }
+            }
+
             // Validate data sources.
             var dataSourceElements = xml.Root.Descendants(reportRdl.Namespace + "DataSources").Elements(reportRdl.Namespace + "DataSource");
 

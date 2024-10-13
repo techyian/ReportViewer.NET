@@ -121,6 +121,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     break;
             }
 
+            this.Values = null;
+
             return sb.ToString();
         }
     }
@@ -164,7 +166,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 foreach (var cr in cornerRows)
                 {
-                    this.TablixCornerRows.Add(new TablixCornerRow(this, cr));
+                    this.TablixCornerRows.Add(new TablixCornerRow(this, cr, this.Tablix));
                 }
             }
         }
@@ -831,13 +833,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         if ((header.TablixHeader.ContainsRepeatExpression && !header.TablixHeader.InsertedKey) || !header.TablixHeader.ContainsRepeatExpression)
                         {
-                            sb.AppendLine(header.TablixHeader.Build(0, row.ContainsAggregatorExpression, row.ContainsRepeatExpression));
+                            sb.AppendLine(header.TablixHeader.Build(0, row.ContainsAggregatorExpression, row.ContainsRepeatExpression, this.Tablix));
                         }
                     }
                 }
                 else if (lastHeader != null && lastHeader.TablixHeader != null && ((lastHeader.TablixHeader.ContainsRepeatExpression && !lastHeader.TablixHeader.InsertedKey) || !lastHeader.TablixHeader.ContainsRepeatExpression))
                 {
-                    sb.AppendLine(lastHeader.TablixHeader.Build(0, row.ContainsAggregatorExpression, row.ContainsRepeatExpression));
+                    sb.AppendLine(lastHeader.TablixHeader.Build(0, row.ContainsAggregatorExpression, row.ContainsRepeatExpression, this.Tablix));
                 }
 
                 if ((!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))) && 
@@ -968,10 +970,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             {
                                 header.TablixHeader.KeyGuid = newKey;
                                                                 
-                                sb.AppendLine(header.TablixHeader.Build(groupResults.Count(), row.ContainsAggregatorExpression, row.ContainsRepeatExpression));
+                                sb.AppendLine(header.TablixHeader.Build(groupResults.Count(), row.ContainsAggregatorExpression, row.ContainsRepeatExpression, this.Tablix));
 
                                 header.TablixHeader.InsertedKey = true;                                    
-                            }                                                                
+                            }
                         }
 
                         createRow = true;
@@ -980,7 +982,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {                            
                         lastHeader.TablixHeader.KeyGuid = newKey;
                         lastHeader.Values = result;                            
-                        sb.AppendLine(lastHeader.TablixHeader.Build(groupResults.Count(), row.ContainsAggregatorExpression, row.ContainsRepeatExpression));
+                        sb.AppendLine(lastHeader.TablixHeader.Build(groupResults.Count(), row.ContainsAggregatorExpression, row.ContainsRepeatExpression, this.Tablix));
 
                         lastHeader.TablixHeader.InsertedKey = true;
 
@@ -1152,7 +1154,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 foreach (var c in cells)
                 {
-                    this.TablixCells.Add(new TablixCell(this, c, this.Body.Tablix.Report));
+                    this.TablixCells.Add(new TablixCell(c, this.Body.Tablix.Report, this));
 
                     if (!this.ContainsRepeatExpression && !string.IsNullOrEmpty(c.Value))
                     {
@@ -1212,7 +1214,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                                 this.GroupedResults = groupedResults;
 
-                                this.BuildCell(sb, i);
+                                sb.AppendLine(this.TablixCells[i].Build(this));
 
                                 if (this.TablixCells[i].TablixCellContent.Count > 0)
                                 {
@@ -1220,7 +1222,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 }
                             }
 
-                            // TODO: Why are there multiple properties maintaining the grouped results? Need to consolidate to reduce confusion.
                             this.GroupedResults = groupedResultsBefore;
                             this.Body.Tablix.GroupedResults = groupedResultsBefore;
                         }
@@ -1231,8 +1232,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 sb.AppendLine(emptyCells > 0 ? $"<td colspan=\"{emptyCells + 1}\">" : "<td>");
                             }
 
-                            this.BuildCell(sb, i);
-
+                            sb.AppendLine(this.TablixCells[i].Build(this));
+                            
                             if (this.TablixCells[i].TablixCellContent.Count > 0)
                             {
                                 sb.AppendLine("</td>");
@@ -1246,8 +1247,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                             sb.AppendLine(emptyCells > 0 ? $"<td colspan=\"{emptyCells + 1}\">" : "<td>");
                         }
 
-                        this.BuildCell(sb, i);
-
+                        sb.AppendLine(this.TablixCells[i].Build(this));
+                        
                         if (this.TablixCells[i].TablixCellContent.Count > 0)
                         {
                             sb.AppendLine("</td>");
@@ -1268,59 +1269,6 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Values = null;
 
             return sb.ToString();
-        }
-
-        private void BuildCell(StringBuilder sb, int cellIdx)
-        {            
-            for (var j = 0; j < this.TablixCells[cellIdx].TablixCellContent.Count; j++)
-            {
-                var content = this.TablixCells[cellIdx].TablixCellContent[j];
-
-                if (content is SubReport)
-                {
-                    var sr = (SubReport)content;
-                    var srRdl = sr.GetSubReportRDL();
-                    var layoutProvider = new LayoutProvider();
-                    var finalUserParamsForSubReport = new List<ReportParameter>();
-
-                    // Retrieve all parameters for the sub report.
-                    foreach (var p in srRdl.ReportParameters)
-                    {
-                        // Search user provided parameters first
-                        if (this.Body.Tablix.Report.UserProvidedParameters.Any(rp => rp.Name == p.Name))
-                        {
-                            finalUserParamsForSubReport.Add(this.Body.Tablix.Report.UserProvidedParameters.First(rp => rp.Name == p.Name));
-                        }
-                        // Try to retrieve the parameter from the tablix row.
-                        else
-                        {                            
-                            var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.Body.Tablix.DataSetReference?.DataSet?.DataSetResults;
-                            var parsedValue = this.Body.Tablix.Report.Parser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, this.Body.Tablix.DataSetReference?.DataSet, null);
-
-                            if (parsedValue != null)
-                            {
-                                finalUserParamsForSubReport.Add(new ReportParameter
-                                {
-                                    Name = p.Name,
-                                    DataType = p.DataType,
-                                    Value = Convert.ToString(parsedValue)
-                                });
-                            }
-                        }
-                    }
-
-                    if (finalUserParamsForSubReport.Count != srRdl.ReportParameters.Count)
-                    {
-                        continue;
-                    }
-
-                    sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Body.Tablix.Report.ToggleItemRequests, this.Body.Tablix.Report.Metadata).GetAwaiter().GetResult().Value);
-                }
-                else
-                {
-                    sb.AppendLine(content.Build(this));
-                }
-            }
         }
 
         private IEnumerable<IDictionary<string, object>> Sort(TablixMember tablixMember, IEnumerable<IDictionary<string, object>> dsr)
@@ -1399,7 +1347,49 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             var sb = new StringBuilder();
 
+            if (this.TablixCornerCells != null)
+            {
+                for (var i = 0; i < this.TablixCornerCells.Count;)
+                {
+                    var emptyCells = 0;
+                    for (var j = i + 1; j < this.TablixCornerCells.Count; j++)
+                    {
+                        if (this.TablixCornerCells[j].TablixCellContent.Count == 0)
+                        {
+                            emptyCells++;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
 
+                    if (this.TablixCornerCells[i].TablixCellContent.Count > 0)
+                    {
+                        sb.AppendLine(emptyCells > 0 ? $"<td colspan=\"{emptyCells + 1}\">" : "<td>");
+                    }
+
+                    sb.AppendLine(this.TablixCornerCells[i].Build(this));
+
+                    if (this.TablixCornerCells[i].TablixCellContent.Count > 0)
+                    {
+                        sb.AppendLine("</td>");
+                    }
+                    
+                    if (emptyCells > 0)
+                    {
+                        i += emptyCells;
+                    }
+                    else
+                    {
+                        i++;
+                    }
+                }
+            }
+
+            this.Values = null;
+
+            return sb.ToString();
         }
     }
 
@@ -1431,7 +1421,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixCellContent = new List<ReportItem>();
 
             var cellContents = cell.Elements(this.Report.Namespace + "CellContents");
-            var reportItems = ReportItem.ParseElements(cellContents, this.Report, this.DataSets, this, parent);
+            var reportItems = ReportItem.ParseElements(cellContents, report, report.DataSets, this, parent);
 
             this.TablixCellContent.AddRange(reportItems);
         }
@@ -1492,6 +1482,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
             }
 
+            this.Values = null;
+
             return sb.ToString();
         }
     }
@@ -1512,47 +1504,31 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 if (!member.IsEmpty)
                 {
-                    this.TablixMembers.Add(new TablixMember(member, this, tablixMemberElements.Count(), true, 1));
+                    this.TablixMembers.Add(new TablixMember(member, this, tablixMemberElements.Count(), true, 1, this.Tablix));
                 }                
-            }
-        }
-
-        public TablixHierarchy(XElement element, TablixBody tablixBody)
-        {
-            this.Tablix = tablixBody.Tablix;
-            this.TablixMembers = new List<TablixMember>();
-
-            var tablixMemberElements = element.Elements(this.Tablix.Report.Namespace + "TablixMembers").Elements(this.Tablix.Report.Namespace + "TablixMember");
-
-            foreach (var member in tablixMemberElements)
-            {
-                this.TablixMembers.Add(new TablixMember(member, this, tablixMemberElements.Count(), true, 1));
             }
         }
     }
 
-    public class TablixMember
+    public class TablixMember : ReportItem
     {
         public string Id { get; set; }
         public TablixHierarchy TablixHierarchy { get; set; }
         public TablixMemberGroup TablixMemberGroup { get; set; }
         public TablixMemberSort TablixMemberSort { get; set; }
         public TablixHeader TablixHeader { get; set; }
-        public List<TablixMember> TablixMembers { get; set; }
-        public dynamic Values { get; set; }
-        public string KeepWithGroup { get; set; }
-        public bool Hidden { get; set; }
-        public string ToggleItem { get; set; }
+        public List<TablixMember> TablixMembers { get; set; }        
+        public string KeepWithGroup { get; set; }        
         public string ToggleItemKey { get; set; }
         public bool RepeatOnNewPage { get; set; }
         public bool KeepTogether { get; set; }
-        public bool IsGroupHasMember => this.TablixMemberGroup != null && this.TablixMembers.Any();
-        public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
+        public bool IsGroupHasMember => this.TablixMemberGroup != null && this.TablixMembers.Any();        
         public bool ContainsReportItemWithSubGroup { get; set; }
         public bool IsRootMember { get; private set; }
         public int HierarchyLevel { get; private set; }
 
-        public TablixMember(XElement element, TablixHierarchy tablixHierarchy, int outerTablixMembersCount, bool isRootMember, int hierarchyLevel)
+        public TablixMember(XElement element, TablixHierarchy tablixHierarchy, int outerTablixMembersCount, bool isRootMember, int hierarchyLevel, ReportItem parent)
+            : base (element, tablixHierarchy.Tablix.Report, parent)
         {
             this.Id = Guid.NewGuid().ToString().Split('-')[0];
             this.TablixHierarchy = tablixHierarchy;
@@ -1619,7 +1595,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     if (!member.IsEmpty)
                     {
-                        membersToProcess.Add(new TablixMember(member, this.TablixHierarchy, tablixMemberElements.Count(), false, hierarchyLevel + 1));
+                        membersToProcess.Add(new TablixMember(member, this.TablixHierarchy, tablixMemberElements.Count(), false, hierarchyLevel + 1, this));
                     }
                 }
 
@@ -1655,7 +1631,12 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.TablixHierarchy.Tablix.Report.HiddenTablixMembers.Add(this);
             }
-        }                
+        }
+
+        public override string Build(ReportItem parent)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class TablixHeader : ReportItem
@@ -1669,21 +1650,27 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public string KeyGuid { get; set; }
         public int GroupCount { get; set; }
         public int AdditionalMemberCount { get; set; }
-        public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
-
+        
         public TablixHeader(TablixMember tablixMember, XElement element, ReportItem parent)
             : base (element, tablixMember.TablixHierarchy.Tablix.Report, parent)
         {
             this.TablixMember = tablixMember;
             this.Size = element.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "Size")?.Value;
-            this.TablixHeaderContent = new TablixCell(this, element, this.TablixMember.TablixHierarchy.Tablix.Report);
+            this.TablixHeaderContent = new TablixCell(element, this.TablixMember.TablixHierarchy.Tablix.Report, this);
                         
             this.ContainsAggregatorExpression = ExpressionParser.ContainsAggregatorExpression(element?.Value ?? string.Empty);
             this.ContainsRepeatExpression = ExpressionParser.ContainsRepeatExpression(element?.Value ?? string.Empty);
         }
 
-        public string Build(int rowCount, bool rowContainsAggregatedExpression, bool rowContainsRepeatExpression)
+        public override string Build(ReportItem parent)
         {
+            throw new NotImplementedException();
+        }
+
+        public string Build(int rowCount, bool rowContainsAggregatedExpression, bool rowContainsRepeatExpression, ReportItem parent)
+        {
+            this.NestedCopy(parent, this);
+
             var sb = new StringBuilder();
 
             if (this.TablixHeaderContent.TablixCellContent.Count > 0)
@@ -1708,6 +1695,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
                 sb.AppendLine("</td>");
             }
+
+            this.Values = null;
 
             return sb.ToString();
         }
