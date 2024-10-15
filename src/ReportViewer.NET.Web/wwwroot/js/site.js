@@ -134,7 +134,7 @@
 
             $('button[data-toggler="true"]').on('click', function () {
 
-                var togglerName = $(this).data('toggler-name');
+                var togglerName = $(this).data('toggler-name').toString();
                 var nameIdx = self.toggleItemRequests.indexOf(togglerName);
 
                 if (nameIdx > -1) {
