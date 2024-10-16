@@ -12,7 +12,8 @@ using System.Xml.Linq;
 namespace ReportViewer.NET.DataObjects.ReportItems
 {    
     public class Tablix : ReportItem
-    {           
+    {
+        public List<TablixCornerRow> TablixCornerRows { get; private set; }
         public TablixBody TablixBodyObj { get; private set; }
         public TablixHierarchy TablixColumnHierarchy { get; private set; }
         public TablixHierarchy TablixRowHierarchy { get; private set; }        
@@ -30,16 +31,26 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 this.RequestedTablixPage = int.Parse(md.Value);
             }
 
-            this.DataSets = datasets;            
+            this.DataSets = datasets;
+            this.TablixCornerRows = new List<TablixCornerRow>();
             this.TablixBodyObj = new TablixBody(this, tablix.Element(report.Namespace + "TablixBody"));
             
             this.DataSetName = tablix.Element(report.Namespace + "DataSetName")?.Value;
 
+            var cornerRows = tablix.Element(report.Namespace + "TablixCorner")?.Elements(report.Namespace + "TablixCornerRows")?.Elements(report.Namespace + "TablixCornerRow");
             var trh = tablix.Elements(report.Namespace + "TablixRowHierarchy").LastOrDefault();
             var tch = tablix.Elements(report.Namespace + "TablixColumnHierarchy").LastOrDefault();
 
             this.TablixRowHierarchy = new TablixHierarchy(trh, this);
             this.TablixColumnHierarchy = new TablixHierarchy(tch, this);
+
+            if (cornerRows != null)
+            {
+                foreach (var cr in cornerRows)
+                {
+                    this.TablixCornerRows.Add(new TablixCornerRow(this, cr, this));
+                }
+            }
 
             if (!string.IsNullOrEmpty(this.DataSetName))
             {
@@ -130,8 +141,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     public class TablixBody
     {
         public List<TablixColumn> TablixColumns { get; private set; }
-        public List<TablixRow> TablixRows { get; private set; }
-        public List<TablixCornerRow> TablixCornerRows { get; private set; }
+        public List<TablixRow> TablixRows { get; private set; }        
         public Tablix Tablix { get; private set; }        
         public int TotalTablixRowHeaders { get; set; }
                 
@@ -140,12 +150,10 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Tablix = tablix;
             this.TablixColumns = new List<TablixColumn>();
             this.TablixRows = new List<TablixRow>();
-            this.TablixCornerRows = new List<TablixCornerRow>();
-            
+                        
             var columns = tablixBody.Elements(this.Tablix.Report.Namespace + "TablixColumns").Elements(this.Tablix.Report.Namespace + "TablixColumn");
             var rows = tablixBody.Elements(this.Tablix.Report.Namespace + "TablixRows").Elements(this.Tablix.Report.Namespace + "TablixRow");
-            var cornerRows = tablixBody.Elements(this.Tablix.Report.Namespace + "TablixCornerRows")?.Elements(this.Tablix.Report.Namespace + "TablixCornerRow");
-
+            
             if (columns != null)
             {
                 foreach (var c in columns)
@@ -160,15 +168,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 {
                     this.TablixRows.Add(new TablixRow(this, r, this.Tablix));
                 }
-            }
-
-            if (cornerRows != null)
-            {
-                foreach (var cr in cornerRows)
-                {
-                    this.TablixCornerRows.Add(new TablixCornerRow(this, cr, this.Tablix));
-                }
-            }
+            }            
         }
 
         public string Build()
@@ -304,24 +304,75 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 }
             }
 
-            if (this.Tablix.TablixColumnHierarchy.TablixMembers.Any())
+            if (this.Tablix.TablixCornerRows.Count > 0)
             {
-                colsSb.AppendLine($"<tr data-colspan-start>");
-            }
-                        
-            for (var i = 0; i < this.Tablix.TablixBodyObj.TotalTablixRowHeaders; i++)
-            {
-                colsSb.AppendLine("<td></td>");
-            }
+                for (var i = 0; i < this.Tablix.TablixCornerRows.Count; i++)
+                {
+                    colsSb.AppendLine($"<tr data-colspan-start>");
+                    colsSb.AppendLine(this.Tablix.TablixCornerRows[i].Build(this.Tablix));
 
-            for (var i = 0; i < this.Tablix.TablixColumnHierarchy.TablixMembers.Count; i++)
-            {
-                colIdx = this.ProcessTablixColumnMembers(colsSb, null, null, this.Tablix.TablixColumnHierarchy.TablixMembers[i], new List<TablixMember>(), colIdx);
-            }
+                    if (this.Tablix.TablixColumnHierarchy.TablixMembers.Count > 0)
+                    {
+                        // When a tablix column spans multiple rows, these are declared as nested headers within the TablixColumnHierarchy TablixMembers.
+                        // The code below is an attempt to determine which row we're on via the current TablixCornerRow index and search the TablixColumnHierarchy 
+                        // tree to find the appropriate member to render, also making sure we pass through any previous tablix members to sort out grouping and sorting.
+                        for (var j = 0; j < this.Tablix.TablixColumnHierarchy.TablixMembers.Count; j++)
+                        {
+                            var membersUptoHierarchy = new List<TablixMember>();
+                            this.FindAllMembersUptoAtHierarchyLevel(this.Tablix.TablixColumnHierarchy.TablixMembers[j], membersUptoHierarchy, i + 1);
 
-            if (this.Tablix.TablixColumnHierarchy.TablixMembers.Any())
+                            this.ProcessTablixColumnMembers(
+                                colsSb,
+                                null,
+                                null,
+                                membersUptoHierarchy.Last(),
+                                membersUptoHierarchy.Take(membersUptoHierarchy.Count - 1).ToList(),
+                                j // is this right?
+                            );
+
+                            
+                        }
+                    }
+
+                    colsSb.AppendLine($"</tr>");
+                }
+            }
+            else if (this.Tablix.TablixColumnHierarchy != null && this.Tablix.TablixColumnHierarchy.TablixMembers.Any())
             {
-                colsSb.AppendLine($"</tr>");
+                // Similar to the above, but because we don't have the guaranteed rows from TablixCornerRows, we need to do a blind search 
+                // on how far down our column hierarchy goes, rendering a row for each header found.
+                var complete = false;
+                var i = 0;
+
+                while (!complete)
+                {
+                    colsSb.AppendLine($"<tr data-colspan-start>");
+
+                    for (var j = 0; j < this.Tablix.TablixColumnHierarchy.TablixMembers.Count; j++)
+                    {
+                        var membersUptoHierarchy = new List<TablixMember>();
+                        this.FindAllMembersUptoAtHierarchyLevel(this.Tablix.TablixColumnHierarchy.TablixMembers[j], membersUptoHierarchy, i + 1);
+
+                        if (!membersUptoHierarchy.Any())
+                        {
+                            complete = true;
+                            break;
+                        }
+
+                        colIdx = this.ProcessTablixColumnMembers(
+                            colsSb,
+                            null,
+                            null,
+                            membersUptoHierarchy.Last(),
+                            membersUptoHierarchy.Take(membersUptoHierarchy.Count - 1).ToList(),
+                            j // is this right?
+                        );
+                    }
+
+                    colsSb.AppendLine($"</tr>");
+
+                    i++;
+                }                                
             }
 
             this.Tablix.GroupedResultsKeys.Clear();
@@ -362,6 +413,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             }
         }
 
+        private void FindAllMembersUptoAtHierarchyLevel(TablixMember start, List<TablixMember> foundMembers, int hierarchyLevel)
+        {
+            if (start.HierarchyLevel <= hierarchyLevel)
+            {
+                foundMembers.Add(start);
+            }
+
+            foreach (var tm in start.TablixMembers)
+            {
+                this.FindAllMembersUptoAtHierarchyLevel(tm, foundMembers, hierarchyLevel);
+            }
+        }
+
         private void FindAllSubGroupHeaders(TablixMember currentMember, List<TablixMember> allHeaders)
         {
             if (currentMember.TablixHeader != null)
@@ -395,8 +459,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.Tablix.DataSetReference.DataSet.GroupedDataSetResults = groupedDs;
             }
-   
-            if (this.Tablix?.DataSetReference?.DataSet?.GroupedDataSetResults != null && tablixMember.TablixMemberGroup != null && tablixMember.TablixMemberGroup.GroupExpression != null)
+
+            // Scenario: column spans multiple rows and is part of column group, always need to process cells for every grouped result found
+            // check whether current member is a group, in which case GroupedDataSetResults will be recalculated, or otherwise check whether member has any parents
+            // which are groups and if so, we re-use current calculated GroupedDataSetResults.
+            if (this.Tablix?.DataSetReference?.DataSet?.GroupedDataSetResults != null && (tablixMember.TablixMemberGroup != null || prevTablixMembers.Any(tm => tm.TablixMemberGroup != null)))
             {
                 // Starting a new grouping
                 var after = 0;
@@ -425,25 +492,25 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                     this.FindAllSubGroupHeaders(tablixMember, headers);
 
-                    if (tablixMember.TablixMembers.Any())
-                    {
-                        // Do we have enough rows to print this member and its children?
-                        if (this.TablixColumns.Count > currentColumnIndx + tablixMember.TablixMembers.Count + 1)
-                        {
-                            currentColumnIndx = this.ProcessColumnResults(currentColumnIndx, tablixMember, prevTablixMembers, groupResults, sb);
-                        }
+                    //if (tablixMember.TablixMembers.Any())
+                    //{
+                    //    // Do we have enough rows to print this member and its children?
+                    //    if (this.TablixColumns.Count > currentColumnIndx + tablixMember.TablixMembers.Count + 1)
+                    //    {
+                    //        currentColumnIndx = this.ProcessColumnResults(currentColumnIndx, tablixMember, prevTablixMembers, groupResults, sb);
+                    //    }
 
-                        foreach (var childMember in tablixMember.TablixMembers)
-                        {
-                            currentColumnIndx = this.ProcessTablixColumnMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentColumnIndx);
+                    //    foreach (var childMember in tablixMember.TablixMembers)
+                    //    {
+                    //        currentColumnIndx = this.ProcessTablixColumnMembers(sb, dataSetResults, groupedResult, childMember, prevTablixMembers, currentColumnIndx);
 
-                            prevTablixMembers.Remove(childMember);
-                        }
-                    }
-                    else
-                    {
-                        currentColumnIndx = this.ProcessColumnResults(currentColumnIndx, tablixMember, prevTablixMembers, groupResults, sb);
-                    }
+                    //        prevTablixMembers.Remove(childMember);
+                    //    }
+                    //}
+                    //else
+                    //{
+                    currentColumnIndx = this.ProcessColumnResults(currentColumnIndx, tablixMember, prevTablixMembers, groupResults, sb);
+                    //}
 
                     this.Tablix.GroupedResultsKeys.Remove(groupedResult.Key.ToString().Replace(" ", ""));
 
@@ -472,15 +539,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 currentColumnIndx = after;
             }
-            else if (tablixMember.TablixMembers.Any())
-            {
-                prevTablixMembers.Add(tablixMember);
+            //else if (tablixMember.TablixMembers.Any())
+            //{
+            //    prevTablixMembers.Add(tablixMember);
 
-                foreach (var childMember in tablixMember.TablixMembers)
-                {
-                    currentColumnIndx = this.ProcessTablixColumnMembers(sb, dataSetResults, groupResults, childMember, prevTablixMembers, currentColumnIndx);
-                }
-            }
+            //    foreach (var childMember in tablixMember.TablixMembers)
+            //    {
+            //        currentColumnIndx = this.ProcessTablixColumnMembers(sb, dataSetResults, groupResults, childMember, prevTablixMembers, currentColumnIndx);
+            //    }
+            //}
             else
             {
                 if (tablixMember.ToggleItem != null)
@@ -578,9 +645,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                     // Here we are wanting to apply the group count of the current grouping to the previous header so we can accurately 
                                     // state rowcount against the row.
                                     ph.TablixHeader.GroupCount = groupedResults.Count > ph.TablixHeader.GroupCount ? groupedResults.Count : ph.TablixHeader.GroupCount;
-                                    ph.TablixHeader.AdditionalMemberCount = ph.TablixMembers.Count;
+                                    ph.TablixHeader.AdditionalMemberCount = ph.TablixMembers.Count();
 
-                                    if (ph.TablixMembers.Count > 0)
+                                    if (ph.TablixMembers.Count() > 0)
                                     {
                                         ph.TablixHeader.AdditionalMemberCount--;
                                     }
@@ -589,7 +656,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                             // As well as rendering the group items from the database, the report may have additional rows (possibly containing aggregated results for that group).
                             // Do we have enough rows left to print additional members based on the currentRowIndx? If so, increase rowcount by tablixMember.TablixMembers.Count.
-                            tablixMember.TablixHeader.AdditionalMemberCount = this.TablixRows.Count > currentRowIndx + tablixMember.TablixMembers.Count ? tablixMember.TablixMembers.Count : 0;
+                            // Each header should be rendered separately so we're only adding to AdditionalMemberCount for child members which don't have a header.
+                            tablixMember.TablixHeader.AdditionalMemberCount = 
+                                this.TablixRows.Count > currentRowIndx + tablixMember.TablixMembers.Count(tm => tm.TablixHeader == null) ? tablixMember.TablixMembers.Count(tm => tm.TablixHeader == null) : 0;
 
                             if (!tablixMember.TablixMembers.Any(tm => tm.TablixMemberGroup != null) && currentRow.ContainsAggregatorExpression && !currentRow.ContainsRepeatExpression)
                             {
@@ -716,18 +785,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 lastHeader.TablixHeader.GroupedResults = groupResults;
             }
                 
-            if (headersFoundInTablixMembers.Any())
-            {
-                foreach (var header in headersFoundInTablixMembers)
-                {
-                    if (!header.TablixHeader.InsertedKey)
-                    {
-                        sb.AppendLine(header.TablixHeader.Build());
-                        header.TablixHeader.InsertedKey = true;
-                    }
-                }
-            }
-            else if (lastHeader != null && lastHeader.TablixHeader != null && !lastHeader.TablixHeader.InsertedKey)
+            //if (headersFoundInTablixMembers.Any())
+            //{
+            //    foreach (var header in headersFoundInTablixMembers)
+            //    {
+            //        if (!header.TablixHeader.InsertedKey)
+            //        {
+            //            sb.AppendLine(header.TablixHeader.Build());
+            //            header.TablixHeader.InsertedKey = true;
+            //        }
+            //    }
+            //}
+            //else 
+            if (lastHeader != null && lastHeader.TablixHeader != null)
             {
                 sb.AppendLine(lastHeader.TablixHeader.Build());
                 lastHeader.TablixHeader.InsertedKey = true;
@@ -1321,22 +1391,22 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     public class TablixCornerRow : ReportItem
     {
         public List<TablixCell> TablixCornerCells { get; private set; }
-        public TablixBody Body { get; private set; }
+        public Tablix Tablix { get; private set; }
 
 
-        internal TablixCornerRow(TablixBody body, XElement cornerRow, ReportItem parent)
-            : base (cornerRow, body.Tablix.Report, parent)
+        internal TablixCornerRow(Tablix tablix, XElement cornerRow, ReportItem parent)
+            : base (cornerRow, tablix.Report, parent)
         {
-            this.Body = body;
+            this.Tablix = tablix;
             this.TablixCornerCells = new List<TablixCell>();
 
-            var tablixCornerCells = cornerRow.Elements(body.Tablix.Report.Namespace + "TablixCornerCell");
+            var tablixCornerCells = cornerRow.Elements(this.Tablix.Report.Namespace + "TablixCornerCell");
 
             if (tablixCornerCells != null)
             {
                 foreach (var tcc in tablixCornerCells)
                 {
-                    this.TablixCornerCells.Add(new TablixCell(tcc, body.Tablix.Report, this));
+                    this.TablixCornerCells.Add(new TablixCell(tcc, this.Tablix.Report, this));
                 }
             }
         }
