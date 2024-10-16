@@ -106,6 +106,7 @@ public class HomeController : Controller, IReportViewerController
 | Sparkline   | Not started|                               |
 | Indicator   | Not started|                               |
 | User Sort   | Not started|                               |
+| Corner Row  | Complete   | Appears to be working as expected |
 
 
 ## Built-in field compatibility
