@@ -83,6 +83,15 @@ public class HomeController : Controller, IReportViewerController
 }
 ```
 
+## Tests
+
+ReportViewer.NET will be tested against a suite of reports to ensure that the most common features available in Report Builder are working as expected. 
+
+All reports available at the following GitHub link are tested against ReportViewer.NET: https://github.com/Apress/beg-sql-server-reporting-services. Due to licensing, the reports haven't been directly referenced by this repository, but please feel free to download the reports and try them out.
+
+Additional reports are available in the `/test/reports/` directory of this repository and have been based off official Microsoft tutorials available here: https://learn.microsoft.com/en-us/sql/reporting-services/reporting-services-tutorials-ssrs?view=sql-server-ver16, and here: https://learn.microsoft.com/en-us/sql/reporting-services/report-builder-tutorials?view=sql-server-ver16.
+
+
 ## Element compatibility
 
 | Element     | Status     | Comments                      |
@@ -97,7 +106,7 @@ public class HomeController : Controller, IReportViewerController
 | Tablix      | Complete?  | Groups, sorting, TablixRowHierarchy, TablixColumnHierarchy appear working. Standard/matrix tables look pretty accurate from local testing.      |    
 | Rectangle   | Complete   |                               |    
 | Line        | Complete   |                               |    
-| Image       | Partial    | JPEG/PNG currently supported  |    
+| Image       | Partial    | JPEG/PNG currently supported. TODO: Background images, external images.  |    
 | Sub Report  | Complete   |                               |    
 | Chart       | Not started|                               |
 | Gauge       | Not started|                               |
