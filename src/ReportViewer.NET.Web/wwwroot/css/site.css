@@ -64,7 +64,8 @@ body {
 }
 
 .report-row > div:not(.sub-report-start) {
-    display: flex;
+    display: block;    
+    position: sticky;
 }
 
 .report-row div p {
@@ -74,10 +75,6 @@ body {
 .sub-report-start {
     display: block;
     width: 100%;
-}
-
-.report-row img {
-    position: relative;
 }
 
 .report-row div p, .report-row div span {
@@ -93,8 +90,8 @@ body {
     display: flex;
     flex-direction: row;
     width: 100%;
-    margin-bottom: 0.75rem;
-    overflow-x: auto;
+    margin-bottom: 0.75rem;    
+    overflow: hidden;
 }
 
 .report-row td div:not(.report-row) {
@@ -108,6 +105,14 @@ body {
     width: 20px;
     margin-right: 0.25rem;
     float: left;
+}
+
+.reportviewer-image {
+    position: sticky;
+}
+
+.reportviewer-table {
+    position: sticky;
 }
 
 .reportviewer-table tbody td {
