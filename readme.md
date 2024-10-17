@@ -315,7 +315,7 @@ Additional reports are available in the `/test/reports/` directory of this repos
 | Misc          | LookupSet         | Not started   |                            |
 | Misc          | MultiLookup       | Not started   |                            |
 | Misc          | Previous          | Not started   |                            |
-| Misc          | RowNumber         | Partial       | Not tested with named scoped |
+| Misc          | RowNumber         | Partial       | Not tested with named scope |
 
 
 
