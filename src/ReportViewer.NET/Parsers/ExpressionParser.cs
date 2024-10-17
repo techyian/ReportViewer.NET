@@ -5,6 +5,7 @@ using ReportViewer.NET.Parsers.Aggregate;
 using ReportViewer.NET.Parsers.BuiltInFields;
 using ReportViewer.NET.Parsers.DateAndTime;
 using ReportViewer.NET.Parsers.Inspection;
+using ReportViewer.NET.Parsers.Misc;
 using ReportViewer.NET.Parsers.ProgramFlow;
 using ReportViewer.NET.Parsers.Text;
 using System;
@@ -50,8 +51,9 @@ namespace ReportViewer.NET.Parsers
             string tablixText,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
             string requestedFormat
         )
         {
@@ -60,7 +62,7 @@ namespace ReportViewer.NET.Parsers
                 return null;
             }
 
-            var expressions = RetrieveExpressionsFromString(tablixText, dataSetResults, values, dataSets, activeDataset);
+            var expressions = RetrieveExpressionsFromString(tablixText, dataSetResults, values, currentRowNumber, dataSets, activeDataset);
 
             return ParseTablixExpressions(expressions, requestedFormat).Value;
         }
@@ -69,8 +71,9 @@ namespace ReportViewer.NET.Parsers
             string tablixText,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset
         )
         {
             string currentString = tablixText.TrimStart('=').TrimStart();
@@ -84,20 +87,21 @@ namespace ReportViewer.NET.Parsers
                 var proposedString = string.Empty;
 
                 this.SearchBuiltInFields(currentString, currentExpression, ref proposedString);
-                this.SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, dataSets, activeDataset, ref proposedString);
+                this.SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
                 this.SearchArithmeticOperators(currentString, currentExpression, ref proposedString);
                 this.SearchComparisonOperators(currentString, currentExpression, ref proposedString);
-                this.SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, dataSets, activeDataset, ref proposedString);
-                this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, dataSets, activeDataset, ref proposedString);
+                this.SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
+                this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
                 this.SearchLogicalOperators(currentString, currentExpression, ref proposedString);
-                this.SearchTextFunctions(currentString, currentExpression, dataSetResults, values, dataSets, activeDataset, ref proposedString);
-                this.SearchDateTimeFunctions(currentString, currentExpression, dataSetResults, values, dataSets, activeDataset, ref proposedString);
+                this.SearchTextFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
+                this.SearchDateTimeFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
+                this.SearchMiscFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
 
                 if (FieldParser.FieldRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == TablixOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var fieldParser = new FieldParser(currentString, TablixOperator.Field, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                    var fieldParser = new FieldParser(currentString, TablixOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                     fieldParser.Parse();
                     proposedString = fieldParser.GetProposedString();
                 }
@@ -106,7 +110,7 @@ namespace ReportViewer.NET.Parsers
                     (currentExpression.Operator == TablixOperator.None || ParameterParser.ParameterRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var paramParser = new ParameterParser(currentString, TablixOperator.Parameter, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                    var paramParser = new ParameterParser(currentString, TablixOperator.Parameter, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                     paramParser.Parse();
                     proposedString = paramParser.GetProposedString();
                 }
@@ -192,7 +196,7 @@ namespace ReportViewer.NET.Parsers
             if (ExecutionTimeParser.ExecutionTimeRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == TablixOperator.None || ExecutionTimeParser.ExecutionTimeRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var executionTimeParser = new ExecutionTimeParser(currentString, TablixOperator.ExecutionTime, currentExpression, null, null, null, _report);
+                var executionTimeParser = new ExecutionTimeParser(currentString, TablixOperator.ExecutionTime, currentExpression, null, null, 0, null, _report);
                 executionTimeParser.Parse();
                 proposedString = executionTimeParser.GetProposedString();
             }
@@ -417,8 +421,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
             ref string proposedString
         )
         {
@@ -426,7 +431,7 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == TablixOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var leftParser = new LeftParser(currentString, TablixOperator.Left, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var leftParser = new LeftParser(currentString, TablixOperator.Left, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 leftParser.Parse();
                 proposedString = leftParser.GetProposedString();
             }
@@ -435,7 +440,7 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == TablixOperator.None || FormatCurrencyParser.FormatCurrencyRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var fcParser = new FormatCurrencyParser(currentString, TablixOperator.FormatCurrency, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var fcParser = new FormatCurrencyParser(currentString, TablixOperator.FormatCurrency, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 fcParser.Parse();
                 proposedString = fcParser.GetProposedString();
             }
@@ -446,8 +451,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
             ref string proposedString
         )
         {
@@ -455,7 +461,7 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == TablixOperator.None || MonthNameParser.MonthNameRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var mnParser = new MonthNameParser(currentString, TablixOperator.MonthName, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var mnParser = new MonthNameParser(currentString, TablixOperator.MonthName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 mnParser.Parse();
                 proposedString = mnParser.GetProposedString();
             }
@@ -471,8 +477,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
             ref string proposedString
         )
         {
@@ -484,7 +491,7 @@ namespace ReportViewer.NET.Parsers
             if (IsNothingParser.IsNothingRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == TablixOperator.None || IsNothingParser.IsNothingRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var isNothingParser = new IsNothingParser(currentString, TablixOperator.IsNothing, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var isNothingParser = new IsNothingParser(currentString, TablixOperator.IsNothing, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 isNothingParser.Parse();
                 proposedString = isNothingParser.GetProposedString();
             }
@@ -495,8 +502,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
             ref string proposedString
         )
         {
@@ -507,7 +515,7 @@ namespace ReportViewer.NET.Parsers
             if (IfParser.IfRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == TablixOperator.None || IfParser.IfRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var ifParser = new IfParser(currentString, TablixOperator.If, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var ifParser = new IfParser(currentString, TablixOperator.If, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 ifParser.Parse();
                 proposedString = ifParser.GetProposedString();
             }
@@ -518,8 +526,9 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
             ref string proposedString
         )
         {
@@ -527,7 +536,7 @@ namespace ReportViewer.NET.Parsers
                     (currentExpression.Operator == TablixOperator.None || CountParser.CountRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var countParser = new CountParser(currentString, TablixOperator.Count, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var countParser = new CountParser(currentString, TablixOperator.Count, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 countParser.Parse();
                 proposedString = countParser.GetProposedString();
             }
@@ -536,7 +545,7 @@ namespace ReportViewer.NET.Parsers
                     (currentExpression.Operator == TablixOperator.None || CountDistinctParser.CountDistinctRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var countDistinctParser = new CountDistinctParser(currentString, TablixOperator.CountDistinct, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var countDistinctParser = new CountDistinctParser(currentString, TablixOperator.CountDistinct, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 countDistinctParser.Parse();
                 proposedString = countDistinctParser.GetProposedString();
             }
@@ -545,7 +554,7 @@ namespace ReportViewer.NET.Parsers
                     (currentExpression.Operator == TablixOperator.None || SumParser.SumRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var sumParser = new SumParser(currentString, TablixOperator.Sum, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var sumParser = new SumParser(currentString, TablixOperator.Sum, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 sumParser.Parse();
                 proposedString = sumParser.GetProposedString();
             }
@@ -554,7 +563,7 @@ namespace ReportViewer.NET.Parsers
                     (currentExpression.Operator == TablixOperator.None || FirstParser.FirstRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var firstParser = new FirstParser(currentString, TablixOperator.Field, currentExpression, dataSetResults, values, dataSets, activeDataset, _report);
+                var firstParser = new FirstParser(currentString, TablixOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 firstParser.Parse();
                 proposedString = firstParser.GetProposedString();
             }
@@ -570,9 +579,25 @@ namespace ReportViewer.NET.Parsers
 
         }
 
-        private void SearchMiscFunctions()
+        private void SearchMiscFunctions(
+            string currentString,
+            TablixExpression currentExpression,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
+            IDictionary<string, object> values,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
+            ref string proposedString
+        )
         {
-
+            if (RowNumberParser.RowNumberRegex.IsMatch(currentString) &&
+               (currentExpression.Operator == TablixOperator.None || RowNumberParser.RowNumberRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var rnParser = new RowNumberParser(currentString, TablixOperator.RowNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                rnParser.Parse();
+                proposedString = rnParser.GetProposedString();
+            }
         }
 
         private TablixExpression ParseTablixExpressions(IEnumerable<TablixExpression> expressions, string requestedFormat)

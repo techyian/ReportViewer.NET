@@ -18,10 +18,11 @@ namespace ReportViewer.NET.Parsers.Text
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FormatCurrencyRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, FormatCurrencyRegex, report)
         {            
         }
 
@@ -63,7 +64,15 @@ namespace ReportViewer.NET.Parsers.Text
             // Then grab the last of the string.
             stringGroups.Add(fcValue.Substring(removed, fcValue.Length - removed));
 
-            var parsedExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[0], this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+            var parsedExpression = this.Report.Parser.ParseTablixExpressionString(
+                stringGroups[0], 
+                this.DataSetResults, 
+                this.Values,
+                this.CurrentRowNumber,
+                this.DataSets, 
+                this.ActiveDataset, 
+                null
+            );
 
             this.CurrentExpression.Index = fcMatch.Index;
             this.CurrentExpression.ResolvedType = typeof(string);

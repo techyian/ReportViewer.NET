@@ -17,9 +17,11 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values, 
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets, 
             DataSet activeDataset,             
-            ReportRDL report) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, ParameterRegex, report)
+            ReportRDL report
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ParameterRegex, report)
         {
         }
 

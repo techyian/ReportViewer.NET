@@ -18,10 +18,11 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values, 
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, FieldRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, FieldRegex, report)
         {            
         }
 
@@ -33,7 +34,15 @@ namespace ReportViewer.NET.Parsers
             if (this.ActiveDataset != null && this.ActiveDataset.Fields.Any(f => !string.IsNullOrEmpty(f.Name) && f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)))
             {
                 var calcField = this.ActiveDataset.Fields.First(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)).Value;
-                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(calcField, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(
+                    calcField, 
+                    this.DataSetResults, 
+                    this.Values,
+                    this.CurrentRowNumber,
+                    this.DataSets, 
+                    this.ActiveDataset, 
+                    null
+                );
 
                 return (resolvedValue.GetType(), resolvedValue);
             }
@@ -42,7 +51,15 @@ namespace ReportViewer.NET.Parsers
                 var ds = this.DataSets.First(ds => ds.Fields.Any(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)));
                 var calcField = ds.Fields.First(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)).Value;
 
-                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(calcField, this.DataSetResults, this.Values, this.DataSets, this.ActiveDataset, null);
+                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(
+                    calcField, 
+                    this.DataSetResults, 
+                    this.Values,
+                    this.CurrentRowNumber,
+                    this.DataSets, 
+                    this.ActiveDataset, 
+                    null
+                );
                 
                 return (resolvedValue.GetType(), resolvedValue);
             }

@@ -18,8 +18,6 @@ ReportViewer.NET exposes the Interface `IReportHandler` and Class `ReportHandler
 
 The library exposes the Interface `IReportViewerController` to assist with giving you an example pattern for loading report parameters and rendering the report. It's recommended that your ASP.NET Core Controller inherits this Interface.
 
-The library contains sample JavaScript which manages client side interaction with the library and can currently be found in `src\ReportViewer.NET.Web\wwwroot\js\site.js`. I will make sure this is made available in a more flexible fashion in the future.
-
 Example DI registration
 
 **Program.cs**

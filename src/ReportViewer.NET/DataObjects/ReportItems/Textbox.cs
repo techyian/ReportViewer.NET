@@ -67,7 +67,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixCellRowExpression = (value, datasetResults, format) => report.Parser.ParseTablixExpressionString(
                 value,
                 datasetResults,
-                this.Cell.Row.Values,
+                this.Cell.Row.Values, // Can these be replaced simply with `this.Values` etc.?
+                this.Cell.Row.CurrentRowNumber,
                 this.Cell.Row.Body.Tablix.DataSets,
                 this.Cell.Row.Body.Tablix.DataSetReference?.DataSet,
                 format
@@ -76,7 +77,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixCellHeaderExpression = (value, datasetResults, format) => report.Parser.ParseTablixExpressionString(
                 value,
                 datasetResults,
-                this.Cell.Header.TablixMember.Values,
+                this.Cell.Header.TablixMember.Values, // Can these be replaced simply with `this.Values` etc.?
+                this.Cell.Header.TablixMember.CurrentRowNumber,
                 this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSets,
                 this.Cell.Header.TablixMember.TablixHierarchy.Tablix.DataSetReference?.DataSet,
                 format
@@ -86,6 +88,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 value,
                 datasetResults,
                 this.Values,
+                this.CurrentRowNumber,
                 this.Report.DataSets,
                 parent?.DataSetReference?.DataSet,
                 format

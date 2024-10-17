@@ -20,6 +20,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public ReportRow ReportRow { get; set; }
         public IGrouping<object, IDictionary<string, object>> GroupedResults { get; set; }
         public dynamic Values { get; set; }
+        public int CurrentRowNumber { get; set; }
         public string DataSetName { get; set; }
         public DataSetReference DataSetReference { get; set; }
         public IEnumerable<DataSet> DataSets { get; set; }
@@ -74,6 +75,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "Hidden")?.Value,
                 null,
                 null,
+                0,
                 report.DataSets,
                 null,
                 null
@@ -203,6 +205,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             child.DataSets = parent.DataSets != null ? parent.DataSets : child.DataSets;
             child.GroupedResults = parent.GroupedResults != null ? parent.GroupedResults : child.GroupedResults;
             child.Values = child.Values ?? parent.Values; // Favour child values, fallback on parent if null.
+            child.CurrentRowNumber = child.CurrentRowNumber > 0 ? child.CurrentRowNumber : parent.CurrentRowNumber;
         }
 
         public abstract string Build(ReportItem parent);

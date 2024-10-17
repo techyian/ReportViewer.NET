@@ -8,5 +8,10 @@ namespace ReportViewer.NET.Extensions
         {
             return str.IndexOf(search, StringComparison.OrdinalIgnoreCase);
         }
+
+        public static bool EqualsIgnore(this string str, string search)
+        {
+            return str.Equals(search, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

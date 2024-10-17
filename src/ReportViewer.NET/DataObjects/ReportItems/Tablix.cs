@@ -914,7 +914,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 if ((!tablixMember.Hidden || (tablixMember.Hidden && this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tablixMember.ToggleItemKey))) && 
                     !prevTablixMembers.Any(tm => tm.Hidden && !this.Tablix.Report.ToggleItemRequests.Any(ti => ti == tm.ToggleItemKey)))
-                {                        
+                {
+                    if (this.Tablix.DataSetReference?.DataSet != null)
+                    {
+                        this.Tablix.DataSetReference.DataSet.CurrentRowNumber = currentRowIndx + 1;
+                    }
+                    
+                    row.CurrentRowNumber = currentRowIndx + 1;
                     sb.AppendLine(row.Build(this.Tablix));
                 }
 
@@ -982,6 +988,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             StringBuilder sb
             )
         {
+            var currentRowNum = 1;
+
             if (groupResults != null)
             {
                 tablixHierarchyStructure.KeyGuid = newKey;
@@ -990,7 +998,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 foreach (var result in groupResults)
                 {
                     row.Values = result;
+                    row.CurrentRowNumber = currentRowNum;
                     row.KeyGuid = tablixHierarchyStructure.KeyGuid;
+
+                    if (this.Tablix.DataSetReference?.DataSet != null)
+                    {
+                        this.Tablix.DataSetReference.DataSet.CurrentRowNumber = currentRowNum;
+                    }
 
                     var dataPageBreak = "";
                     var dataGroupResultsCount = $"data-tablepages=\"{tablixHierarchyStructure.TotalPages}\"";
@@ -1069,8 +1083,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         sb.AppendLine("</tr>");
                     }                                                
-                                     
-
+                    
                     // I don't know if this is right or just plain hacky. If the current TablixMember is a group and has children then we know that this instance
                     // just needs to be rendered once. However, if the TablixMember is a group and has a header that should be repeated then we should loop over the results.
                     // Honestly, at this stage I'm just making this stuff up.
@@ -1080,17 +1093,27 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         break;
                     }
+
+                    currentRowNum++;
                 }
             }
             else
-            {
+            {               
                 foreach (var result in this.Tablix.DataSetReference.DataSet.DataSetResults)
                 {
                     row.Values = result;
+                    row.CurrentRowNumber = currentRowNum;
+
+                    if (this.Tablix.DataSetReference?.DataSet != null)
+                    {
+                        this.Tablix.DataSetReference.DataSet.CurrentRowNumber = currentRowNum;
+                    }
 
                     sb.AppendLine($"<tr height=\"{row.Height}\" data-grouped-result=\"false\">");
                     sb.AppendLine(row.Build(this.Tablix));
                     sb.AppendLine("</tr>");
+
+                    currentRowNum++;
                 }
             }
         }
@@ -1525,7 +1548,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         else
                         {
                             var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.DataSetReference?.DataSet?.DataSetResults;
-                            var parsedValue = this.Report.Parser.ParseTablixExpressionString(p.Value, dataSetResults, (IDictionary<string, object>)this.Values, null, this.DataSetReference?.DataSet, null);
+                            var parsedValue = this.Report.Parser.ParseTablixExpressionString(
+                                p.Value, 
+                                dataSetResults, 
+                                (IDictionary<string, object>)this.Values,
+                                this.CurrentRowNumber,
+                                null, 
+                                this.DataSetReference?.DataSet, 
+                                null
+                            );
 
                             if (parsedValue != null)
                             {
@@ -1615,6 +1646,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Hidden")?.Value,
                 null,
                 null,
+                0,
                 this.TablixHierarchy.Tablix.Report.DataSets,
                 null,
                 null
@@ -1887,6 +1919,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         OrElse,
         Left,
         MonthName,
-        FormatCurrency
+        FormatCurrency,
+        RowNumber
     }
 }

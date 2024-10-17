@@ -69,8 +69,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         private string BuildDatabaseImage(ReportItem parent)
         {
-            var dataSetResults = parent?.GroupedResults?.Select(r => r).ToList() ?? parent?.DataSetReference?.DataSet?.DataSetResults;
-            var parsedValue = this.Report.Parser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, parent?.DataSets, parent?.DataSetReference?.DataSet, null);
+            var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.DataSetReference?.DataSet?.DataSetResults;
+            var parsedValue = this.Report.Parser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, this.CurrentRowNumber, this.DataSets, this.DataSetReference?.DataSet, null);
             var b64 = string.Empty;
 
             // TODO: Will this ever not be a byte[]?

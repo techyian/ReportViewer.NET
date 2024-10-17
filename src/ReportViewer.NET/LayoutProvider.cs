@@ -251,7 +251,7 @@ namespace ReportViewer.NET
 
                 if (!string.IsNullOrEmpty(expression))
                 {
-                    var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, textbox.DataSets, null, report);
+                    var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, 0, textbox.DataSets, null, report);
                     var dsName = fieldParser.ExtractDataSetName();
                     var ds = report.DataSets.Where(ds => ds.Name == dsName).FirstOrDefault();
 

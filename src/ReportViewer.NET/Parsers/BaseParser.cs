@@ -8,16 +8,17 @@ namespace ReportViewer.NET.Parsers
 {
     public abstract class BaseParser
     {        
-        protected string CurrentString { get; set; }
-        protected TablixOperator Operator { get; set; }
-        protected TablixExpression CurrentExpression { get; set; }
-        protected IEnumerable<IDictionary<string, object>> DataSetResults { get; set; }
-        protected IDictionary<string, object> Values { get; set; }
-        protected IEnumerable<DataSet> DataSets { get; set; }
-        protected DataSet ActiveDataset { get; set; }        
-        protected Match RegexMatch { get; set; }
-        protected ReportRDL Report { get; set; }
-
+        protected string CurrentString { get; private set; }
+        protected TablixOperator Operator { get; private set; }
+        protected TablixExpression CurrentExpression { get; private set; }
+        protected IEnumerable<IDictionary<string, object>> DataSetResults { get; private set; }
+        protected IDictionary<string, object> Values { get; private set; }
+        protected int CurrentRowNumber { get; private set; }
+        protected IEnumerable<DataSet> DataSets { get; private set; }
+        protected DataSet ActiveDataset { get; private set; }        
+        protected Match RegexMatch { get; private set; }
+        protected ReportRDL Report { get; private set; }
+        
         private int _endIndx;
 
 
@@ -27,10 +28,11 @@ namespace ReportViewer.NET.Parsers
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets, 
             DataSet activeDataset,
             Regex regex,
-            ReportRDL report
+            ReportRDL report            
         )
         {
             this.CurrentString = currentString;
@@ -38,6 +40,7 @@ namespace ReportViewer.NET.Parsers
             this.CurrentExpression = currentExpression;
             this.DataSetResults = dataSetResults;
             this.Values = values;
+            this.CurrentRowNumber = currentRowNumber;
             this.DataSets = dataSets;
             this.ActiveDataset = activeDataset;            
             this.RegexMatch = regex.Match(currentString);

@@ -17,10 +17,11 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, IfRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, IfRegex, report)
         {
         }
 
@@ -86,13 +87,39 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var booleanExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[0], DataSetResults, Values, DataSets, ActiveDataset, null);
-            var thenExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[1], DataSetResults, Values, DataSets, ActiveDataset, null);
-            var elseExpression = this.Report.Parser.ParseTablixExpressionString(stringGroups[2], DataSetResults, Values, DataSets, ActiveDataset, null);
+            var booleanExpression = this.Report.Parser.ParseTablixExpressionString(
+                stringGroups[0], 
+                this.DataSetResults, 
+                this.Values, 
+                this.CurrentRowNumber, 
+                this.DataSets, 
+                this.ActiveDataset, 
+                null
+            );
+            
+            var thenExpression = this.Report.Parser.ParseTablixExpressionString(
+                stringGroups[1], 
+                this.DataSetResults, 
+                this.Values, 
+                this.CurrentRowNumber, 
+                this.DataSets, 
+                this.ActiveDataset, 
+                null
+            );
+            
+            var elseExpression = this.Report.Parser.ParseTablixExpressionString(
+                stringGroups[2], 
+                this.DataSetResults, 
+                this.Values, 
+                this.CurrentRowNumber, 
+                this.DataSets, 
+                this.ActiveDataset, 
+                null
+            );
 
-            CurrentExpression.Index = match.Index;
-            CurrentExpression.ResolvedType = typeof(string);
-            CurrentExpression.Value = (bool)booleanExpression ? thenExpression : elseExpression;
+            this.CurrentExpression.Index = match.Index;
+            this.CurrentExpression.ResolvedType = typeof(string);
+            this.CurrentExpression.Value = (bool)booleanExpression ? thenExpression : elseExpression;
         }
     }
 }

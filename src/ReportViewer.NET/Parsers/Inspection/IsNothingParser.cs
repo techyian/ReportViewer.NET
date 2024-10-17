@@ -16,10 +16,11 @@ namespace ReportViewer.NET.Parsers.Inspection
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, IsNothingRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, IsNothingRegex, report)
         {
         }
 
@@ -33,7 +34,15 @@ namespace ReportViewer.NET.Parsers.Inspection
             var match = IsNothingRegex.Match(CurrentString);
             var expression = CurrentString.Substring(10, CurrentString.Length - 11);
 
-            var resolvedValue = this.Report.Parser.ParseTablixExpressionString(expression, DataSetResults, Values, DataSets, ActiveDataset, null);
+            var resolvedValue = this.Report.Parser.ParseTablixExpressionString(
+                expression, 
+                this.DataSetResults, 
+                this.Values,
+                this.CurrentRowNumber,
+                this.DataSets,
+                this.ActiveDataset, 
+                null
+            );
 
             CurrentExpression.Index = match.Index;
             CurrentExpression.ResolvedType = typeof(bool);

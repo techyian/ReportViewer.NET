@@ -17,10 +17,11 @@ namespace ReportViewer.NET.Parsers.Aggregate
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
-            IEnumerable<DataObjects.DataSet> dataSets,
-            DataObjects.DataSet activeDataset,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, SumRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, SumRegex, report)
         {
         }
 

@@ -17,10 +17,11 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             TablixExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, activeDataset, MonthNameRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, MonthNameRegex, report)
         {            
         }
 
@@ -44,7 +45,15 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             if (commaMatches.Count == 0)
             {
                 // No need to abbreviate, just return full month name.
-                monthNum = (int)this.Report.Parser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
+                monthNum = (int)this.Report.Parser.ParseTablixExpressionString(
+                    matchValue, 
+                    this.DataSetResults,
+                    this.Values,
+                    this.CurrentRowNumber,
+                    this.DataSets, 
+                    this.ActiveDataset, 
+                    null
+                );
 
                 CurrentExpression.Index = match.Index;
                 CurrentExpression.ResolvedType = typeof(string);
@@ -82,7 +91,15 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            monthNum = (int)this.Report.Parser.ParseTablixExpressionString(matchValue, DataSetResults, Values, DataSets, ActiveDataset, null);
+            monthNum = (int)this.Report.Parser.ParseTablixExpressionString(
+                matchValue,
+                this.DataSetResults,
+                this.Values,
+                this.CurrentRowNumber,
+                this.DataSets, 
+                this.ActiveDataset, 
+                null
+            );
 
             CurrentExpression.Index = match.Index;
             CurrentExpression.ResolvedType = typeof(string);

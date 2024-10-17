@@ -15,10 +15,11 @@ namespace ReportViewer.NET.Parsers.BuiltInFields
             TablixOperator op, 
             TablixExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
-            IDictionary<string, object> values, 
+            IDictionary<string, object> values,
+            int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, dataSets, null, ExecutionTimeRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, null, ExecutionTimeRegex, report)
         {
         }
 
