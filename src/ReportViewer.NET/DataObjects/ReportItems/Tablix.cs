@@ -1,11 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
-using ReportViewer.NET.Comparers;
+﻿using ReportViewer.NET.Comparers;
 using ReportViewer.NET.Parsers;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Xml.Linq;
 
@@ -17,6 +15,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         public TablixBody TablixBodyObj { get; private set; }
         public TablixHierarchy TablixColumnHierarchy { get; private set; }
         public TablixHierarchy TablixRowHierarchy { get; private set; }        
+        public List<TablixSort> TablixSortExpressions { get; set; }
         public PageBreak PageBreak { get; private set; }
         public int TotalTopLevelGroupCount { get; set; }
         public int RequestedTablixPage { get; set; } = 1;
@@ -34,12 +33,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.DataSets = datasets;
             this.TablixCornerRows = new List<TablixCornerRow>();
             this.TablixBodyObj = new TablixBody(this, tablix.Element(report.Namespace + "TablixBody"));
-            
+            this.TablixSortExpressions = new List<TablixSort>();
+
             this.DataSetName = tablix.Element(report.Namespace + "DataSetName")?.Value;
 
             var cornerRows = tablix.Element(report.Namespace + "TablixCorner")?.Elements(report.Namespace + "TablixCornerRows")?.Elements(report.Namespace + "TablixCornerRow");
             var trh = tablix.Elements(report.Namespace + "TablixRowHierarchy").LastOrDefault();
             var tch = tablix.Elements(report.Namespace + "TablixColumnHierarchy").LastOrDefault();
+            var tablixSorts = tablix.Elements(this.Report.Namespace + "SortExpressions")?.Elements(report.Namespace + "SortExpression");
 
             this.TablixRowHierarchy = new TablixHierarchy(trh, this);
             this.TablixColumnHierarchy = new TablixHierarchy(tch, this);
@@ -79,6 +80,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         break;
                     // Between can't be used for report items.
                 }
+            }
+
+            if (tablixSorts != null)
+            {
+                foreach (var tablixSort in tablixSorts)
+                {                    
+                    this.TablixSortExpressions.Add(new TablixSort(this, tablixSort));
+                }                                            
             }
         }
 
@@ -224,6 +233,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         private string BuildNoRowHierarchy()
         {
             var sb = new StringBuilder();
+
+            this.Sort(null, this.Tablix.DataSetReference?.DataSet?.DataSetResults);
 
             sb.AppendLine("<thead>");
             sb.AppendLine("<tr>");
@@ -1120,7 +1131,29 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
         private IEnumerable<IDictionary<string, object>> Sort(TablixMember tablixMember, IEnumerable<IDictionary<string, object>> dsr)
         {
-            if (tablixMember.TablixMemberSort != null && dsr != null)
+            if (this.Tablix.TablixSortExpressions.Any())
+            {
+                TablixMemberSortComparer previousComparer = null;
+
+                foreach (var ts in this.Tablix.TablixSortExpressions)
+                {
+                    // Order dataset results by expression.                    
+                    var fieldsIdx = ts.SortExpression.IndexOf("Fields!");
+                    var fieldEnd = ts.SortExpression.IndexOf('.', fieldsIdx);
+                    var fieldName = ts.SortExpression.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
+                    var baseComparer = new TablixMemberSortComparer(fieldName, previousComparer);
+                                        
+                    if (dsr != null)
+                    {
+                        ts.Sorted = true;
+
+                        dsr = dsr.Order(baseComparer);
+                        previousComparer = baseComparer;
+                    }
+                }
+            }
+
+            if (tablixMember != null && tablixMember.TablixMemberSort != null && dsr != null)
             {                
                 // Order dataset results by expression.                    
                 var fieldsIdx = tablixMember.TablixMemberSort.SortExpression.IndexOf("Fields!");
@@ -1854,6 +1887,19 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         break;
                 }
             }
+        }
+    }
+
+    public class TablixSort
+    {
+        public string SortExpression { get; set; }
+        public Tablix Tablix { get; set; }
+        public bool Sorted { get; set; }
+
+        public TablixSort(Tablix tablix, XElement element)
+        {
+            this.Tablix = tablix;
+            this.SortExpression = element.Element(this.Tablix.Report.Namespace + "Value")?.Value;
         }
     }
 
