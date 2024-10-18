@@ -115,35 +115,35 @@ Additional reports are available in the `/test/reports/` directory of this repos
 
 **First Report** - https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginning%20SSRS/Learn%20SSRS/Beginning%20SSRS%20Chapter%202/Wizard%20Reports/First%20Report.rdl
 
-![first report](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/First Report.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/First%20Report.PNG?raw=true
 
 **Matrix Report** - https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginning%20SSRS/Learn%20SSRS/Beginning%20SSRS%20Chapter%202/Wizard%20Reports/Matrix%20Report.rdl
 
-![matrix report](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/Matrix Report.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/Matrix%20Report.PNG?raw=true
 
 **Calculated Field** - https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginning%20SSRS/Learn%20SSRS/Beginning%20SSRS%20Chapter%204/Building%20Reports/Calculated%20Field.rdl
 
-![calculated field](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/Calculated Field.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/Calculated%20Field.PNG?raw=true
 
 **List Report** - https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginning%20SSRS/Learn%20SSRS/Beginning%20SSRS%20Chapter%204/Building%20Reports/List%20Report.rdl
 
-![list report](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/List Report.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/List%20Report.PNG?raw=true
 
 **Sales by Territory 2**  - https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginning%20SSRS/Learn%20SSRS/Beginning%20SSRS%20Chapter%206/Dynamic%20Reports/Sales%20by%20Territory%202.rdl
 
-![sales by territory 2](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/Sales by Territory 2.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/Sales%20by%20Territory%202.PNG?raw=true
 
 **Sales by Territory Matrix** - https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginning%20SSRS/Learn%20SSRS/Beginning%20SSRS%20Chapter%206/Dynamic%20Reports/Sales%20by%20Territory%20Matrix.rdl
 
-![sales by territory matrix](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/Sales by Territory Matrix.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/Sales%20by%20Territory%20Matrix.PNG?raw=true
 
 **Visibility by Parameters** - https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginning%20SSRS/Learn%20SSRS/Beginning%20SSRS%20Chapter%206/Dynamic%20Reports/Visibility%20by%20Parameters.rdl
 
-![sales by territory matrix](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/Visibility by Parameters 1.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/Visibility%20by%20Parameters%201.PNG?raw=true
 
-![sales by territory matrix](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/Visibility by Parameters 2.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/Visibility%20by%20Parameters%202.PNG?raw=true
 
-![sales by territory matrix](https://github.com/techyian/ReportViewer.NET/tree/master/assets/images/Visibility by Parameters all.jpg?raw=true)
+https://github.com/techyian/ReportViewer.NET/blob/master/assets/images/Visibility%20by%20Parameters%20all.PNG?raw=true
 
 ## Element compatibility
 
