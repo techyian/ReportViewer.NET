@@ -12,7 +12,24 @@ ReportViewer.NET is currently designed to target .NET 8.
 
 1. Include the provided CSS in `assets/reportviewer.net.css` in your project.
 2. Include the provided JS in `assets/reportviewer.net.js` in your project.
-3. Read the remainder of this section to learn how to use ReportViewer.NET in your project.
+3. Create the HTML placeholder element and load the JS in your HTML file by adding the following: 
+
+```
+<div class="report-viewer">
+
+</div>
+
+<script type="text/javascript">
+    var reportViewer = new ReportViewer('/api/Reports', 'My RDL file');
+
+    reportViewer.postReportParameters();    
+</script>
+
+```
+
+The `ReportViewer` function accepts two parameters: `apiPath` and `rdlName`, where `apiPath` references the name of your API path minus the endpoint itself. ReportViewer.NET expects two endpoints to be available on the given path: `GenerateParameters` and `GenerateReport`.
+
+4. Read the remainder of this section to learn how to use ReportViewer.NET in your project.
 
 ReportViewer.NET exposes the Interface `IReportHandler` and Class `ReportHandler` which are intended to be injected to your ASP.NET Controller via Dependency Injection. Please ensure that you register ReportViewer.NET using a Scoped/Transient lifetime - this library should not be registered with a Singleton lifetime.
 
@@ -60,7 +77,7 @@ public class HomeController : Controller, IReportViewerController
     // Default endpoints omitted for brevity.
     
     [HttpPost]
-    public async Task<IActionResult> ParameterViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
+    public async Task<IActionResult> GenerateParameters([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
     {
         // The 'LoadReport' method parses the report RDL's XML and initialises the C# object hierarchy.
         _reportViewer.LoadReport(rdl, userProvidedParameters);
@@ -72,7 +89,7 @@ public class HomeController : Controller, IReportViewerController
     }
     
     [HttpPost]
-    public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
+    public async Task<IActionResult> GenerateReport([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
     {   
         // The 'LoadReport' method parses the report RDL's XML and initialises the C# object hierarchy.
         _reportViewer.LoadReport(rdl, userProvidedParameters);

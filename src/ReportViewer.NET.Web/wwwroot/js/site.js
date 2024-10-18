@@ -1,9 +1,11 @@
-﻿function ReportViewer() {
+﻿function ReportViewer(apiPath, rdlName) {
 
     var self = this;
 
     self.toggleItemRequests = [];
     self.metadata = [];
+    self.apiPath = apiPath;
+    self.rdlName = rdlName;
 
     function constructReportParameters() {
         var eles = $('.report-viewer input');
@@ -71,7 +73,7 @@
 
         return $.ajax({
             method: 'POST',
-            url: `/Home/ParameterViewer`,
+            url: `${self.apiPath.replace(/\/$/, "")}/GenerateParameters?rdl=${self.rdlName}`,
             data: JSON.stringify(dto),
             contentType: 'application/json; charset=utf-8'
         }).done(function (data, textStatus, jqXHR) {
@@ -126,7 +128,7 @@
         
         return $.ajax({
             method: 'POST',
-            url: `/Home/ReportViewer`,
+            url: `${self.apiPath.replace(/\/$/, "")}/GenerateReport?rdl=${self.rdlName}`,
             data: JSON.stringify(dto),
             contentType: 'application/json; charset=utf-8'
         }).done(function (data, textStatus, jqXHR) {

@@ -32,8 +32,8 @@ namespace ReportViewer.NET.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ParameterViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
-        {
+        public async Task<IActionResult> GenerateParameters([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
+        {            
             _reportViewer.LoadReport(rdl, userProvidedParameters);
             var paramHtml = await _reportViewer.PublishReportParameters(rdl, userProvidedParameters.Parameters);
 
@@ -41,8 +41,8 @@ namespace ReportViewer.NET.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ReportViewer([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
-        {            
+        public async Task<IActionResult> GenerateReport([FromQuery] string rdl, [FromBody] ReportParameters userProvidedParameters)
+        {         
             _reportViewer.LoadReport(rdl, userProvidedParameters);
             var reportHtml = await _reportViewer.PublishReportOutput(rdl, userProvidedParameters);
 
