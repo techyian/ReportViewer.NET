@@ -10,8 +10,8 @@ ReportViewer.NET is currently designed to target .NET 8.
 
 ## How to use
 
-1. Include the provided CSS in `src/ReportViewer.NET.Web/wwwroot/css/site.css` in your project.
-2. Include the provided JS in `src/ReportViewer.NET.Web/wwwroot/js/site.js` in your project.
+1. Include the provided CSS in `assets/reportviewer.net.css` in your project.
+2. Include the provided JS in `assets/reportviewer.net.js` in your project.
 3. Read the remainder of this section to learn how to use ReportViewer.NET in your project.
 
 ReportViewer.NET exposes the Interface `IReportHandler` and Class `ReportHandler` which are intended to be injected to your ASP.NET Controller via Dependency Injection. Please ensure that you register ReportViewer.NET using a Scoped/Transient lifetime - this library should not be registered with a Singleton lifetime.
