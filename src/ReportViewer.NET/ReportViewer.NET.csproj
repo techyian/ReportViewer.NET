@@ -13,7 +13,7 @@
 	<PackageProjectUrl>https://github.com/techyian/ReportViewer.NET</PackageProjectUrl>
 	<RepositoryType>git</RepositoryType>
 	<RepositoryUrl>https://github.com/techyian/ReportViewer.NET</RepositoryUrl>
-	<VersionPrefix>0.1.3</VersionPrefix>
+	<VersionPrefix>0.2.0</VersionPrefix>
 	<TargetFramework>net8.0</TargetFramework>
     <Nullable>disable</Nullable>
   </PropertyGroup>
