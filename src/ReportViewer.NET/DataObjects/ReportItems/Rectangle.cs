@@ -44,7 +44,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
                 foreach (var reportRow in rectangleReportRows)
                 {
-                    sb.AppendLine($"<div class=\"report-row\" style=\"max-width:{reportRow.RowWidth}mm\">");
+                    sb.AppendLine($"<div class=\"report-row\" style=\"min-width:{reportRow.RowWidth}mm\">");
 
                     foreach (var reportItem in reportRow.RowItems)
                     {

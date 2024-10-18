@@ -65,8 +65,8 @@
     display: flex;
     flex-direction: row;
     width: 100%;
-    margin-bottom: 0.75rem;    
-    overflow: hidden;
+    margin-bottom: 0.75rem;
+    overflow-x: auto;
 }
 
 .report-row td div:not(.report-row) {

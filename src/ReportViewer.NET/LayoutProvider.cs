@@ -135,7 +135,7 @@ namespace ReportViewer.NET
 
             foreach (var reportRow in bodyReportRows) 
             {
-                sb.AppendLine($"<div class=\"report-row\" style=\"max-width:{reportRow.RowWidth}mm\">");
+                sb.AppendLine($"<div class=\"report-row\" style=\"min-width:{reportRow.RowWidth}mm\">");
 
                 foreach (var reportItem in reportRow.RowItems)
                 {
