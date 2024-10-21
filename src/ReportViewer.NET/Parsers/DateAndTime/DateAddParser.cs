@@ -47,7 +47,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             }
 
             // DateTime will either come directly from database or will be calculated from other expression.
-            var date = (DateTime)this.Report.Parser.ParseReportExpressionString(
+            var date = this.Report.Parser.ParseReportExpressionString(
                 foundParameters.Item2[2],
                 this.DataSetResults,
                 this.Values,
@@ -55,7 +55,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
                 this.DataSets,
                 this.ActiveDataset,
                 null
-            );
+            ).ExpressionAsDateTime();
 
             var datepart = foundParameters.Item2[0].Replace("\"", "");
             var increment = int.Parse(foundParameters.Item2[1]);

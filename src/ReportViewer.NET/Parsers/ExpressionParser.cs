@@ -76,6 +76,12 @@ namespace ReportViewer.NET.Parsers
             DataSet activeDataset
         )
         {
+            if (tablixText.StartsWith("="))
+            {
+                // As we're processing an expression, clear out newlines and tabs.
+                tablixText = tablixText.Replace("\n", "").Replace("\t", "");
+            }
+
             string currentString = tablixText.TrimStart('=').TrimStart();
             List<ReportExpression> expressions = new List<ReportExpression>();
 
@@ -498,6 +504,15 @@ namespace ReportViewer.NET.Parsers
                 var dateDiffParser = new DateDiffParser(currentString, ExpressionFieldOperator.DateDiff, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 dateDiffParser.Parse();
                 proposedString = dateDiffParser.GetProposedString();
+            }
+
+            if (DayParser.DayRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || DayParser.DayRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var dayParser = new DayParser(currentString, ExpressionFieldOperator.Day, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                dayParser.Parse();
+                proposedString = dayParser.GetProposedString();
             }
         }
 
