@@ -523,6 +523,15 @@ namespace ReportViewer.NET.Parsers
                 nowParser.Parse();
                 proposedString = nowParser.GetProposedString();
             }
+
+            if (DateValueParser.DateValueRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || DateValueParser.DateValueRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var dvParser = new DateValueParser(currentString, ExpressionFieldOperator.DateValue, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                dvParser.Parse();
+                proposedString = dvParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
