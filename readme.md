@@ -110,6 +110,11 @@ All reports available at the following GitHub link are tested against ReportView
 
 Additional reports are available in the `/test/reports/` directory of this repository and have been based off official Microsoft tutorials available here: https://learn.microsoft.com/en-us/sql/reporting-services/reporting-services-tutorials-ssrs?view=sql-server-ver16, and here: https://learn.microsoft.com/en-us/sql/reporting-services/report-builder-tutorials?view=sql-server-ver16.
 
+## Help/FAQ
+
+1. Q: When I have a tall element which spans multiple rows in my report, stacked members sharing the same row(s) aren't positioned correctly.
+   
+   A: Due to the way ReportViewer.NET calculates the position of elements, if you have a tall element which spans many rows, stacked members on the same row will not display as you may expect. Try wrapping stacked elements in a Rectangle. You will need to explicitly paste your elements into the Rectangle for this to work.
 
 ## Screenshots
 
