@@ -195,7 +195,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | RenderFormat.IsInteractive     | Not started   |                            |
 | RenderFormat.Name              | Not started   |                            |
 | ReportFolder                   | Not started   |                            |
-| ReportName                     | Not started   | Complete                           |
+| ReportName                     | Complete      |                            |
 | ReportServerUrl                | Not started   |                            |
 | TotalPages                     | Not started   |                            |
 | UserID                         | Not started   |                            |
