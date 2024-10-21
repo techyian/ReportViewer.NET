@@ -481,6 +481,15 @@ namespace ReportViewer.NET.Parsers
                 mnParser.Parse();
                 proposedString = mnParser.GetProposedString();
             }
+
+            if (DateAddParser.DateAddRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || DateAddParser.DateAddRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var dateAddParser = new DateAddParser(currentString, ExpressionFieldOperator.MonthName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                dateAddParser.Parse();
+                proposedString = dateAddParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()

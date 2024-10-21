@@ -13,5 +13,10 @@ namespace ReportViewer.NET.Extensions
         {
             return str.Equals(search, StringComparison.OrdinalIgnoreCase);
         }
+
+        public static bool StartsWithIgnore(this string str, string search) 
+        { 
+            return str.StartsWith(search, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
