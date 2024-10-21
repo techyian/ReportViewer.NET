@@ -14,8 +14,8 @@ namespace ReportViewer.NET.Parsers.Text
 
         public FormatCurrencyParser(
             string currentString,
-            TablixOperator op,
-            TablixExpression currentExpression,
+            ExpressionFieldOperator op,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -64,7 +64,7 @@ namespace ReportViewer.NET.Parsers.Text
             // Then grab the last of the string.
             stringGroups.Add(fcValue.Substring(removed, fcValue.Length - removed));
 
-            var parsedExpression = this.Report.Parser.ParseTablixExpressionString(
+            var parsedExpression = this.Report.Parser.ParseReportExpressionString(
                 stringGroups[0], 
                 this.DataSetResults, 
                 this.Values,

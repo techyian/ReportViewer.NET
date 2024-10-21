@@ -1492,7 +1492,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         else
                         {
                             var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.DataSetReference?.DataSet?.DataSetResults;
-                            var parsedValue = this.Report.Parser.ParseTablixExpressionString(
+                            var parsedValue = this.Report.Parser.ParseReportExpressionString(
                                 p.Value, 
                                 dataSetResults, 
                                 (IDictionary<string, object>)this.Values,
@@ -1586,7 +1586,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             var tablixHeader = element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "TablixHeader");
             var tablixMemberElements = element.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMembers")?.Elements(this.TablixHierarchy.Tablix.Report.Namespace + "TablixMember");
             
-            var isHidden = this.TablixHierarchy.Tablix.Report.Parser.ParseTablixExpressionString(
+            var isHidden = this.TablixHierarchy.Tablix.Report.Parser.ParseReportExpressionString(
                 element.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Visibility")?.Element(this.TablixHierarchy.Tablix.Report.Namespace + "Hidden")?.Value,
                 null,
                 null,
@@ -1825,58 +1825,5 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.TablixMember = tablixMember;            
             this.SortExpression = element.Element(this.TablixMember.TablixHierarchy.Tablix.Report.Namespace + "Value")?.Value;
         }
-    }
-
-    public class TablixExpression
-    {
-        public int Index { get; set; } = -1;
-        public int EndIndex { get; set; }
-        public TablixOperator Operator { get; set; }
-        public string Field { get; set; }
-        public Type ResolvedType { get; set; }
-        public object Value { get; set; }
-        public string DataSetName { get; set; }
-    }
-
-    public enum TablixOperator
-    {
-        None,
-        Count,
-        CountDistinct,
-        Sum,
-        Field,
-        Parameter,
-        Add,
-        Subtract,
-        Multiply,
-        Divide,
-        Mod,
-        String,
-        If,
-        IsArray,
-        IsDate,
-        IsNothing,
-        IsNumeric,
-        Equals,
-        LessThan,
-        LessThanEqualTo,
-        GreaterThan,
-        GreaterThanEqualTo,
-        NotEqual,
-        Like,
-        Is,
-        ConcatAnd,
-        ConcatPlus,
-        ExecutionTime,
-        And,
-        Not,
-        Or,
-        Xor,
-        AndAlso,
-        OrElse,
-        Left,
-        MonthName,
-        FormatCurrency,
-        RowNumber
     }
 }

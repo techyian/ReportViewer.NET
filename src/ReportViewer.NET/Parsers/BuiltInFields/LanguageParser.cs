@@ -2,24 +2,28 @@
 using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace ReportViewer.NET.Parsers.BuiltInFields
 {
-    internal class ExecutionTimeParser : BaseParser
+    public class LanguageParser : BaseParser
     {
-        public static Regex ExecutionTimeRegex = new Regex("(\\bGlobals!ExecutionTime\\b)", RegexOptions.IgnoreCase);
+        public static Regex LanguageRegex = new Regex("(\\bUser!Language\\b)", RegexOptions.IgnoreCase);
 
-        public ExecutionTimeParser(
-            string currentString, 
-            ExpressionFieldOperator op, 
-            ReportExpression currentExpression, 
-            IEnumerable<IDictionary<string, object>> dataSetResults, 
+        public LanguageParser(
+            string currentString,
+            ExpressionFieldOperator op,
+            ReportExpression currentExpression,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, null, ExecutionTimeRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, null, LanguageRegex, report)
         {
         }
 
@@ -30,11 +34,11 @@ namespace ReportViewer.NET.Parsers.BuiltInFields
 
         public override void Parse()
         {
-            var match = ExecutionTimeRegex.Match(this.CurrentString);
-            
+            var match = LanguageRegex.Match(this.CurrentString);
+
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = DateTime.Now.ToString();
+            this.CurrentExpression.Value = CultureInfo.CurrentCulture.Name;
         }
     }
 }

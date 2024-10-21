@@ -13,8 +13,8 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 
         public MonthNameParser(
             string currentString,
-            TablixOperator op,
-            TablixExpression currentExpression,
+            ExpressionFieldOperator op,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -45,7 +45,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             if (commaMatches.Count == 0)
             {
                 // No need to abbreviate, just return full month name.
-                monthNum = (int)this.Report.Parser.ParseTablixExpressionString(
+                monthNum = (int)this.Report.Parser.ParseReportExpressionString(
                     matchValue, 
                     this.DataSetResults,
                     this.Values,
@@ -91,7 +91,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            monthNum = (int)this.Report.Parser.ParseTablixExpressionString(
+            monthNum = (int)this.Report.Parser.ParseReportExpressionString(
                 matchValue,
                 this.DataSetResults,
                 this.Values,

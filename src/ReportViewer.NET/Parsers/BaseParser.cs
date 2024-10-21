@@ -9,8 +9,8 @@ namespace ReportViewer.NET.Parsers
     public abstract class BaseParser
     {        
         protected string CurrentString { get; private set; }
-        protected TablixOperator Operator { get; private set; }
-        protected TablixExpression CurrentExpression { get; private set; }
+        protected ExpressionFieldOperator Operator { get; private set; }
+        protected ReportExpression CurrentExpression { get; private set; }
         protected IEnumerable<IDictionary<string, object>> DataSetResults { get; private set; }
         protected IDictionary<string, object> Values { get; private set; }
         protected int CurrentRowNumber { get; private set; }
@@ -24,8 +24,8 @@ namespace ReportViewer.NET.Parsers
 
         public BaseParser(
             string currentString, 
-            TablixOperator op, 
-            TablixExpression currentExpression,
+            ExpressionFieldOperator op, 
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,

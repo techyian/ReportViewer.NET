@@ -17,27 +17,27 @@ namespace ReportViewer.NET.Parsers
 {
     public class ExpressionParser
     {
-        private readonly TablixOperator[] ArithmeticOperators = { TablixOperator.Add, TablixOperator.Subtract, TablixOperator.Multiply, TablixOperator.Divide, TablixOperator.Mod };
+        private readonly ExpressionFieldOperator[] ArithmeticOperators = { ExpressionFieldOperator.Add, ExpressionFieldOperator.Subtract, ExpressionFieldOperator.Multiply, ExpressionFieldOperator.Divide, ExpressionFieldOperator.Mod };
 
-        private readonly TablixOperator[] ComparisonOperators = {
-            TablixOperator.LessThan, TablixOperator.LessThanEqualTo, TablixOperator.GreaterThan, TablixOperator.GreaterThanEqualTo, TablixOperator.Equals,
-            TablixOperator.NotEqual, TablixOperator.Like, TablixOperator.Is
+        private readonly ExpressionFieldOperator[] ComparisonOperators = {
+            ExpressionFieldOperator.LessThan, ExpressionFieldOperator.LessThanEqualTo, ExpressionFieldOperator.GreaterThan, ExpressionFieldOperator.GreaterThanEqualTo, ExpressionFieldOperator.Equals,
+            ExpressionFieldOperator.NotEqual, ExpressionFieldOperator.Like, ExpressionFieldOperator.Is
         };
 
-        private readonly TablixOperator[] LogicalOperators =
+        private readonly ExpressionFieldOperator[] LogicalOperators =
         {
-            TablixOperator.And, TablixOperator.Not, TablixOperator.Or, TablixOperator.Xor,
-            TablixOperator.AndAlso, TablixOperator.OrElse
+            ExpressionFieldOperator.And, ExpressionFieldOperator.Not, ExpressionFieldOperator.Or, ExpressionFieldOperator.Xor,
+            ExpressionFieldOperator.AndAlso, ExpressionFieldOperator.OrElse
         };
 
-        private readonly TablixOperator[] ConcatenationOperators =
+        private readonly ExpressionFieldOperator[] ConcatenationOperators =
         {
-            TablixOperator.ConcatAnd, TablixOperator.ConcatPlus
+            ExpressionFieldOperator.ConcatAnd, ExpressionFieldOperator.ConcatPlus
         };
 
-        private readonly TablixOperator[] AggregateOperators =
+        private readonly ExpressionFieldOperator[] AggregateOperators =
         {
-            TablixOperator.Count, TablixOperator.Sum
+            ExpressionFieldOperator.Count, ExpressionFieldOperator.Sum
         };
 
         private ReportRDL _report;
@@ -47,7 +47,7 @@ namespace ReportViewer.NET.Parsers
             _report = report;
         }
 
-        public object ParseTablixExpressionString(
+        public object ParseReportExpressionString(
             string tablixText,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
@@ -64,10 +64,10 @@ namespace ReportViewer.NET.Parsers
 
             var expressions = RetrieveExpressionsFromString(tablixText, dataSetResults, values, currentRowNumber, dataSets, activeDataset);
 
-            return ParseTablixExpressions(expressions, requestedFormat).Value;
+            return ParseReportExpressions(expressions, requestedFormat).Value;
         }
 
-        public List<TablixExpression> RetrieveExpressionsFromString(
+        public List<ReportExpression> RetrieveExpressionsFromString(
             string tablixText,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
@@ -77,13 +77,13 @@ namespace ReportViewer.NET.Parsers
         )
         {
             string currentString = tablixText.TrimStart('=').TrimStart();
-            List<TablixExpression> expressions = new List<TablixExpression>();
+            List<ReportExpression> expressions = new List<ReportExpression>();
 
             // TODO: Parse built in expressions, e.g. Globals.
 
             while (!string.IsNullOrEmpty(currentString))
             {
-                var currentExpression = new TablixExpression();
+                var currentExpression = new ReportExpression();
                 var proposedString = string.Empty;
 
                 this.SearchBuiltInFields(currentString, currentExpression, ref proposedString);
@@ -98,24 +98,24 @@ namespace ReportViewer.NET.Parsers
                 this.SearchMiscFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
 
                 if (FieldParser.FieldRegex.IsMatch(currentString) &&
-                    (currentExpression.Operator == TablixOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var fieldParser = new FieldParser(currentString, TablixOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                    var fieldParser = new FieldParser(currentString, ExpressionFieldOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                     fieldParser.Parse();
                     proposedString = fieldParser.GetProposedString();
                 }
 
                 if (ParameterParser.ParameterRegex.IsMatch(currentString) &&
-                    (currentExpression.Operator == TablixOperator.None || ParameterParser.ParameterRegex.Match(currentString).Index < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || ParameterParser.ParameterRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var paramParser = new ParameterParser(currentString, TablixOperator.Parameter, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                    var paramParser = new ParameterParser(currentString, ExpressionFieldOperator.Parameter, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                     paramParser.Parse();
                     proposedString = paramParser.GetProposedString();
                 }
 
-                if ((currentExpression.Operator != TablixOperator.None && currentExpression.Index > 0) || currentExpression.Operator == TablixOperator.None)
+                if ((currentExpression.Operator != ExpressionFieldOperator.None && currentExpression.Index > 0) || currentExpression.Operator == ExpressionFieldOperator.None)
                 {
                     // We've resolved an expression but it isn't at the beginning of our string. Try and extract textual/numeric content at the start.
                     if (currentString.TrimStart().StartsWith('"'))
@@ -124,7 +124,7 @@ namespace ReportViewer.NET.Parsers
                         var extractedStringLiteral = ExtractStringLiteral(currentString);
 
                         currentExpression.ResolvedType = typeof(string);
-                        currentExpression.Operator = TablixOperator.None;
+                        currentExpression.Operator = ExpressionFieldOperator.None;
                         currentExpression.Value = extractedStringLiteral.TrimStart('"').TrimEnd('"');
                         currentExpression.Index = currentString.IndexOf(extractedStringLiteral);
                         proposedString = currentString.Substring(currentExpression.Index + extractedStringLiteral.Length, currentString.Length - currentExpression.Index - extractedStringLiteral.Length);
@@ -136,7 +136,7 @@ namespace ReportViewer.NET.Parsers
                     {
                         // We found an integer value, we can parse this and get out of the loop.
                         currentExpression.ResolvedType = typeof(int);
-                        currentExpression.Operator = TablixOperator.None;
+                        currentExpression.Operator = ExpressionFieldOperator.None;
                         currentExpression.Value = parsedInt;
                         expressions.Add(currentExpression);
 
@@ -154,7 +154,7 @@ namespace ReportViewer.NET.Parsers
                             if (int.TryParse(split[i], out var parsedSplitInt))
                             {
                                 currentExpression.ResolvedType = typeof(int);
-                                currentExpression.Operator = TablixOperator.None;
+                                currentExpression.Operator = ExpressionFieldOperator.None;
                                 currentExpression.Value = parsedSplitInt;
                                 currentExpression.Index = currentString.IndexOf(split[i]);
                                 proposedString = currentString.Substring(currentExpression.Index + parsedSplitInt.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitInt.ToString().Length);
@@ -171,7 +171,7 @@ namespace ReportViewer.NET.Parsers
                         if (!found)
                         {
                             currentExpression.ResolvedType = typeof(string);
-                            currentExpression.Operator = TablixOperator.None;
+                            currentExpression.Operator = ExpressionFieldOperator.None;
                             currentExpression.Value = currentString.TrimStart('"').TrimEnd('"');
                             expressions.Add(currentExpression);
 
@@ -189,76 +189,84 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchBuiltInFields(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             ref string proposedString
             )
         {
             if (ExecutionTimeParser.ExecutionTimeRegex.IsMatch(currentString) &&
-                (currentExpression.Operator == TablixOperator.None || ExecutionTimeParser.ExecutionTimeRegex.Match(currentString).Index < currentExpression.Index))
+                (currentExpression.Operator == ExpressionFieldOperator.None || ExecutionTimeParser.ExecutionTimeRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var executionTimeParser = new ExecutionTimeParser(currentString, TablixOperator.ExecutionTime, currentExpression, null, null, 0, null, _report);
+                var executionTimeParser = new ExecutionTimeParser(currentString, ExpressionFieldOperator.ExecutionTime, currentExpression, null, null, 0, null, _report);
                 executionTimeParser.Parse();
                 proposedString = executionTimeParser.GetProposedString();
+            }
+
+            if (LanguageParser.LanguageRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || LanguageParser.LanguageRegex.Match(currentString).Index < currentExpression.Index))
+            {
+                var languageParser = new LanguageParser(currentString, ExpressionFieldOperator.Language, currentExpression, null, null, 0, null, _report);
+                languageParser.Parse();
+                proposedString = languageParser.GetProposedString();
             }
         }
 
         private void SearchArithmeticOperators(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             ref string proposedString
         )
         {
             if (currentString.IndexOf("+") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("+")) &&
-                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("+") < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("+") < currentExpression.Index)
                 )
             {
                 var idx = currentString.IndexOf("+");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Add;
+                currentExpression.Operator = ExpressionFieldOperator.Add;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOf("-") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("-")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("-") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("-") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf("-");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Subtract;
+                currentExpression.Operator = ExpressionFieldOperator.Subtract;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOf("*") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("*")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("*") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("*") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf("*");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Multiply;
+                currentExpression.Operator = ExpressionFieldOperator.Multiply;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOf("/") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("/")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("/") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("/") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf("/");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Divide;
+                currentExpression.Operator = ExpressionFieldOperator.Divide;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOfIgnore("Mod") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Mod")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Mod") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOfIgnore("Mod") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOfIgnore("Mod");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Mod;
+                currentExpression.Operator = ExpressionFieldOperator.Mod;
 
                 proposedString = currentString.Substring(idx + 3, currentString.Length - idx - 3).TrimStart();
             }
@@ -266,94 +274,94 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchComparisonOperators(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             ref string proposedString
         )
         {
             if (currentString.IndexOf(">=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf(">=")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf(">=") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf(">=") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf(">=");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.GreaterThanEqualTo;
+                currentExpression.Operator = ExpressionFieldOperator.GreaterThanEqualTo;
 
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2).TrimStart();
             }
 
             if (currentString.IndexOf("<=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("<=")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("<=") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("<=") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf("<=");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.LessThanEqualTo;
+                currentExpression.Operator = ExpressionFieldOperator.LessThanEqualTo;
 
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2).TrimStart();
             }
 
             if (currentString.IndexOf(">") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf(">")) &&
-                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf(">") < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf(">") < currentExpression.Index)
                 )
             {
                 var idx = currentString.IndexOf(">");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.GreaterThan;
+                currentExpression.Operator = ExpressionFieldOperator.GreaterThan;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOf("<") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("<")) &&
-                    (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("<") < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("<") < currentExpression.Index)
                 )
             {
                 var idx = currentString.IndexOf("<");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.LessThan;
+                currentExpression.Operator = ExpressionFieldOperator.LessThan;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOf("=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("=")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("=") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("=") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf("=");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Equals;
+                currentExpression.Operator = ExpressionFieldOperator.Equals;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOf("&") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("&")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("&") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("&") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf("&");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.ConcatAnd;
+                currentExpression.Operator = ExpressionFieldOperator.ConcatAnd;
 
                 proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
             }
 
             if (currentString.IndexOf("<>") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("<>")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOf("<>") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("<>") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOf("<>");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.NotEqual;
+                currentExpression.Operator = ExpressionFieldOperator.NotEqual;
 
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2).TrimStart();
             }
 
             if (currentString.IndexOfIgnore("Like") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Like")) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Like") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOfIgnore("Like") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOfIgnore("Like");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Like;
+                currentExpression.Operator = ExpressionFieldOperator.Like;
 
                 proposedString = currentString.Substring(idx + 4, currentString.Length - idx - 4).TrimStart();
             }
@@ -361,12 +369,12 @@ namespace ReportViewer.NET.Parsers
             if (currentString.IndexOfIgnore("Is") > -1 &&
                 !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Is")) &&
                 ((currentString.IndexOfIgnore("IsNothing") > -1 && currentString.IndexOfIgnore("Is") < currentString.IndexOfIgnore("IsNothing")) || currentString.IndexOfIgnore("IsNothing") == -1) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Is") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOfIgnore("Is") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOfIgnore("Is");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Is;
+                currentExpression.Operator = ExpressionFieldOperator.Is;
 
                 proposedString = currentString.Substring(idx + 2, currentString.Length - idx - 2).TrimStart();
             }
@@ -374,7 +382,7 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchConcatenationOperators(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             ref string proposedString
         )
         {
@@ -382,30 +390,30 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchLogicalOperators(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             ref string proposedString
         )
         {
             if (currentString.IndexOfIgnore("And") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("And")) &&
                 ((currentString.IndexOfIgnore("AndNot") > -1 && currentString.IndexOfIgnore("And") < currentString.IndexOfIgnore("AndNot")) || currentString.IndexOfIgnore("AndNot") == -1) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("And") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOfIgnore("And") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOfIgnore("And");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.And;
+                currentExpression.Operator = ExpressionFieldOperator.And;
 
                 proposedString = currentString.Substring(idx + 3, currentString.Length - idx - 3).TrimStart();
             }
 
             if (currentString.IndexOfIgnore("Not") > -1 && !WithinStringLiteral(currentString, currentString.IndexOfIgnore("Not")) &&
                 ((currentString.IndexOfIgnore("AndNot") > -1 && currentString.IndexOfIgnore("Not") < currentString.IndexOfIgnore("AndNot")) || currentString.IndexOfIgnore("AndNot") == -1) &&
-                (currentExpression.Operator == TablixOperator.None || currentString.IndexOfIgnore("Not") < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOfIgnore("Not") < currentExpression.Index)
             )
             {
                 var idx = currentString.IndexOfIgnore("Not");
                 currentExpression.Index = idx;
-                currentExpression.Operator = TablixOperator.Not;
+                currentExpression.Operator = ExpressionFieldOperator.Not;
 
                 proposedString = currentString.Substring(idx + 3, currentString.Length - idx - 3).TrimStart();
             }
@@ -418,7 +426,7 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchTextFunctions(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -428,19 +436,19 @@ namespace ReportViewer.NET.Parsers
         )
         {
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
-                (currentExpression.Operator == TablixOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var leftParser = new LeftParser(currentString, TablixOperator.Left, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var leftParser = new LeftParser(currentString, ExpressionFieldOperator.Left, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 leftParser.Parse();
                 proposedString = leftParser.GetProposedString();
             }
 
             if (FormatCurrencyParser.FormatCurrencyRegex.IsMatch(currentString) &&
-                (currentExpression.Operator == TablixOperator.None || FormatCurrencyParser.FormatCurrencyRegex.Match(currentString).Index < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || FormatCurrencyParser.FormatCurrencyRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var fcParser = new FormatCurrencyParser(currentString, TablixOperator.FormatCurrency, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var fcParser = new FormatCurrencyParser(currentString, ExpressionFieldOperator.FormatCurrency, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 fcParser.Parse();
                 proposedString = fcParser.GetProposedString();
             }
@@ -448,7 +456,7 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchDateTimeFunctions(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -458,10 +466,10 @@ namespace ReportViewer.NET.Parsers
         )
         {
             if (MonthNameParser.MonthNameRegex.IsMatch(currentString) &&
-                (currentExpression.Operator == TablixOperator.None || MonthNameParser.MonthNameRegex.Match(currentString).Index < currentExpression.Index)
+                (currentExpression.Operator == ExpressionFieldOperator.None || MonthNameParser.MonthNameRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var mnParser = new MonthNameParser(currentString, TablixOperator.MonthName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var mnParser = new MonthNameParser(currentString, ExpressionFieldOperator.MonthName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 mnParser.Parse();
                 proposedString = mnParser.GetProposedString();
             }
@@ -474,7 +482,7 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchInspectionFunctions(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -489,9 +497,9 @@ namespace ReportViewer.NET.Parsers
             // IsNumeric
 
             if (IsNothingParser.IsNothingRegex.IsMatch(currentString) &&
-                (currentExpression.Operator == TablixOperator.None || IsNothingParser.IsNothingRegex.Match(currentString).Index < currentExpression.Index))
+                (currentExpression.Operator == ExpressionFieldOperator.None || IsNothingParser.IsNothingRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var isNothingParser = new IsNothingParser(currentString, TablixOperator.IsNothing, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var isNothingParser = new IsNothingParser(currentString, ExpressionFieldOperator.IsNothing, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 isNothingParser.Parse();
                 proposedString = isNothingParser.GetProposedString();
             }
@@ -499,7 +507,7 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchProgramFlowFunctions(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -513,9 +521,9 @@ namespace ReportViewer.NET.Parsers
             // Switch
 
             if (IfParser.IfRegex.IsMatch(currentString) &&
-                (currentExpression.Operator == TablixOperator.None || IfParser.IfRegex.Match(currentString).Index < currentExpression.Index))
+                (currentExpression.Operator == ExpressionFieldOperator.None || IfParser.IfRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var ifParser = new IfParser(currentString, TablixOperator.If, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var ifParser = new IfParser(currentString, ExpressionFieldOperator.If, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 ifParser.Parse();
                 proposedString = ifParser.GetProposedString();
             }
@@ -523,7 +531,7 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchAggregateFunctions(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -533,37 +541,37 @@ namespace ReportViewer.NET.Parsers
         )
         {
             if (CountParser.CountRegex.IsMatch(currentString) &&
-                    (currentExpression.Operator == TablixOperator.None || CountParser.CountRegex.Match(currentString).Index < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || CountParser.CountRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var countParser = new CountParser(currentString, TablixOperator.Count, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var countParser = new CountParser(currentString, ExpressionFieldOperator.Count, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 countParser.Parse();
                 proposedString = countParser.GetProposedString();
             }
 
             if (CountDistinctParser.CountDistinctRegex.IsMatch(currentString) &&
-                    (currentExpression.Operator == TablixOperator.None || CountDistinctParser.CountDistinctRegex.Match(currentString).Index < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || CountDistinctParser.CountDistinctRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var countDistinctParser = new CountDistinctParser(currentString, TablixOperator.CountDistinct, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var countDistinctParser = new CountDistinctParser(currentString, ExpressionFieldOperator.CountDistinct, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 countDistinctParser.Parse();
                 proposedString = countDistinctParser.GetProposedString();
             }
 
             if (SumParser.SumRegex.IsMatch(currentString) &&
-                    (currentExpression.Operator == TablixOperator.None || SumParser.SumRegex.Match(currentString).Index < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || SumParser.SumRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var sumParser = new SumParser(currentString, TablixOperator.Sum, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var sumParser = new SumParser(currentString, ExpressionFieldOperator.Sum, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 sumParser.Parse();
                 proposedString = sumParser.GetProposedString();
             }
 
             if (FirstParser.FirstRegex.IsMatch(currentString) &&
-                    (currentExpression.Operator == TablixOperator.None || FirstParser.FirstRegex.Match(currentString).Index < currentExpression.Index)
+                    (currentExpression.Operator == ExpressionFieldOperator.None || FirstParser.FirstRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var firstParser = new FirstParser(currentString, TablixOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var firstParser = new FirstParser(currentString, ExpressionFieldOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 firstParser.Parse();
                 proposedString = firstParser.GetProposedString();
             }
@@ -581,7 +589,7 @@ namespace ReportViewer.NET.Parsers
 
         private void SearchMiscFunctions(
             string currentString,
-            TablixExpression currentExpression,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -591,26 +599,26 @@ namespace ReportViewer.NET.Parsers
         )
         {
             if (RowNumberParser.RowNumberRegex.IsMatch(currentString) &&
-               (currentExpression.Operator == TablixOperator.None || RowNumberParser.RowNumberRegex.Match(currentString).Index < currentExpression.Index)
+               (currentExpression.Operator == ExpressionFieldOperator.None || RowNumberParser.RowNumberRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var rnParser = new RowNumberParser(currentString, TablixOperator.RowNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var rnParser = new RowNumberParser(currentString, ExpressionFieldOperator.RowNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 rnParser.Parse();
                 proposedString = rnParser.GetProposedString();
             }
         }
 
-        private TablixExpression ParseTablixExpressions(IEnumerable<TablixExpression> expressions, string requestedFormat)
+        private ReportExpression ParseReportExpressions(IEnumerable<ReportExpression> expressions, string requestedFormat)
         {
             // Last logical operator to be checked on boolean returning operator/function.
-            TablixOperator lastLogicalOperator = TablixOperator.None;
+            ExpressionFieldOperator lastLogicalOperator = ExpressionFieldOperator.None;
             bool lastLogicalOperatorValue = false;
 
             if (expressions.Count() > 0)
             {
                 var final = expressions.Aggregate((prev, next) =>
                 {
-                    var newExpr = new TablixExpression();
+                    var newExpr = new ReportExpression();
 
                     newExpr.ResolvedType = prev.ResolvedType;
 
@@ -646,7 +654,7 @@ namespace ReportViewer.NET.Parsers
             return null;
         }
 
-        private void ArithmeticOperatorAggregator(TablixExpression prev, TablixExpression next, TablixExpression newExpr)
+        private void ArithmeticOperatorAggregator(ReportExpression prev, ReportExpression next, ReportExpression newExpr)
         {
             if (ArithmeticOperators.Contains(next.Operator))
             {
@@ -661,25 +669,25 @@ namespace ReportViewer.NET.Parsers
 
             switch (prev.Operator)
             {
-                case TablixOperator.Add:
+                case ExpressionFieldOperator.Add:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") + double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.Subtract:
+                case ExpressionFieldOperator.Subtract:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") - double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.Multiply:
+                case ExpressionFieldOperator.Multiply:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") * double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.Divide:
+                case ExpressionFieldOperator.Divide:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") / double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.Mod:
+                case ExpressionFieldOperator.Mod:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") % double.Parse(next.Value?.ToString() ?? "");
                     break;
             }
         }
 
-        private void ComparisonOperatorAggregator(TablixExpression prev, TablixExpression next, TablixExpression newExpr, TablixOperator lastLogicalOperator, ref bool booleanOperator)
+        private void ComparisonOperatorAggregator(ReportExpression prev, ReportExpression next, ReportExpression newExpr, ExpressionFieldOperator lastLogicalOperator, ref bool booleanOperator)
         {
             if (ComparisonOperators.Contains(next.Operator))
             {
@@ -689,19 +697,19 @@ namespace ReportViewer.NET.Parsers
 
             switch (prev.Operator)
             {
-                case TablixOperator.LessThan:
+                case ExpressionFieldOperator.LessThan:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") < double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.LessThanEqualTo:
+                case ExpressionFieldOperator.LessThanEqualTo:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") <= double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.GreaterThan:
+                case ExpressionFieldOperator.GreaterThan:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") > double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.GreaterThanEqualTo:
+                case ExpressionFieldOperator.GreaterThanEqualTo:
                     newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") >= double.Parse(next.Value?.ToString() ?? "");
                     break;
-                case TablixOperator.Equals:
+                case ExpressionFieldOperator.Equals:
                     switch (Type.GetTypeCode(prev.ResolvedType))
                     {
                         case TypeCode.DateTime:
@@ -721,7 +729,7 @@ namespace ReportViewer.NET.Parsers
                     }
 
                     break;
-                case TablixOperator.NotEqual:
+                case ExpressionFieldOperator.NotEqual:
                     switch (Type.GetTypeCode(prev.ResolvedType))
                     {
                         case TypeCode.DateTime:
@@ -750,7 +758,7 @@ namespace ReportViewer.NET.Parsers
             }
         }
 
-        private void LogicalOperatorAggregator(TablixExpression prev, TablixExpression next, TablixExpression newExpr, bool booleanOperator, ref TablixOperator lastLogicalOperator)
+        private void LogicalOperatorAggregator(ReportExpression prev, ReportExpression next, ReportExpression newExpr, bool booleanOperator, ref ExpressionFieldOperator lastLogicalOperator)
         {
             if (LogicalOperators.Contains(next.Operator))
             {
@@ -763,7 +771,7 @@ namespace ReportViewer.NET.Parsers
             {
                 newExpr.ResolvedType = typeof(bool);
 
-                if (prev.Operator == TablixOperator.Not && next.ResolvedType == typeof(bool))
+                if (prev.Operator == ExpressionFieldOperator.Not && next.ResolvedType == typeof(bool))
                 {
                     // Negate next value
                     newExpr.Value = !(bool)next.Value;
@@ -771,7 +779,7 @@ namespace ReportViewer.NET.Parsers
             }
         }
 
-        private void ConcatenationOperatorAggregator(TablixExpression prev, TablixExpression next, TablixExpression newExpr)
+        private void ConcatenationOperatorAggregator(ReportExpression prev, ReportExpression next, ReportExpression newExpr)
         {
             if (ConcatenationOperators.Contains(next.Operator))
             {
@@ -781,10 +789,10 @@ namespace ReportViewer.NET.Parsers
 
             switch (prev.Operator)
             {
-                case TablixOperator.ConcatAnd:
+                case ExpressionFieldOperator.ConcatAnd:
                     newExpr.Value = prev.Value.ToString() + next.Value.ToString();
                     break;
-                case TablixOperator.ConcatPlus:
+                case ExpressionFieldOperator.ConcatPlus:
                     if (int.TryParse(prev.Value.ToString(), out var prevInt) && int.TryParse(next.Value.ToString(), out var nextInt))
                     {
                         newExpr.Value = prevInt + nextInt;
@@ -798,26 +806,26 @@ namespace ReportViewer.NET.Parsers
             }
         }
 
-        private bool EvaluateLogicalOperator(TablixOperator lastLogicalOperator, bool valueA, bool valueB)
+        private bool EvaluateLogicalOperator(ExpressionFieldOperator lastLogicalOperator, bool valueA, bool valueB)
         {
             switch (lastLogicalOperator)
             {
-                case TablixOperator.And:
-                case TablixOperator.AndAlso:
+                case ExpressionFieldOperator.And:
+                case ExpressionFieldOperator.AndAlso:
                     return valueA && valueB;
-                case TablixOperator.Not:
+                case ExpressionFieldOperator.Not:
                     return !valueA;
-                case TablixOperator.Or:
-                case TablixOperator.OrElse:
+                case ExpressionFieldOperator.Or:
+                case ExpressionFieldOperator.OrElse:
                     return valueA || valueB;
-                case TablixOperator.Xor:
+                case ExpressionFieldOperator.Xor:
                     return valueA ^ valueB;
             }
 
             return valueA;
         }
 
-        private TablixExpression EvaluateRequestedFormat(TablixExpression finalExpression, string requestedFormat)
+        private ReportExpression EvaluateRequestedFormat(ReportExpression finalExpression, string requestedFormat)
         {
             if (string.IsNullOrEmpty(requestedFormat))
                 return finalExpression;

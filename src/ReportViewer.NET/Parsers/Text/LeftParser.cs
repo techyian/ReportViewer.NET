@@ -13,8 +13,8 @@ namespace ReportViewer.NET.Parsers.Text
                 
         public LeftParser(
             string currentString,
-            TablixOperator op,
-            TablixExpression currentExpression,
+            ExpressionFieldOperator op,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -86,7 +86,7 @@ namespace ReportViewer.NET.Parsers.Text
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var stringExpression = (string)this.Report.Parser.ParseTablixExpressionString(
+            var stringExpression = (string)this.Report.Parser.ParseReportExpressionString(
                 stringGroups[0], 
                 this.DataSetResults, 
                 this.Values,

@@ -69,7 +69,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 else
                                 {                                    
                                     var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.DataSetReference?.DataSet?.DataSetResults;
-                                    var parsedValue = this.Report.Parser.ParseTablixExpressionString(p.Value, dataSetResults, null, this.CurrentRowNumber, this.DataSets, this.DataSetReference?.DataSet, null);
+                                    var parsedValue = this.Report.Parser.ParseReportExpressionString(p.Value, dataSetResults, null, this.CurrentRowNumber, this.DataSets, this.DataSetReference?.DataSet, null);
 
                                     if (parsedValue != null)
                                     {
