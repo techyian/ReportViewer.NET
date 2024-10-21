@@ -56,8 +56,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         private string BuildEmbeddedImage()
         {
             switch (this.EmbeddedImage.MimeType)
-            {
-                // TODO: Handle other mime types.
+            {                
                 case "image/jpeg":
                     return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />";                    
                 case "image/png":
