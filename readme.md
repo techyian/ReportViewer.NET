@@ -237,6 +237,10 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | ----- | -------        | ------        | --------                   |
 |       | Fields         | Complete      |                            |
 |       | Parameters     | Complete      |                            |
+
+### Text
+| Group | Expression     | Status        | Comments                   |
+| ----- | -------        | ------        | --------                   |
 | Text  | Asc            | Not started   |                            |
 | Text  | AscW           | Not started   |                            |
 | Text  | Asc            | Not started   |                            |
@@ -270,6 +274,11 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Text  | StrRev         | Not started   |                            |
 | Text  | Trim           | Not started   |                            |
 | Text  | UCase          | Not started   |                            |
+
+### Date & Time
+
+| Group | Expression     | Status        | Comments                   |
+| ----- | -------        | ------        | --------                   |
 | Date & Time  | CDate           | Not started   |                            |
 | Date & Time  | DateAdd         | Complete      |                            |
 | Date & Time  | DateDiff        | Complete      |                            |
@@ -294,6 +303,11 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Date & Time  | Weekday         | Not started   |                            |
 | Date & Time  | WeekdayName     | Not started   |                            |
 | Date & Time  | Year            | Not started   |                            |
+
+### Math
+
+| Group | Expression      | Status        | Comments                   |
+| ----- | -------         | ------        | --------                   |
 | Math  | Abs             | Not started   |                            |
 | Math  | Acos            | Not started   |                            |
 | Math  | Asin            | Not started   |                            |
@@ -320,13 +334,28 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Math  | Sqrt            | Not started   |                            |
 | Math  | Tan             | Not started   |                            |
 | Math  | Tanh            | Not started   |                            |
+
+### Inspection
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Inspection    | IsArray           | Not started   |                            |
 | Inspection    | IsDate            | Not started   |                            |
 | Inspection    | IsNothing         | Complete      |                            |
 | Inspection    | IsNumeric         | Not started   |                            |
+
+### Program Flow
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Program Flow  | Choose            | Not started   |                            |
 | Program Flow  | IIf               | Complete      |                            |
 | Program Flow  | Switch            | Not started   |                            |
+
+### Aggregate 
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Aggregate     | Avg               | Not started   |                            |
 | Aggregate     | Count             | Partial       | TODO: Handle other count expressions not using fields?? |
 | Aggregate     | CountDistinct     | Partial       | As above                   |
@@ -343,6 +372,10 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Aggregate     | VarP              | Not started   |                            |
 | Aggregate     | RunningValue      | Not started   |                            |
 | Aggregate     | Aggregate         | Not started   |                            |
+
+### Financial
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Financial     | DDB               | Not started   |                            |
 | Financial     | FV                | Not started   |                            |
 | Financial     | IPmt              | Not started   |                            |
@@ -353,6 +386,11 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Financial     | Rate              | Not started   |                            |
 | Financial     | SLN               | Not started   |                            |
 | Financial     | SYD               | Not started   |                            |
+
+### Conversion
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Conversion    | CBool             | Not started   |                            |
 | Conversion    | CByte             | Not started   |                            |
 | Conversion    | CChar             | Not started   |                            |
@@ -372,6 +410,11 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Conversion    | Oct               | Not started   |                            |
 | Conversion    | Str               | Not started   |                            |
 | Conversion    | Val               | Not started   |                            |
+
+### Misc
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Misc          | InScope           | Not started   |                            |
 | Misc          | Level             | Not started   |                            |
 | Misc          | Lookup            | Not started   |                            |
