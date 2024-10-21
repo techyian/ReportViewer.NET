@@ -1234,7 +1234,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         var columnMember = this.Body.Tablix.TablixColumnHierarchy.TablixMembers[i];
 
-                        if (columnMember.TablixMemberGroup != null)
+                        if (columnMember.TablixMemberGroup != null && !string.IsNullOrEmpty(columnMember.TablixMemberGroup.GroupExpression))
                         {
                             var sorted = this.Sort(columnMember, this.GroupedResults);
                             var groupedByColumnMember = this.Group(columnMember, sorted);

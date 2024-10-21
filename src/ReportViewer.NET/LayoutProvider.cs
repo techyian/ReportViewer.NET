@@ -195,7 +195,7 @@ namespace ReportViewer.NET
                 reportItem.ReportRow = currentRow;
 
                 currentRow.RowWidth = reportItem.Width + reportItem.Left;
-                currentRow.RowHeight = reportItem.Height + reportItem.Top;
+                currentRow.RowHeight = !(reportItem is Line) ? reportItem.Height + reportItem.Top : 0;
             }
             else
             {
@@ -218,8 +218,9 @@ namespace ReportViewer.NET
                         currentRow.RowWidth = reportItem.Width + reportItem.Left;
                     }
 
-                    if (reportItem.Height + reportItem.Top > currentRow.RowHeight)
+                    if (reportItem.Height + reportItem.Top > currentRow.RowHeight && !(reportItem is Line))
                     {
+                        // Don't use Line height as absolute.
                         currentRow.RowHeight = reportItem.Height + reportItem.Top;
                     }
 

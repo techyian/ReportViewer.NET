@@ -25,11 +25,13 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             var sb = new StringBuilder();
 
+            this.Style.MaxHeight = this.Style.Height;
+
             if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
             {
                 this.Hidden = false;
                 this.Style.Hidden = false;
-
+                
                 sb.AppendLine($"<div class=\"report-rectangle\" {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\">");
 
                 var rectangleReportRows = new List<ReportRow>()

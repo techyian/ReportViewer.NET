@@ -15,8 +15,9 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.Hidden = false;
                 this.Style.Hidden = false;
+                this.Style.Position = "absolute";
 
-                return $"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\"></div>";
+                return $"<div class=\"reportviewer-line\" {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\"></div>";
             }
 
             return string.Empty;
