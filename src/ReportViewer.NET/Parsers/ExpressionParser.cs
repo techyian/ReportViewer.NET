@@ -486,9 +486,18 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == ExpressionFieldOperator.None || DateAddParser.DateAddRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dateAddParser = new DateAddParser(currentString, ExpressionFieldOperator.MonthName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                var dateAddParser = new DateAddParser(currentString, ExpressionFieldOperator.DateAdd, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 dateAddParser.Parse();
                 proposedString = dateAddParser.GetProposedString();
+            }
+
+            if (DateDiffParser.DateDiffRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || DateDiffParser.DateDiffRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var dateDiffParser = new DateDiffParser(currentString, ExpressionFieldOperator.DateDiff, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                dateDiffParser.Parse();
+                proposedString = dateDiffParser.GetProposedString();
             }
         }
 

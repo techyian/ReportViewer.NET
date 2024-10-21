@@ -54,6 +54,7 @@ namespace ReportViewer.NET.Parsers
         Left,
         MonthName,
         DateAdd,
+        DateDiff,
         FormatCurrency,
         RowNumber
     }

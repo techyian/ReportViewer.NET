@@ -272,7 +272,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Text  | UCase          | Not started   |                            |
 | Date & Time  | CDate           | Not started   |                            |
 | Date & Time  | DateAdd         | Not started   | Complete                           |
-| Date & Time  | DateDiff        | Not started   |                            |
+| Date & Time  | DateDiff        | Not started   | Complete                           |
 | Date & Time  | DatePart        | Not started   |                            |
 | Date & Time  | DateSerial      | Not started   |                            |
 | Date & Time  | DateString      | Not started   |                            |
