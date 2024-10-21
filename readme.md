@@ -187,7 +187,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Field                          | Status        | Comments                   |
 | -------                        | ------        | --------                   |
 | ExecutionTime                  | Complete      |                            |
-| Language                       | Not started   | Complete                           |
+| Language                       | Complete      |                            |
 | OverallPageNumber              | Not started   |                            |
 | OverallTotalPages              | Not started   |                            |
 | PageName                       | Not started   |                            |
