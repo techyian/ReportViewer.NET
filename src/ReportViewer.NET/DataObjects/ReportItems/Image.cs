@@ -61,7 +61,11 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 case "image/jpeg":
                     return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />";                    
                 case "image/png":
-                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />";                    
+                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />";
+                case "image/bmp":
+                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/bmp;base64, {this.EmbeddedImage.ImageData}\" />";
+                case "image/gif":
+                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/gif;base64, {this.EmbeddedImage.ImageData}\" />";
             }
 
             return string.Empty;

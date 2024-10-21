@@ -171,7 +171,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Tablix      | Complete?  | Groups, sorting, TablixRowHierarchy, TablixColumnHierarchy appear working. Standard/matrix tables look pretty accurate from local testing.      |    
 | Rectangle   | Complete   |                               |    
 | Line        | Complete   |                               |    
-| Image       | Partial    | JPEG/PNG currently supported. TODO: Background images, external images.  |    
+| Image       | Partial    | TODO: Background images, external images.  |    
 | Sub Report  | Complete   |                               |    
 | Chart       | Not started|                               |
 | Gauge       | Not started|                               |
