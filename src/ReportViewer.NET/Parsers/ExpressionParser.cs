@@ -514,6 +514,15 @@ namespace ReportViewer.NET.Parsers
                 dayParser.Parse();
                 proposedString = dayParser.GetProposedString();
             }
+
+            if (NowParser.NowRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || NowParser.NowRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var nowParser = new NowParser(currentString, ExpressionFieldOperator.Now, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                nowParser.Parse();
+                proposedString = nowParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()

@@ -283,7 +283,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Date & Time  | Minute          | Not started   |                            |
 | Date & Time  | Month           | Not started   |                            |
 | Date & Time  | MonthName       | Complete      |                            |
-| Date & Time  | Now             | Not started   |                            |
+| Date & Time  | Now             | Complete      |                            |
 | Date & Time  | Second          | Not started   |                            |
 | Date & Time  | TimeOfDay       | Not started   |                            |
 | Date & Time  | Timer           | Not started   |                            |
