@@ -208,6 +208,14 @@ namespace ReportViewer.NET.Parsers
                 languageParser.Parse();
                 proposedString = languageParser.GetProposedString();
             }
+
+            if (ReportNameParser.ReportNameRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || ReportNameParser.ReportNameRegex.Match(currentString).Index < currentExpression.Index))
+            {
+                var reportNameParser = new ReportNameParser(currentString, ExpressionFieldOperator.ReportName, currentExpression, null, null, 0, null, _report);
+                reportNameParser.Parse();
+                proposedString = reportNameParser.GetProposedString();
+            }
         }
 
         private void SearchArithmeticOperators(
