@@ -142,5 +142,24 @@ namespace ReportViewer.NET.Extensions
 
             return 0;
         }
+
+        public static string FormatDateTime(this DateTime dtt, DateFormat format)
+        {
+            switch (format)
+            {
+                case DateFormat.GeneralDate:
+                    return dtt.ToString("d");                    
+                case DateFormat.LongDate:
+                    return dtt.ToLongDateString();                    
+                case DateFormat.ShortDate:
+                    return dtt.ToShortDateString();                    
+                case DateFormat.LongTime:
+                    return dtt.ToLongTimeString();                    
+                case DateFormat.ShortTime:
+                    return dtt.ToShortTimeString();
+                default:
+                    return dtt.ToString("d");
+            }            
+        }
     }
 }
