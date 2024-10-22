@@ -559,6 +559,15 @@ namespace ReportViewer.NET.Parsers
                 minuteParser.Parse();
                 proposedString = minuteParser.GetProposedString();
             }
+
+            if (MonthParser.MonthRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || MonthParser.MonthRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var monthParser = new MonthParser(currentString, ExpressionFieldOperator.Month, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                monthParser.Parse();
+                proposedString = monthParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
