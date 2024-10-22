@@ -586,6 +586,15 @@ namespace ReportViewer.NET.Parsers
                 todParser.Parse();
                 proposedString = todParser.GetProposedString();
             }
+
+            if (TimerParser.TimerRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || TimerParser.TimerRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var timerParser = new TimerParser(currentString, ExpressionFieldOperator.Timer, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                timerParser.Parse();
+                proposedString = timerParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
