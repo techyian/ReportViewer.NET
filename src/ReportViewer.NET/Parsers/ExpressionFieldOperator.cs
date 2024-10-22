@@ -59,6 +59,7 @@ namespace ReportViewer.NET.Parsers
         Now,
         DateValue,
         DateFormat,
+        Hour,
         FormatCurrency,
         RowNumber
     }

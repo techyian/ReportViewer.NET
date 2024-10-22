@@ -541,6 +541,15 @@ namespace ReportViewer.NET.Parsers
                 dfParser.Parse();
                 proposedString = dfParser.GetProposedString();
             }
+
+            if (HourParser.HourRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || HourParser.HourRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var hourParser = new HourParser(currentString, ExpressionFieldOperator.Hour, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                hourParser.Parse();
+                proposedString = hourParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
