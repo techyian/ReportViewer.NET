@@ -25,7 +25,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
 
             var sb = new StringBuilder();
 
-            this.Style.MaxHeight = this.Style.Height;
+            //this.Style.MaxHeight = this.Style.Height;
 
             if (!this.Hidden || (this.Hidden && this.Report.ToggleItemRequests.Contains(this.ToggleItem)))
             {
@@ -129,7 +129,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 reportItem.ReportRow = currentRow;
 
                 currentRow.RowWidth = reportItem.Width + reportItem.Left;
-                currentRow.RowHeight = reportItem.Height + reportItem.Top;
+                currentRow.RowHeight = (!(reportItem is Line) || (reportItem is Line && reportItem.Style.Position == "")) ? reportItem.Height + reportItem.Top : 0;
+                currentRow.MaxHeight = reportItem.Height;
             }
             else
             {
@@ -139,6 +140,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                     {
                         RowWidth = reportItem.Width + reportItem.Left,
                         RowHeight = reportItem.Height + reportItem.Top,
+                        MaxHeight = reportItem.Height
                     };
 
                     newRow.RowItems.Add(reportItem);
@@ -152,9 +154,14 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         currentRow.RowWidth = reportItem.Width + reportItem.Left;
                     }
 
-                    if (reportItem.Height + reportItem.Top > currentRow.RowHeight)
+                    if (reportItem.Height + reportItem.Top > currentRow.RowHeight && (!(reportItem is Line) || (reportItem is Line && reportItem.Style.Position == "")))
                     {
                         currentRow.RowHeight = reportItem.Height + reportItem.Top;
+                    }
+
+                    if (currentRow.MaxHeight < reportItem.Height && (!(reportItem is Line) || (reportItem is Line && reportItem.Style.Position == "")))
+                    {
+                        currentRow.MaxHeight = reportItem.Height;
                     }
 
                     currentRow.RowItems.Add(reportItem);
