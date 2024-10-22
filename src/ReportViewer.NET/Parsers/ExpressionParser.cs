@@ -568,6 +568,15 @@ namespace ReportViewer.NET.Parsers
                 monthParser.Parse();
                 proposedString = monthParser.GetProposedString();
             }
+
+            if (SecondParser.SecondRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || SecondParser.SecondRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var secondParser = new SecondParser(currentString, ExpressionFieldOperator.Second, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                secondParser.Parse();
+                proposedString = secondParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
