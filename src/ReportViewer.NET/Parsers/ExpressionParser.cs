@@ -550,6 +550,15 @@ namespace ReportViewer.NET.Parsers
                 hourParser.Parse();
                 proposedString = hourParser.GetProposedString();
             }
+
+            if (MinuteParser.MinuteRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || MinuteParser.MinuteRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var minuteParser = new MinuteParser(currentString, ExpressionFieldOperator.Minute, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                minuteParser.Parse();
+                proposedString = minuteParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
