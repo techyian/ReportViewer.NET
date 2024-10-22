@@ -294,7 +294,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Date & Time  | MonthName       | Complete      |                            |
 | Date & Time  | Now             | Complete      |                            |
 | Date & Time  | Second          | Complete      |                            |
-| Date & Time  | TimeOfDay       | Not started   |                            |
+| Date & Time  | TimeOfDay       | Complete      |                            |
 | Date & Time  | Timer           | Not started   |                            |
 | Date & Time  | TimeSerial      | Not started   |                            |
 | Date & Time  | TimeString      | Not started   |                            |

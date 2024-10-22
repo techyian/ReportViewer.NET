@@ -577,6 +577,15 @@ namespace ReportViewer.NET.Parsers
                 secondParser.Parse();
                 proposedString = secondParser.GetProposedString();
             }
+
+            if (TimeOfDayParser.TimeOfDayRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || TimeOfDayParser.TimeOfDayRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var todParser = new TimeOfDayParser(currentString, ExpressionFieldOperator.TimeOfDay, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                todParser.Parse();
+                proposedString = todParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
