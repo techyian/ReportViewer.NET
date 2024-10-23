@@ -65,6 +65,7 @@ namespace ReportViewer.NET.Parsers
         Second,
         TimeOfDay,
         Timer,
+        TimeSerial,
         FormatCurrency,
         RowNumber
     }

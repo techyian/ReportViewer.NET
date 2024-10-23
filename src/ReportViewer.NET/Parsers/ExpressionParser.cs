@@ -595,6 +595,15 @@ namespace ReportViewer.NET.Parsers
                 timerParser.Parse();
                 proposedString = timerParser.GetProposedString();
             }
+
+            if (TimeSerialParser.TimeSerialRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || TimeSerialParser.TimeSerialRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var timeSerialParser = new TimeSerialParser(currentString, ExpressionFieldOperator.TimeSerial, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                timeSerialParser.Parse();
+                proposedString = timeSerialParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()

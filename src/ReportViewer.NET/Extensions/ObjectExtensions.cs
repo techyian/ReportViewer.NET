@@ -19,5 +19,10 @@ namespace ReportViewer.NET.Extensions
 
             return DateTime.MinValue;
         }
+
+        public static int ExpressionAsInt(this object obj) 
+        {
+            return int.Parse(obj.ToString());
+        }
     }
 }
