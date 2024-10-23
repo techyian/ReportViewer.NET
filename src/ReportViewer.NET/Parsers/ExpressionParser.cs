@@ -81,7 +81,7 @@ namespace ReportViewer.NET.Parsers
                 // As we're processing an expression, clear out newlines and tabs.
                 tablixText = tablixText.Replace("\n", "").Replace("\t", "");
             }
-
+            
             string currentString = tablixText.TrimStart('=').TrimStart();
             List<ReportExpression> expressions = new List<ReportExpression>();
 
@@ -504,6 +504,15 @@ namespace ReportViewer.NET.Parsers
                 var dateDiffParser = new DateDiffParser(currentString, ExpressionFieldOperator.DateDiff, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 dateDiffParser.Parse();
                 proposedString = dateDiffParser.GetProposedString();
+            }
+
+            if (DatePartParser.DatePartRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || DatePartParser.DatePartRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var datePartParser = new DatePartParser(currentString, ExpressionFieldOperator.DatePart, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                datePartParser.Parse();
+                proposedString = datePartParser.GetProposedString();
             }
 
             if (DayParser.DayRegex.IsMatch(currentString) &&

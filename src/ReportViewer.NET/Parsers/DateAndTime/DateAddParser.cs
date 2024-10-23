@@ -33,10 +33,10 @@ namespace ReportViewer.NET.Parsers.DateAndTime
         public override void Parse()
         {
             var match = DateAddRegex.Match(CurrentString);
-            var matchValue = match.Value.Replace("\n", "").Replace("\t", "");
+            var matchValue = match.Value;
 
-            // Remove the surrounding DateAdd including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.Substring(8, matchValue.Length - 9);
+            // Remove the surrounding DateAdd including open & close brace so we can inspect inner members and see if they too contain program flow expressions.             
+            matchValue = matchValue.MatchValueSubString(8);
 
             var foundParameters = this.ParseParenthesis(matchValue);
 
@@ -57,8 +57,8 @@ namespace ReportViewer.NET.Parsers.DateAndTime
                 null
             ).ExpressionAsDateTime();
 
-            var datepart = foundParameters.Item2[0].Replace("\"", "");
-            var increment = int.Parse(foundParameters.Item2[1]);
+            var datepart = foundParameters.Item2[0].TrimDatePart();
+            var increment = int.Parse(foundParameters.Item2[1].Trim());
             DateInterval dateInterval;
 
             if (datepart.StartsWithIgnore("DateInterval."))

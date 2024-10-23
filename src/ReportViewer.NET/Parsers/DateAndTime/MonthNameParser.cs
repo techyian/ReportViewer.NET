@@ -1,4 +1,5 @@
 ﻿using ReportViewer.NET.DataObjects;
+using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -34,10 +35,10 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             int monthNum;
 
             var match = MonthNameRegex.Match(CurrentString);
-            var matchValue = match.Value.Replace("\n", "").Replace("\t", "");
+            var matchValue = match.Value;
 
             // Remove the surrounding MonthName including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.Substring(10, matchValue.Length - 11);
+            matchValue = matchValue.MatchValueSubString(10);
 
             var foundParameters = this.ParseParenthesis(matchValue);
 

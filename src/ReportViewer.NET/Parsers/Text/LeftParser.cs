@@ -1,5 +1,5 @@
 ﻿using ReportViewer.NET.DataObjects;
-using ReportViewer.NET.DataObjects.ReportItems;
+using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +36,7 @@ namespace ReportViewer.NET.Parsers.Text
             var matchValue = match.Value.Replace("\n", "").Replace("\t", "");
 
             // Remove the surrounding Left including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.Substring(5, matchValue.Length - 6);
+            matchValue = matchValue.MatchValueSubString(5);
 
             var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(matchValue);
             //var textInQuotesMatches = TextInQuotesRegex.Matches(matchValue);

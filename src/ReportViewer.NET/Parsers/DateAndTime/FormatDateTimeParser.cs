@@ -36,7 +36,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             var matchValue = match.Value;
 
             // Remove the surrounding FormatDateTime including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.Substring(15, matchValue.Length - 16);
+            matchValue = matchValue.MatchValueSubString(15);
 
             var foundParameters = this.ParseParenthesis(matchValue);
 
@@ -57,7 +57,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
                 null
             ).ExpressionAsDateTime();
 
-            foundParameters.Item2[1] = foundParameters.Item2[1].TrimStart();
+            foundParameters.Item2[1] = foundParameters.Item2[1].Trim();
 
             var dateFormatStrPart = foundParameters.Item2[1].Substring(11, foundParameters.Item2[1].Length - 11);
             var dateFormat = (DateFormat)Enum.Parse(typeof(DateFormat), dateFormatStrPart);

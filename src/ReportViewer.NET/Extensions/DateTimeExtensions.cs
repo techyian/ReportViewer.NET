@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualBasic;
 using ReportViewer.NET.Parsers.DateAndTime;
 using System;
+using System.Globalization;
 
 namespace ReportViewer.NET.Extensions
 {
@@ -143,6 +144,70 @@ namespace ReportViewer.NET.Extensions
             return 0;
         }
 
+        public static int ParseDatePartInterval(this DateTime dtt, DateInterval dateInterval, FirstDayOfWeek fdow, FirstWeekOfYear fwoy)
+        {            
+            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+            Calendar calendar = cultureInfo.Calendar;
+                        
+            /*cultureInfo.DateTimeFormat.CalendarWeekRule = FirstWeekOfYearToCalendarWeekRule(fwoy);
+            cultureInfo.DateTimeFormat.FirstDayOfWeek = FirstDayOfWeekToDayOfWeek(fdow);*/
+
+            switch (dateInterval)
+            {
+                case DateInterval.Year:
+                    return calendar.GetYear(dtt);
+                case DateInterval.Quarter:
+                    return Convert.ToInt32(Math.Ceiling(Convert.ToDecimal(calendar.GetMonth(dtt) / 4)));
+                case DateInterval.Month:
+                    return calendar.GetMonth(dtt);
+                case DateInterval.DayOfYear:
+                case DateInterval.Day:
+                case DateInterval.Weekday:                    
+                    return calendar.GetDayOfMonth(dtt);
+                case DateInterval.WeekOfYear:
+                    return calendar.GetWeekOfYear(dtt, FirstWeekOfYearToCalendarWeekRule(fwoy), FirstDayOfWeekToDayOfWeek(fdow));
+                case DateInterval.Hour:
+                    return calendar.GetHour(dtt);
+                case DateInterval.Minute:
+                    return calendar.GetMinute(dtt);
+                case DateInterval.Second:
+                    return calendar.GetSecond(dtt);
+            }
+
+            return 0;
+        }
+
+        public static int ParseDatePartShortString(this DateTime dtt, string dateInterval, FirstDayOfWeek fdow, FirstWeekOfYear fwoy)
+        {
+            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+            Calendar calendar = cultureInfo.Calendar;
+
+            switch (dateInterval.ToLower())
+            {
+                case "yyyy": // Year
+                    return calendar.GetYear(dtt);
+                case "q": // Quarter
+                    return Convert.ToInt32(Math.Ceiling(Convert.ToDecimal(calendar.GetMonth(dtt) / 4)));
+                case "m": // Month
+                    return calendar.GetMonth(dtt);
+                case "y": // Day of year
+                case "w": // Weekday
+                case "d": // Day
+                          // How are these intervals different - confused?
+                    return calendar.GetDayOfMonth(dtt);
+                case "ww": // Week
+                    return calendar.GetWeekOfYear(dtt, FirstWeekOfYearToCalendarWeekRule(fwoy), FirstDayOfWeekToDayOfWeek(fdow));
+                case "h": // Hour
+                    return calendar.GetHour(dtt);
+                case "n": // Minute
+                    return calendar.GetMinute(dtt);
+                case "s": // Second
+                    return calendar.GetSecond(dtt);
+            }
+
+            return 0;
+        }
+
         public static string FormatDateTime(this DateTime dtt, DateFormat format)
         {
             switch (format)
@@ -160,6 +225,46 @@ namespace ReportViewer.NET.Extensions
                 default:
                     return dtt.ToString("d");
             }            
+        }
+
+        private static DayOfWeek FirstDayOfWeekToDayOfWeek(FirstDayOfWeek fdow)
+        {
+            switch (fdow)
+            {
+                case FirstDayOfWeek.Monday:
+                    return DayOfWeek.Monday;
+                case FirstDayOfWeek.Tuesday:
+                    return DayOfWeek.Tuesday;
+                case FirstDayOfWeek.Wednesday:
+                    return DayOfWeek.Wednesday;
+                case FirstDayOfWeek.Thursday:
+                    return DayOfWeek.Thursday;
+                case FirstDayOfWeek.Friday:
+                    return DayOfWeek.Friday;
+                case FirstDayOfWeek.Saturday:
+                    return DayOfWeek.Saturday;
+                case FirstDayOfWeek.Sunday:
+                    return DayOfWeek.Sunday;
+                default:
+                    CultureInfo cultureInfo = CultureInfo.CurrentCulture;                    
+                    return cultureInfo.DateTimeFormat.FirstDayOfWeek;
+            }
+        }
+
+        private static CalendarWeekRule FirstWeekOfYearToCalendarWeekRule(FirstWeekOfYear fwoy)
+        {
+            switch (fwoy)
+            {
+                case FirstWeekOfYear.Jan1:
+                    return CalendarWeekRule.FirstDay;
+                case FirstWeekOfYear.FirstFourDays:
+                    return CalendarWeekRule.FirstFourDayWeek;
+                case FirstWeekOfYear.FirstFullWeek:
+                    return CalendarWeekRule.FirstFullWeek;
+                default:
+                    CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+                    return cultureInfo.DateTimeFormat.CalendarWeekRule;
+            }
         }
     }
 }

@@ -35,7 +35,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             var matchValue = match.Value;
 
             // Remove the surrounding TimeSerial including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.Substring(11, matchValue.Length - 12);
+            matchValue = matchValue.MatchValueSubString(11);
 
             var foundParameters = this.ParseParenthesis(matchValue);
 

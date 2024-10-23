@@ -1,5 +1,6 @@
 ﻿using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.DataObjects.ReportItems;
+using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -37,7 +38,7 @@ namespace ReportViewer.NET.Parsers.Text
             var fcValue = fcMatch.Value.Replace("\n", "").Replace("\t", "");
 
             // Remove the surrounding FormatCurrency including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
-            fcValue = fcValue.Substring(15, fcValue.Length - 16);
+            fcValue = fcValue.MatchValueSubString(15);
 
             // TODO: Handle additional parameters from FormatCurrency function. For now just default to system settings.
             var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(fcValue);            

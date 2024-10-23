@@ -35,7 +35,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             var matchValue = match.Value;
 
             // Remove the surrounding Month including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.Substring(6, matchValue.Length - 7);
+            matchValue = matchValue.MatchValueSubString(6);
 
             var dtt = this.Report.Parser.ParseReportExpressionString(
                 matchValue,
