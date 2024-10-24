@@ -29,5 +29,10 @@ namespace ReportViewer.NET.Extensions
         {
             return obj.ToString();
         }
+
+        public static double ExpressionAsDouble(this object obj)
+        {
+            return double.Parse(obj.ToString());
+        }
     }
 }
