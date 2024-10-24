@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReportViewer.NET", "src\Rep
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReportViewer.NET.Web", "src\ReportViewer.NET.Web\ReportViewer.NET.Web.csproj", "{15439CA2-723D-42AB-99FE-5A89588A3799}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportViewer.NET.Tests", "test\ReportViewer.NET.Tests\ReportViewer.NET.Tests.csproj", "{C9C8777C-079E-4804-8EF0-4DFE2EF5597E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{15439CA2-723D-42AB-99FE-5A89588A3799}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15439CA2-723D-42AB-99FE-5A89588A3799}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15439CA2-723D-42AB-99FE-5A89588A3799}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9C8777C-079E-4804-8EF0-4DFE2EF5597E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9C8777C-079E-4804-8EF0-4DFE2EF5597E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9C8777C-079E-4804-8EF0-4DFE2EF5597E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9C8777C-079E-4804-8EF0-4DFE2EF5597E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -67,12 +67,14 @@ namespace ReportViewer.NET
             }
         }
 
-        public void LoadReport(string rdlName, ReportParameters userProvidedParameters)
+        public ReportRDL LoadReport(string rdlName, ReportParameters userProvidedParameters)
         {
             var idx = _reportRdls.FindIndex(r => r.Name == rdlName);
             var rdl = _reportRdls.First(r => r.Name == rdlName);
             
             _reportRdls[idx] = this.ParseXml(rdl.Xml, rdlName, userProvidedParameters);
+
+            return _reportRdls[idx];
         }
 
         public void RegisterDataSource(string name, string connectionString, string datasourceReference = null)

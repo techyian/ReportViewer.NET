@@ -24,5 +24,10 @@ namespace ReportViewer.NET.Extensions
         {
             return int.Parse(obj.ToString());
         }
+
+        public static string ExpressionAsString(this object obj) 
+        {
+            return obj.ToString();
+        }
     }
 }
