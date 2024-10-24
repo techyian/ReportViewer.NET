@@ -2,11 +2,6 @@
 using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.Extensions;
 using ReportViewer.NET.Parsers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ReportViewer.NET.Tests.Parsers.DateAndTime
 {
