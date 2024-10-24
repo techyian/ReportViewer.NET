@@ -157,7 +157,7 @@ namespace ReportViewer.NET.Extensions
                 case DateInterval.Year:
                     return calendar.GetYear(dtt);
                 case DateInterval.Quarter:
-                    return Convert.ToInt32(Math.Ceiling(Convert.ToDecimal(calendar.GetMonth(dtt) / 4)));
+                    return Convert.ToInt32(Math.Ceiling(Convert.ToDecimal(calendar.GetMonth(dtt)) / 4));
                 case DateInterval.Month:
                     return calendar.GetMonth(dtt);
                 case DateInterval.DayOfYear:
@@ -187,7 +187,7 @@ namespace ReportViewer.NET.Extensions
                 case "yyyy": // Year
                     return calendar.GetYear(dtt);
                 case "q": // Quarter
-                    return Convert.ToInt32(Math.Ceiling(Convert.ToDecimal(calendar.GetMonth(dtt) / 4)));
+                    return Convert.ToInt32(Math.Ceiling(Convert.ToDecimal(calendar.GetMonth(dtt)) / 4));
                 case "m": // Month
                     return calendar.GetMonth(dtt);
                 case "y": // Day of year

@@ -68,14 +68,28 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             {
                 var fdowString = foundParameters.Item2[2].Trim();
 
-                fdow = (FirstDayOfWeek)Enum.Parse(typeof(FirstDayOfWeek), fdowString.Substring(15, fdowString.Length - 15));
+                if (int.TryParse(fdowString, out var fdowInt))
+                {
+                    fdow = (FirstDayOfWeek)fdowInt;
+                }
+                else
+                {
+                    fdow = (FirstDayOfWeek)Enum.Parse(typeof(FirstDayOfWeek), fdowString.Substring(15, fdowString.Length - 15));
+                }                
             }
 
             if (foundParameters.Item2.Count == 4)
             {
                 var fwoyString = foundParameters.Item2[3].Trim();
 
-                fwoy = (FirstWeekOfYear)Enum.Parse(typeof(FirstWeekOfYear), fwoyString.Substring(16, fwoyString.Length - 16));
+                if (int.TryParse(fwoyString, out var fwoyInt))
+                {
+                    fwoy = (FirstWeekOfYear)fwoyInt;
+                }
+                else
+                {
+                    fwoy = (FirstWeekOfYear)Enum.Parse(typeof(FirstWeekOfYear), fwoyString.Substring(16, fwoyString.Length - 16));
+                }                
             }
 
             if (datepart.StartsWithIgnore("DateInterval."))
