@@ -20,7 +20,7 @@ namespace ReportViewer.NET.Tests.Parsers.DateAndTime
         }
 
         [TestMethod]
-        public void DateAdd_Day_From_Field_ShortString()
+        public void DateAdd_Day_ShortString()
         {
             // Arrange
             var expr = "=DateAdd(\"d\", 3, \"January 15 2010\")";
@@ -42,7 +42,7 @@ namespace ReportViewer.NET.Tests.Parsers.DateAndTime
         }
 
         [TestMethod]
-        public void DateAdd_Month_From_Field_ShortString()
+        public void DateAdd_Month_ShortString()
         {
             // Arrange
             var expr = "=DateAdd(\"m\", 3, \"January 15 2010\")";
@@ -64,7 +64,7 @@ namespace ReportViewer.NET.Tests.Parsers.DateAndTime
         }
 
         [TestMethod]
-        public void DateAdd_Day_From_Field_ShortString_Nested()
+        public void DateAdd_Day_ShortString_Nested()
         {
             // Arrange
             var expr = "=DateAdd(\"d\", 3, DateAdd(\"d\", 4, \"January 15 2010\"))";
@@ -86,7 +86,7 @@ namespace ReportViewer.NET.Tests.Parsers.DateAndTime
         }
 
         [TestMethod]
-        public void DateAdd_Day_From_Field_DateInterval()
+        public void DateAdd_Day_DateInterval()
         {
             // Arrange
             var expr = "=DateAdd(DateInterval.Day, 3, \"January 15 2010\")";
@@ -108,7 +108,7 @@ namespace ReportViewer.NET.Tests.Parsers.DateAndTime
         }
 
         [TestMethod]
-        public void DateAdd_Month_From_Field_DateInterval()
+        public void DateAdd_Month_DateInterval()
         {
             // Arrange
             var expr = "=DateAdd(DateInterval.Month, 3, \"January 15 2010\")";
