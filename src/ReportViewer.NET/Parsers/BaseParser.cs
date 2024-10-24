@@ -78,7 +78,27 @@ namespace ReportViewer.NET.Parsers
 
         public (int, List<string>) ParseParenthesis(string matchValue)
         {
-            var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(matchValue);
+            var commaMatches = new List<int>();
+            var parens = 0;
+
+            for (var i = 0; i < matchValue.Length; i++)
+            {
+                if (matchValue[i] == '(')
+                {
+                    parens++;
+                }
+
+                if (matchValue[i] == ')')
+                {
+                    parens--;
+                }
+
+                if (matchValue[i] == ',' && parens == 0)
+                {
+                    commaMatches.Add(i);
+                }
+            }
+            
             var indexes = new List<int>();
 
             if (commaMatches.Count == 0)
@@ -88,11 +108,11 @@ namespace ReportViewer.NET.Parsers
 
             // We've got more than we were looking for. So we must now look at commas found within quotes and strip out the ones we don't want.
             // This probably isn't the most performant way of doing this...
-            foreach (Match commaMatch in commaMatches)
+            foreach (int idx in commaMatches)
             {
-                if (!ExpressionParser.WithinStringLiteral(matchValue, commaMatch.Index))
+                if (!ExpressionParser.WithinStringLiteral(matchValue, idx))
                 {
-                    indexes.Add(commaMatch.Index);
+                    indexes.Add(idx);
                 }
             }
 
