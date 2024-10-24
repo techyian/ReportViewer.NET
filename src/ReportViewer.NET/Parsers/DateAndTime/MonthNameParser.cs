@@ -81,7 +81,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             CurrentExpression.Index = match.Index;
             CurrentExpression.ResolvedType = typeof(string);
 
-            if (foundParameters.Item2.Count == 1 || foundParameters.Item2[1].ToLower() == "false")
+            if (foundParameters.Item2.Count == 1 || foundParameters.Item2[1].Trim().EqualsIgnore("false"))
             {
                 CurrentExpression.Value = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNum);
             }
