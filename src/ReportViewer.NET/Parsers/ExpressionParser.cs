@@ -650,6 +650,15 @@ namespace ReportViewer.NET.Parsers
                 weekdayParser.Parse();
                 proposedString = weekdayParser.GetProposedString();
             }
+
+            if (WeekdayNameParser.WeekdayNameRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || WeekdayNameParser.WeekdayNameRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var weekdayNameParser = new WeekdayNameParser(currentString, ExpressionFieldOperator.WeekdayName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                weekdayNameParser.Parse();
+                proposedString = weekdayNameParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()

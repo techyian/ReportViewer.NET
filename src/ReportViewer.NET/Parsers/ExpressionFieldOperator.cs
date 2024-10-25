@@ -71,6 +71,7 @@ namespace ReportViewer.NET.Parsers
         TimeValue,
         Today,
         Weekday,
+        WeekdayName,
         FormatCurrency,
         RowNumber
     }

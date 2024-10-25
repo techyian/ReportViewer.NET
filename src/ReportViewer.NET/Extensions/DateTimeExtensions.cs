@@ -216,6 +216,11 @@ namespace ReportViewer.NET.Extensions
             return currentDayOfWeek + 1;
         }
 
+        public static string ParseWeekdayName(this DateTime dtt, FirstDayOfWeek fdow, bool abbreviate)
+        {            
+            return !abbreviate ? AdjustedWeekdayName(dtt, fdow) : AdjustedWeekdayNameAbbreviated(dtt, fdow);
+        }
+
         public static string FormatDateTime(this DateTime dtt, DateFormat format)
         {
             switch (format)
@@ -297,6 +302,67 @@ namespace ReportViewer.NET.Extensions
                 default:
                     return (int)calendar.GetDayOfWeek(dtt);
             }
+        }
+
+        private static string AdjustedWeekdayName(DateTime dtt, FirstDayOfWeek fdow) 
+        {
+            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+            Calendar calendar = cultureInfo.Calendar;
+
+            // Using typeof(DayOfWeek) as this is the enum type returned by GetDayOfWeek.
+
+            switch (fdow)
+            {
+                case FirstDayOfWeek.Monday:
+                    return Enum.GetName(typeof(DayOfWeek), AdjustWeekdayBounds((int)calendar.GetDayOfWeek(dtt) + 1));
+                case FirstDayOfWeek.Tuesday:
+                    return Enum.GetName(typeof(DayOfWeek), AdjustWeekdayBounds((int)calendar.GetDayOfWeek(dtt) + 2));
+                case FirstDayOfWeek.Wednesday:
+                    return Enum.GetName(typeof(DayOfWeek), AdjustWeekdayBounds((int)calendar.GetDayOfWeek(dtt) + 3));
+                case FirstDayOfWeek.Thursday:
+                    return Enum.GetName(typeof(DayOfWeek), AdjustWeekdayBounds((int)calendar.GetDayOfWeek(dtt) + 4));
+                case FirstDayOfWeek.Friday:
+                    return Enum.GetName(typeof(DayOfWeek), AdjustWeekdayBounds((int)calendar.GetDayOfWeek(dtt) + 5));
+                case FirstDayOfWeek.Saturday:
+                    return Enum.GetName(typeof(DayOfWeek), AdjustWeekdayBounds((int)calendar.GetDayOfWeek(dtt) + 6));
+                default:
+                    return Enum.GetName(typeof(DayOfWeek), (int)calendar.GetDayOfWeek(dtt));
+            }
+        }       
+
+        private static int AdjustWeekdayBounds(int dayOfWeek)
+        {
+            if (dayOfWeek > 6)
+            {
+                return dayOfWeek -= 7;
+            }
+
+            return dayOfWeek;
+        }
+        
+        private static string AdjustedWeekdayNameAbbreviated(DateTime dtt, FirstDayOfWeek fdow)
+        {
+            var weekdayName = AdjustedWeekdayName(dtt, fdow);
+
+            switch (weekdayName)
+            {
+                case "Sunday":
+                    return "Sun";
+                case "Monday":
+                    return "Mon";
+                case "Tuesday":
+                    return "Tue";
+                case "Wednesday":
+                    return "Wed";
+                case "Thursday":
+                    return "Thu";
+                case "Friday":
+                    return "Fri";
+                case "Saturday":
+                    return "Sat";
+            }
+
+            return string.Empty;
         }
     }
 }

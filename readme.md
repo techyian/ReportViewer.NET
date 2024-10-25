@@ -301,7 +301,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Date & Time  | TimeValue       | Complete      |                            |
 | Date & Time  | Today           | Complete      |                            |
 | Date & Time  | Weekday         | Complete      |                            |
-| Date & Time  | WeekdayName     | Not started   |                            |
+| Date & Time  | WeekdayName     | Complete      |                            |
 | Date & Time  | Year            | Not started   |                            |
 
 ### Math
