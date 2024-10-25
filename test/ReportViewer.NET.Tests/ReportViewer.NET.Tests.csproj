@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Data\Format text.rdl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\Format text.rdl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Parsers\Aggregate\" />
+    <Folder Include="Parsers\BuiltInFields\" />
+    <Folder Include="Parsers\Inspection\" />
+    <Folder Include="Parsers\Misc\" />
+    <Folder Include="Parsers\Text\" />
+    <Folder Include="Parsers\ProgramFlow\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.12.6" />
+    <PackageReference Include="MSTest" Version="3.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ReportViewer.NET\ReportViewer.NET.csproj" />
+  </ItemGroup>
+
+</Project>

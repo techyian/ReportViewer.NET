@@ -9,7 +9,7 @@ namespace ReportViewer.NET
     {
         void RegisterRdlFromFile(string rdlName, string filePath);
         void RegisterRdlFromString(string rdlName, string rdlXml);
-        void LoadReport(string rdlName, ReportParameters userProvidedParameters);
+        ReportRDL LoadReport(string rdlName, ReportParameters userProvidedParameters);
         void RegisterDataSource(string name, string connectionString, string datasourceReference = null);
         Task<HtmlString> PublishReportParameters(string report, IEnumerable<ReportParameter> userProvidedParameters);
         Task<HtmlString> PublishReportOutput(string report, ReportParameters parameters);

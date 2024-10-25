@@ -21,6 +21,7 @@ namespace ReportViewer.NET.DataObjects
         public string Top { get; set; }
         public string Left { get; set; }        
         public string Height { get; set; }
+        public string MaxHeight { get; set; }
         public string Width { get; set; }
         public string ZIndex { get; set; }
         public string FontFamily { get; set; }
@@ -28,6 +29,7 @@ namespace ReportViewer.NET.DataObjects
         public string FontSize { get; set; }
         public string Color { get; set; }    
         public bool Hidden { get; set; }
+        public string Position { get; set; }
         
         public Style()
         {
@@ -177,13 +179,24 @@ namespace ReportViewer.NET.DataObjects
                         
             sb.Append(!string.IsNullOrEmpty(this.Top) ? $"top: {ConvertUnit(this.Top)};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Left) ? $"left: {ConvertUnit(this.Left)};" : "");
-            sb.Append(!string.IsNullOrEmpty(this.Height) ? $"min-height: {ConvertUnit(this.Height)};" : "");
+            
+            if (!string.IsNullOrEmpty(this.MaxHeight))
+            {
+                sb.Append($"max-height: {ConvertUnit(this.MaxHeight)};");
+            }
+            else if(!string.IsNullOrEmpty(this.Height))
+            {
+                sb.Append($"min-height: {ConvertUnit(this.Height)};");
+            }
+                                    
             sb.Append(!string.IsNullOrEmpty(this.Width) ? $"width: {ConvertUnit(this.Width)};" : "");
             sb.Append(!string.IsNullOrEmpty(this.ZIndex) ? $"z-index: {this.ZIndex};" : "");
             sb.Append(!string.IsNullOrEmpty(this.FontFamily) ? $"font-family: {this.FontFamily};" : "");
             sb.Append(!string.IsNullOrEmpty(this.FontWeight) ? $"font-weight: {this.FontWeight};" : "");
             sb.Append(!string.IsNullOrEmpty(this.FontSize) ? $"font-size: {this.FontSize};" : "");
             sb.Append(!string.IsNullOrEmpty(this.Color) ? $"color: {this.Color};" : "");
+            sb.Append(!string.IsNullOrEmpty(this.Position) ? $"position: {this.Position};" : "");
+            
             sb.Append(this.Hidden ? $"display: none;" : "");
 
             sb.Append("\"");

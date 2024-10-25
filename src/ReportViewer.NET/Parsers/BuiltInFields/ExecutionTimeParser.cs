@@ -12,8 +12,8 @@ namespace ReportViewer.NET.Parsers.BuiltInFields
 
         public ExecutionTimeParser(
             string currentString, 
-            TablixOperator op, 
-            TablixExpression currentExpression, 
+            ExpressionFieldOperator op, 
+            ReportExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values,
             int currentRowNumber,

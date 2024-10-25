@@ -110,6 +110,11 @@ All reports available at the following GitHub link are tested against ReportView
 
 Additional reports are available in the `/test/reports/` directory of this repository and have been based off official Microsoft tutorials available here: https://learn.microsoft.com/en-us/sql/reporting-services/reporting-services-tutorials-ssrs?view=sql-server-ver16, and here: https://learn.microsoft.com/en-us/sql/reporting-services/report-builder-tutorials?view=sql-server-ver16.
 
+## Help/FAQ
+
+1. Q: When I have a tall element which spans multiple rows in my report, stacked members sharing the same row(s) aren't positioned correctly.
+   
+   A: Due to the way ReportViewer.NET calculates the position of elements, if you have a tall element which spans many rows, stacked members on the same row will not display as you may expect. Try wrapping stacked elements in a Rectangle. You will need to explicitly paste your elements into the Rectangle for this to work.
 
 ## Screenshots
 
@@ -166,7 +171,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Tablix      | Complete?  | Groups, sorting, TablixRowHierarchy, TablixColumnHierarchy appear working. Standard/matrix tables look pretty accurate from local testing.      |    
 | Rectangle   | Complete   |                               |    
 | Line        | Complete   |                               |    
-| Image       | Partial    | JPEG/PNG currently supported. TODO: Background images, external images.  |    
+| Image       | Partial    | TODO: Background images, external images.  |    
 | Sub Report  | Complete   |                               |    
 | Chart       | Not started|                               |
 | Gauge       | Not started|                               |
@@ -182,7 +187,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Field                          | Status        | Comments                   |
 | -------                        | ------        | --------                   |
 | ExecutionTime                  | Complete      |                            |
-| Language                       | Not started   |                            |
+| Language                       | Complete      |                            |
 | OverallPageNumber              | Not started   |                            |
 | OverallTotalPages              | Not started   |                            |
 | PageName                       | Not started   |                            |
@@ -190,7 +195,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | RenderFormat.IsInteractive     | Not started   |                            |
 | RenderFormat.Name              | Not started   |                            |
 | ReportFolder                   | Not started   |                            |
-| ReportName                     | Not started   |                            |
+| ReportName                     | Complete      |                            |
 | ReportServerUrl                | Not started   |                            |
 | TotalPages                     | Not started   |                            |
 | UserID                         | Not started   |                            |
@@ -232,6 +237,10 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | ----- | -------        | ------        | --------                   |
 |       | Fields         | Complete      |                            |
 |       | Parameters     | Complete      |                            |
+
+### Text
+| Group | Expression     | Status        | Comments                   |
+| ----- | -------        | ------        | --------                   |
 | Text  | Asc            | Not started   |                            |
 | Text  | AscW           | Not started   |                            |
 | Text  | Asc            | Not started   |                            |
@@ -265,30 +274,40 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Text  | StrRev         | Not started   |                            |
 | Text  | Trim           | Not started   |                            |
 | Text  | UCase          | Not started   |                            |
-| Date & Time  | CDate           | Not started   |                            |
-| Date & Time  | DateAdd         | Not started   |                            |
-| Date & Time  | DateDiff        | Not started   |                            |
-| Date & Time  | DatePart        | Not started   |                            |
-| Date & Time  | DateSerial      | Not started   |                            |
-| Date & Time  | DateString      | Not started   |                            |
-| Date & Time  | DateValue       | Not started   |                            |
-| Date & Time  | Day             | Not started   |                            |
-| Date & Time  | FormatDateTime  | Not started   |                            |
-| Date & Time  | Hour            | Not started   |                            |
-| Date & Time  | Minute          | Not started   |                            |
-| Date & Time  | Month           | Not started   |                            |
+
+### Date & Time
+
+| Group | Expression     | Status        | Comments                   |
+| ----- | -------        | ------        | --------                   |
+| Date & Time  | CDate           | Complete      |                            |
+| Date & Time  | DateAdd         | Complete      |                            |
+| Date & Time  | DateDiff        | Complete      |                            |
+| Date & Time  | DatePart        | Partial       | Not yet tested with all time intervals                            |
+| Date & Time  | DateSerial      | Complete      |                            |
+| Date & Time  | DateString      | Complete      |                            |
+| Date & Time  | DateValue       | Complete      |                            |
+| Date & Time  | Day             | Complete      |                            |
+| Date & Time  | FormatDateTime  | Complete      |                            |
+| Date & Time  | Hour            | Complete      |                            |
+| Date & Time  | Minute          | Complete      |                            |
+| Date & Time  | Month           | Complete      |                            |
 | Date & Time  | MonthName       | Complete      |                            |
-| Date & Time  | Now             | Not started   |                            |
-| Date & Time  | Second          | Not started   |                            |
-| Date & Time  | TimeOfDay       | Not started   |                            |
-| Date & Time  | Timer           | Not started   |                            |
-| Date & Time  | TimeSerial      | Not started   |                            |
-| Date & Time  | TimeString      | Not started   |                            |
-| Date & Time  | TimeValue       | Not started   |                            |
-| Date & Time  | Today           | Not started   |                            |
-| Date & Time  | Weekday         | Not started   |                            |
-| Date & Time  | WeekdayName     | Not started   |                            |
-| Date & Time  | Year            | Not started   |                            |
+| Date & Time  | Now             | Complete      |                            |
+| Date & Time  | Second          | Complete      |                            |
+| Date & Time  | TimeOfDay       | Complete      |                            |
+| Date & Time  | Timer           | Complete      |                            |
+| Date & Time  | TimeSerial      | Complete      |                            |
+| Date & Time  | TimeString      | Complete      |                            |
+| Date & Time  | TimeValue       | Complete      |                            |
+| Date & Time  | Today           | Complete      |                            |
+| Date & Time  | Weekday         | Complete      |                            |
+| Date & Time  | WeekdayName     | Complete      |                            |
+| Date & Time  | Year            | Complete      |                            |
+
+### Math
+
+| Group | Expression      | Status        | Comments                   |
+| ----- | -------         | ------        | --------                   |
 | Math  | Abs             | Not started   |                            |
 | Math  | Acos            | Not started   |                            |
 | Math  | Asin            | Not started   |                            |
@@ -315,13 +334,28 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Math  | Sqrt            | Not started   |                            |
 | Math  | Tan             | Not started   |                            |
 | Math  | Tanh            | Not started   |                            |
+
+### Inspection
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Inspection    | IsArray           | Not started   |                            |
 | Inspection    | IsDate            | Not started   |                            |
 | Inspection    | IsNothing         | Complete      |                            |
 | Inspection    | IsNumeric         | Not started   |                            |
+
+### Program Flow
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Program Flow  | Choose            | Not started   |                            |
 | Program Flow  | IIf               | Complete      |                            |
 | Program Flow  | Switch            | Not started   |                            |
+
+### Aggregate 
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Aggregate     | Avg               | Not started   |                            |
 | Aggregate     | Count             | Partial       | TODO: Handle other count expressions not using fields?? |
 | Aggregate     | CountDistinct     | Partial       | As above                   |
@@ -338,6 +372,10 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Aggregate     | VarP              | Not started   |                            |
 | Aggregate     | RunningValue      | Not started   |                            |
 | Aggregate     | Aggregate         | Not started   |                            |
+
+### Financial
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Financial     | DDB               | Not started   |                            |
 | Financial     | FV                | Not started   |                            |
 | Financial     | IPmt              | Not started   |                            |
@@ -348,6 +386,11 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Financial     | Rate              | Not started   |                            |
 | Financial     | SLN               | Not started   |                            |
 | Financial     | SYD               | Not started   |                            |
+
+### Conversion
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Conversion    | CBool             | Not started   |                            |
 | Conversion    | CByte             | Not started   |                            |
 | Conversion    | CChar             | Not started   |                            |
@@ -367,6 +410,11 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Conversion    | Oct               | Not started   |                            |
 | Conversion    | Str               | Not started   |                            |
 | Conversion    | Val               | Not started   |                            |
+
+### Misc
+
+| Group         | Expression        | Status        | Comments                   |
+| -----         | -------           | ------        | --------                   |
 | Misc          | InScope           | Not started   |                            |
 | Misc          | Level             | Not started   |                            |
 | Misc          | Lookup            | Not started   |                            |

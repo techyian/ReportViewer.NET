@@ -13,8 +13,8 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
 
         public IfParser(
             string currentString,
-            TablixOperator op,
-            TablixExpression currentExpression,
+            ExpressionFieldOperator op,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -87,7 +87,7 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
             // Then grab the last of the string.
             stringGroups.Add(matchValue.Substring(removed, matchValue.Length - removed));
 
-            var booleanExpression = this.Report.Parser.ParseTablixExpressionString(
+            var booleanExpression = this.Report.Parser.ParseReportExpressionString(
                 stringGroups[0], 
                 this.DataSetResults, 
                 this.Values, 
@@ -97,7 +97,7 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
                 null
             );
             
-            var thenExpression = this.Report.Parser.ParseTablixExpressionString(
+            var thenExpression = this.Report.Parser.ParseReportExpressionString(
                 stringGroups[1], 
                 this.DataSetResults, 
                 this.Values, 
@@ -107,7 +107,7 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
                 null
             );
             
-            var elseExpression = this.Report.Parser.ParseTablixExpressionString(
+            var elseExpression = this.Report.Parser.ParseReportExpressionString(
                 stringGroups[2], 
                 this.DataSetResults, 
                 this.Values, 

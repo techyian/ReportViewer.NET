@@ -1,5 +1,6 @@
 ﻿using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.DataObjects.ReportItems;
+using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -14,8 +15,8 @@ namespace ReportViewer.NET.Parsers.Text
 
         public FormatCurrencyParser(
             string currentString,
-            TablixOperator op,
-            TablixExpression currentExpression,
+            ExpressionFieldOperator op,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -37,7 +38,7 @@ namespace ReportViewer.NET.Parsers.Text
             var fcValue = fcMatch.Value.Replace("\n", "").Replace("\t", "");
 
             // Remove the surrounding FormatCurrency including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
-            fcValue = fcValue.Substring(15, fcValue.Length - 16);
+            fcValue = fcValue.MatchValueSubString(15);
 
             // TODO: Handle additional parameters from FormatCurrency function. For now just default to system settings.
             var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(fcValue);            
@@ -64,7 +65,7 @@ namespace ReportViewer.NET.Parsers.Text
             // Then grab the last of the string.
             stringGroups.Add(fcValue.Substring(removed, fcValue.Length - removed));
 
-            var parsedExpression = this.Report.Parser.ParseTablixExpressionString(
+            var parsedExpression = this.Report.Parser.ParseReportExpressionString(
                 stringGroups[0], 
                 this.DataSetResults, 
                 this.Values,

@@ -7,6 +7,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {
         public Line(XElement element, ReportRDL report, ReportItem parent) : base(element, report, parent)
         {
+            this.Style.Position = "absolute";
         }
 
         public override string Build(ReportItem parent)
@@ -15,8 +16,8 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             {
                 this.Hidden = false;
                 this.Style.Hidden = false;
-
-                return $"<div {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\"></div>";
+                
+                return $"<div class=\"reportviewer-line\" {this.Style?.Build()} data-toggle=\"{this.ToggleItem}\"></div>";
             }
 
             return string.Empty;

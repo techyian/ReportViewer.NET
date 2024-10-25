@@ -12,8 +12,8 @@ namespace ReportViewer.NET.Parsers.Inspection
 
         public IsNothingParser(
             string currentString,
-            TablixOperator op,
-            TablixExpression currentExpression,
+            ExpressionFieldOperator op,
+            ReportExpression currentExpression,
             IEnumerable<IDictionary<string, object>> dataSetResults,
             IDictionary<string, object> values,
             int currentRowNumber,
@@ -34,7 +34,7 @@ namespace ReportViewer.NET.Parsers.Inspection
             var match = IsNothingRegex.Match(CurrentString);
             var expression = CurrentString.Substring(10, CurrentString.Length - 11);
 
-            var resolvedValue = this.Report.Parser.ParseTablixExpressionString(
+            var resolvedValue = this.Report.Parser.ParseReportExpressionString(
                 expression, 
                 this.DataSetResults, 
                 this.Values,

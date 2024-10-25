@@ -14,8 +14,8 @@ namespace ReportViewer.NET.Parsers
 
         public FieldParser(
             string currentString, 
-            TablixOperator op, 
-            TablixExpression currentExpression, 
+            ExpressionFieldOperator op, 
+            ReportExpression currentExpression, 
             IEnumerable<IDictionary<string, object>> dataSetResults, 
             IDictionary<string, object> values, 
             int currentRowNumber,
@@ -34,7 +34,7 @@ namespace ReportViewer.NET.Parsers
             if (this.ActiveDataset != null && this.ActiveDataset.Fields.Any(f => !string.IsNullOrEmpty(f.Name) && f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)))
             {
                 var calcField = this.ActiveDataset.Fields.First(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)).Value;
-                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(
+                var resolvedValue = this.Report.Parser.ParseReportExpressionString(
                     calcField, 
                     this.DataSetResults, 
                     this.Values,
@@ -51,7 +51,7 @@ namespace ReportViewer.NET.Parsers
                 var ds = this.DataSets.First(ds => ds.Fields.Any(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)));
                 var calcField = ds.Fields.First(f => f.Name.ToLower() == fieldName && !string.IsNullOrEmpty(f.Value)).Value;
 
-                var resolvedValue = this.Report.Parser.ParseTablixExpressionString(
+                var resolvedValue = this.Report.Parser.ParseReportExpressionString(
                     calcField, 
                     this.DataSetResults, 
                     this.Values,

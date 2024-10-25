@@ -64,7 +64,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 this.ActionInfo = new ActionInfo(ai, report);
             }
 
-            this.TablixCellRowExpression = (value, datasetResults, format) => report.Parser.ParseTablixExpressionString(
+            this.TablixCellRowExpression = (value, datasetResults, format) => report.Parser.ParseReportExpressionString(
                 value,
                 datasetResults,
                 this.Cell.Row.Values, // Can these be replaced simply with `this.Values` etc.?
@@ -74,7 +74,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 format
             );
 
-            this.TablixCellHeaderExpression = (value, datasetResults, format) => report.Parser.ParseTablixExpressionString(
+            this.TablixCellHeaderExpression = (value, datasetResults, format) => report.Parser.ParseReportExpressionString(
                 value,
                 datasetResults,
                 this.Cell.Header.TablixMember.Values, // Can these be replaced simply with `this.Values` etc.?
@@ -84,7 +84,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                 format
             );
 
-            this.StandaloneExpression = (value, datasetResults, parent, format) => report.Parser.ParseTablixExpressionString(
+            this.StandaloneExpression = (value, datasetResults, parent, format) => report.Parser.ParseReportExpressionString(
                 value,
                 datasetResults,
                 this.Values,

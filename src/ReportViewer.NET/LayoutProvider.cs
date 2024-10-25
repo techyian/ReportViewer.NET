@@ -135,7 +135,7 @@ namespace ReportViewer.NET
 
             foreach (var reportRow in bodyReportRows) 
             {
-                sb.AppendLine($"<div class=\"report-row\" style=\"min-width:{reportRow.RowWidth}mm\">");
+                sb.AppendLine($"<div class=\"report-row\" style=\"min-width:{reportRow.RowWidth}mm; min-height:{reportRow.MaxHeight}mm;\">");
 
                 foreach (var reportItem in reportRow.RowItems)
                 {
@@ -195,7 +195,8 @@ namespace ReportViewer.NET
                 reportItem.ReportRow = currentRow;
 
                 currentRow.RowWidth = reportItem.Width + reportItem.Left;
-                currentRow.RowHeight = reportItem.Height + reportItem.Top;
+                currentRow.RowHeight = (!(reportItem is Line) || (reportItem is Line && reportItem.Style.Position == "")) ? reportItem.Height + reportItem.Top : 0;
+                currentRow.MaxHeight = reportItem.Height;
             }
             else
             {
@@ -204,7 +205,8 @@ namespace ReportViewer.NET
                     var newRow = new ReportRow()
                     {
                         RowWidth = reportItem.Width + reportItem.Left,
-                        RowHeight = reportItem.Height + reportItem.Top,                        
+                        RowHeight = reportItem.Height + reportItem.Top,        
+                        MaxHeight = reportItem.Height
                     };
 
                     newRow.RowItems.Add(reportItem);
@@ -218,9 +220,15 @@ namespace ReportViewer.NET
                         currentRow.RowWidth = reportItem.Width + reportItem.Left;
                     }
 
-                    if (reportItem.Height + reportItem.Top > currentRow.RowHeight)
+                    if (reportItem.Height + reportItem.Top > currentRow.RowHeight && (!(reportItem is Line) || (reportItem is Line && reportItem.Style.Position == "")))
                     {
+                        // Don't use Line height as absolute.
                         currentRow.RowHeight = reportItem.Height + reportItem.Top;
+                    }
+
+                    if (currentRow.MaxHeight < reportItem.Height && (!(reportItem is Line) || (reportItem is Line && reportItem.Style.Position == "")))
+                    {
+                        currentRow.MaxHeight = reportItem.Height;
                     }
 
                     currentRow.RowItems.Add(reportItem);
@@ -251,7 +259,7 @@ namespace ReportViewer.NET
 
                 if (!string.IsNullOrEmpty(expression))
                 {
-                    var fieldParser = new FieldParser(expression, TablixOperator.Field, new TablixExpression(), null, null, 0, textbox.DataSets, null, report);
+                    var fieldParser = new FieldParser(expression, ExpressionFieldOperator.Field, new ReportExpression(), null, null, 0, textbox.DataSets, null, report);
                     var dsName = fieldParser.ExtractDataSetName();
                     var ds = report.DataSets.Where(ds => ds.Name == dsName).FirstOrDefault();
 

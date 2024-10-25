@@ -56,12 +56,15 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         private string BuildEmbeddedImage()
         {
             switch (this.EmbeddedImage.MimeType)
-            {
-                // TODO: Handle other mime types.
+            {                
                 case "image/jpeg":
                     return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/jpeg;base64, {this.EmbeddedImage.ImageData}\" />";                    
                 case "image/png":
-                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />";                    
+                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/png;base64, {this.EmbeddedImage.ImageData}\" />";
+                case "image/bmp":
+                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/bmp;base64, {this.EmbeddedImage.ImageData}\" />";
+                case "image/gif":
+                    return $"<img class=\"reportviewer-image img\" {Style?.Build()} data-toggle=\"{this.ToggleItem}\" src=\"data:image/gif;base64, {this.EmbeddedImage.ImageData}\" />";
             }
 
             return string.Empty;
@@ -70,7 +73,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
         private string BuildDatabaseImage(ReportItem parent)
         {
             var dataSetResults = this.GroupedResults?.Select(r => r).ToList() ?? this.DataSetReference?.DataSet?.DataSetResults;
-            var parsedValue = this.Report.Parser.ParseTablixExpressionString(this.Value, dataSetResults, this.Values, this.CurrentRowNumber, this.DataSets, this.DataSetReference?.DataSet, null);
+            var parsedValue = this.Report.Parser.ParseReportExpressionString(this.Value, dataSetResults, this.Values, this.CurrentRowNumber, this.DataSets, this.DataSetReference?.DataSet, null);
             var b64 = string.Empty;
 
             // TODO: Will this ever not be a byte[]?

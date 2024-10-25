@@ -71,7 +71,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
             this.Style.Height = heightValue;
             this.Style.Width = widthValue;
                         
-            var isHidden = report.Parser.ParseTablixExpressionString(
+            var isHidden = report.Parser.ParseReportExpressionString(
                 element.Element(report.Namespace + "Visibility")?.Element(report.Namespace + "Hidden")?.Value,
                 null,
                 null,
@@ -215,6 +215,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
     {        
         public double RowWidth { get; set; }
         public double RowHeight { get; set; }
+        public double MaxHeight { get; set; }
         public List<ReportItem> RowItems { get; set; } = new List<ReportItem>();
     }
 
