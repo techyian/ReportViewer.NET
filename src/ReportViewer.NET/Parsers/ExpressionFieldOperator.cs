@@ -57,6 +57,7 @@ namespace ReportViewer.NET.Parsers
         DateDiff,
         DatePart,
         DateSerial,
+        DateString,
         Day,
         Now,
         DateValue,
