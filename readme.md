@@ -299,7 +299,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Date & Time  | TimeSerial      | Complete      |                            |
 | Date & Time  | TimeString      | Complete      |                            |
 | Date & Time  | TimeValue       | Complete      |                            |
-| Date & Time  | Today           | Not started   |                            |
+| Date & Time  | Today           | Complete      |                            |
 | Date & Time  | Weekday         | Not started   |                            |
 | Date & Time  | WeekdayName     | Not started   |                            |
 | Date & Time  | Year            | Not started   |                            |

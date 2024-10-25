@@ -631,6 +631,15 @@ namespace ReportViewer.NET.Parsers
                 timeValueParser.Parse();
                 proposedString = timeValueParser.GetProposedString();
             }
+
+            if (TodayParser.TodayRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || TodayParser.TodayRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var todayParser = new TodayParser(currentString, ExpressionFieldOperator.Today, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                todayParser.Parse();
+                proposedString = todayParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
