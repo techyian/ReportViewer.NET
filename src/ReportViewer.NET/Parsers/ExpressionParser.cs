@@ -659,6 +659,15 @@ namespace ReportViewer.NET.Parsers
                 weekdayNameParser.Parse();
                 proposedString = weekdayNameParser.GetProposedString();
             }
+
+            if (YearParser.YearRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || YearParser.YearRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var yearParser = new YearParser(currentString, ExpressionFieldOperator.Year, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                yearParser.Parse();
+                proposedString = yearParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()

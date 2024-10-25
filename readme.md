@@ -302,7 +302,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Date & Time  | Today           | Complete      |                            |
 | Date & Time  | Weekday         | Complete      |                            |
 | Date & Time  | WeekdayName     | Complete      |                            |
-| Date & Time  | Year            | Not started   |                            |
+| Date & Time  | Year            | Complete      |                            |
 
 ### Math
 
