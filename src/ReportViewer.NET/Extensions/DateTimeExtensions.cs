@@ -208,6 +208,14 @@ namespace ReportViewer.NET.Extensions
             return 0;
         }
 
+        public static int ParseWeekday(this DateTime dtt, FirstDayOfWeek fdow)
+        {   
+            var currentDayOfWeek = (int)AdjustedDayOfWeek(dtt, fdow);
+
+            // TODO: Does SSRS increment by 1 to get a sane week number?
+            return currentDayOfWeek + 1;
+        }
+
         public static string FormatDateTime(this DateTime dtt, DateFormat format)
         {
             switch (format)
@@ -264,6 +272,30 @@ namespace ReportViewer.NET.Extensions
                 default:
                     CultureInfo cultureInfo = CultureInfo.CurrentCulture;
                     return cultureInfo.DateTimeFormat.CalendarWeekRule;
+            }
+        }
+
+        private static int AdjustedDayOfWeek(DateTime dtt, FirstDayOfWeek fdow)
+        {
+            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+            Calendar calendar = cultureInfo.Calendar;
+
+            switch (fdow)
+            {                
+                case FirstDayOfWeek.Monday:
+                    return ((int)calendar.GetDayOfWeek(dtt) + 6) % 7;
+                case FirstDayOfWeek.Tuesday:
+                    return ((int)calendar.GetDayOfWeek(dtt) + 5) % 7;
+                case FirstDayOfWeek.Wednesday:
+                    return ((int)calendar.GetDayOfWeek(dtt) + 4) % 7;
+                case FirstDayOfWeek.Thursday:
+                    return ((int)calendar.GetDayOfWeek(dtt) + 3) % 7;
+                case FirstDayOfWeek.Friday:
+                    return ((int)calendar.GetDayOfWeek(dtt) + 2) % 7;
+                case FirstDayOfWeek.Saturday:
+                    return ((int)calendar.GetDayOfWeek(dtt) + 1) % 7;
+                default:
+                    return (int)calendar.GetDayOfWeek(dtt);
             }
         }
     }

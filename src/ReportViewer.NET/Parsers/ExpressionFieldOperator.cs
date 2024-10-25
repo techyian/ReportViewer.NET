@@ -70,6 +70,7 @@ namespace ReportViewer.NET.Parsers
         TimeString,
         TimeValue,
         Today,
+        Weekday,
         FormatCurrency,
         RowNumber
     }

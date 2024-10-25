@@ -516,6 +516,7 @@ namespace ReportViewer.NET.Parsers
             }
 
             if (DayParser.DayRegex.IsMatch(currentString) &&
+                ((WeekdayParser.WeekdayRegex.IsMatch(currentString) && DayParser.DayRegex.Match(currentString).Index < WeekdayParser.WeekdayRegex.Match(currentString).Index) || !WeekdayParser.WeekdayRegex.IsMatch(currentString)) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DayParser.DayRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
@@ -639,6 +640,15 @@ namespace ReportViewer.NET.Parsers
                 var todayParser = new TodayParser(currentString, ExpressionFieldOperator.Today, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 todayParser.Parse();
                 proposedString = todayParser.GetProposedString();
+            }
+
+            if (WeekdayParser.WeekdayRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || WeekdayParser.WeekdayRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var weekdayParser = new WeekdayParser(currentString, ExpressionFieldOperator.Weekday, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                weekdayParser.Parse();
+                proposedString = weekdayParser.GetProposedString();
             }
         }
 
