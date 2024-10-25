@@ -2,12 +2,7 @@
 using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.Extensions;
 using ReportViewer.NET.Parsers;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ReportViewer.NET.Tests.Parsers.DateAndTime
 {
@@ -26,7 +21,7 @@ namespace ReportViewer.NET.Tests.Parsers.DateAndTime
         }
 
         [TestMethod]
-        public void FormatDateTime_Return_ShortDate_String()
+        public void TimeString_Return_String()
         {
             // Slim chance of failure between DateTime.Now and expression being parsed.
 
