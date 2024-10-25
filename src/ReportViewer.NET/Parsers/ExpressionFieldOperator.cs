@@ -68,6 +68,7 @@ namespace ReportViewer.NET.Parsers
         Timer,
         TimeSerial,
         TimeString,
+        TimeValue,
         FormatCurrency,
         RowNumber
     }

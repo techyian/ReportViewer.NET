@@ -622,6 +622,15 @@ namespace ReportViewer.NET.Parsers
                 timeStringParser.Parse();
                 proposedString = timeStringParser.GetProposedString();
             }
+
+            if (TimeValueParser.TimeValueRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || TimeValueParser.TimeValueRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var timeValueParser = new TimeValueParser(currentString, ExpressionFieldOperator.TimeValue, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                timeValueParser.Parse();
+                proposedString = timeValueParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
