@@ -613,6 +613,15 @@ namespace ReportViewer.NET.Parsers
                 timeSerialParser.Parse();
                 proposedString = timeSerialParser.GetProposedString();
             }
+
+            if (TimeStringParser.TimeStringRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || TimeStringParser.TimeStringRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var timeStringParser = new TimeStringParser(currentString, ExpressionFieldOperator.TimeString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                timeStringParser.Parse();
+                proposedString = timeStringParser.GetProposedString();
+            }
         }
 
         private void SearchMathFunctions()
