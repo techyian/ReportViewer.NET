@@ -515,6 +515,15 @@ namespace ReportViewer.NET.Parsers
                 proposedString = datePartParser.GetProposedString();
             }
 
+            if (DateSerialParser.DateSerialRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || DateSerialParser.DateSerialRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var dateSerialParser = new DateSerialParser(currentString, ExpressionFieldOperator.DateSerial, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                dateSerialParser.Parse();
+                proposedString = dateSerialParser.GetProposedString();
+            }
+
             if (DayParser.DayRegex.IsMatch(currentString) &&
                 ((WeekdayParser.WeekdayRegex.IsMatch(currentString) && DayParser.DayRegex.Match(currentString).Index < WeekdayParser.WeekdayRegex.Match(currentString).Index) || !WeekdayParser.WeekdayRegex.IsMatch(currentString)) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DayParser.DayRegex.Match(currentString).Index < currentExpression.Index)
