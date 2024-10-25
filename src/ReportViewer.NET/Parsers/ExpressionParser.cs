@@ -479,6 +479,15 @@ namespace ReportViewer.NET.Parsers
             ref string proposedString
         )
         {
+            if (CDateParser.CDateRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || CDateParser.CDateRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var cDateParser = new CDateParser(currentString, ExpressionFieldOperator.CDate, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                cDateParser.Parse();
+                proposedString = cDateParser.GetProposedString();
+            }
+
             if (MonthNameParser.MonthNameRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || MonthNameParser.MonthNameRegex.Match(currentString).Index < currentExpression.Index)
             )

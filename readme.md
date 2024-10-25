@@ -279,7 +279,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 
 | Group | Expression     | Status        | Comments                   |
 | ----- | -------        | ------        | --------                   |
-| Date & Time  | CDate           | Not started   |                            |
+| Date & Time  | CDate           | Complete      |                            |
 | Date & Time  | DateAdd         | Complete      |                            |
 | Date & Time  | DateDiff        | Complete      |                            |
 | Date & Time  | DatePart        | Partial       | Not yet tested with all time intervals                            |
