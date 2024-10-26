@@ -54,6 +54,7 @@ namespace ReportViewer.NET.Parsers
         Left,
         Asc,
         AscW,
+        Chr,
         MonthName,
         CDate,
         DateAdd,
