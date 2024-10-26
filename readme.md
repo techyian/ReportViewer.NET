@@ -241,7 +241,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 ### Text
 | Group | Expression     | Status        | Comments                   |
 | ----- | -------        | ------        | --------                   |
-| Text  | Asc            | Not started   |                            |
+| Text  | Asc            | Complete      |                            |
 | Text  | AscW           | Not started   |                            |
 | Text  | Asc            | Not started   |                            |
 | Text  | Chr            | Not started   |                            |

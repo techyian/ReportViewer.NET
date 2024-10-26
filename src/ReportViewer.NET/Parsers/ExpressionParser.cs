@@ -449,6 +449,15 @@ namespace ReportViewer.NET.Parsers
             ref string proposedString
         )
         {
+            if (AscParser.AscRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || AscParser.AscRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var ascParser = new AscParser(currentString, ExpressionFieldOperator.Asc, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                ascParser.Parse();
+                proposedString = ascParser.GetProposedString();
+            }
+
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )

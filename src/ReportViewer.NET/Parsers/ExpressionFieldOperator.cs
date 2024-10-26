@@ -52,6 +52,7 @@ namespace ReportViewer.NET.Parsers
         AndAlso,
         OrElse,
         Left,
+        Asc,
         MonthName,
         CDate,
         DateAdd,
