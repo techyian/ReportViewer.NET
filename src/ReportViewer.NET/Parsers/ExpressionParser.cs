@@ -476,6 +476,15 @@ namespace ReportViewer.NET.Parsers
                 proposedString = chrParser.GetProposedString();
             }
 
+            if (ChrWParser.ChrWRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || ChrWParser.ChrWRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var chrWParser = new ChrWParser(currentString, ExpressionFieldOperator.ChrW, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                chrWParser.Parse();
+                proposedString = chrWParser.GetProposedString();
+            }
+
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )

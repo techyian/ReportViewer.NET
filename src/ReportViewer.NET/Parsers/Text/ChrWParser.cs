@@ -1,17 +1,18 @@
 ﻿using ReportViewer.NET.DataObjects;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Text;
-using System;
 using ReportViewer.NET.Extensions;
+using System;
+using System.Buffers.Binary;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers.Text
 {
-    public class ChrParser : BaseParser
+    public class ChrWParser : BaseParser
     {
-        public static Regex ChrRegex = RegexCommon.GenerateParserRegex("Chr");
+        public static Regex ChrWRegex = RegexCommon.GenerateParserRegex("ChrW");
 
-        public ChrParser(
+        public ChrWParser(
             string currentString,
             ExpressionFieldOperator op,
             ReportExpression currentExpression,
@@ -21,7 +22,7 @@ namespace ReportViewer.NET.Parsers.Text
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ChrRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ChrWRegex, report)
         {
         }
 
@@ -32,11 +33,11 @@ namespace ReportViewer.NET.Parsers.Text
 
         public override void Parse()
         {
-            var match = ChrRegex.Match(this.CurrentString);
+            var match = ChrWRegex.Match(this.CurrentString);
             var matchValue = match.Value;
 
-            // Remove the surrounding Chr including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.MatchValueSubString(4);
+            // Remove the surrounding ChrW including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
+            matchValue = matchValue.MatchValueSubString(5);
 
             var code = this.Report.Parser.ParseReportExpressionString(
                 matchValue,
@@ -50,7 +51,13 @@ namespace ReportViewer.NET.Parsers.Text
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = Encoding.ASCII.GetString(new byte[] { Convert.ToByte(code) });
+
+            var buffer = new byte[2];
+            var span = new Span<byte>(buffer);
+
+            BinaryPrimitives.WriteInt16LittleEndian(span, Convert.ToInt16(code));
+
+            this.CurrentExpression.Value = Encoding.Unicode.GetString(span);
         }
     }
 }

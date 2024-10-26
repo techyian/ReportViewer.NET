@@ -244,7 +244,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Text  | Asc            | Complete      |                            |
 | Text  | AscW           | Complete      |                            |
 | Text  | Chr            | Complete      |                            |
-| Text  | ChrW           | Not started   |                            |
+| Text  | ChrW           | Complete      |                            |
 | Text  | Filter         | Not started   |                            |
 | Text  | Format         | Not started   |                            |
 | Text  | FormatCurrency | Complete      |                            |
