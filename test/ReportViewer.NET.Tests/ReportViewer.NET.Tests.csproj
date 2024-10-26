@@ -19,7 +19,6 @@
     <Folder Include="Parsers\BuiltInFields\" />
     <Folder Include="Parsers\Inspection\" />
     <Folder Include="Parsers\Misc\" />
-    <Folder Include="Parsers\ProgramFlow\" />
   </ItemGroup>
 
   <ItemGroup>
