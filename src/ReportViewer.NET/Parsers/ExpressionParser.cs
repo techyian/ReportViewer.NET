@@ -457,6 +457,15 @@ namespace ReportViewer.NET.Parsers
                 ascParser.Parse();
                 proposedString = ascParser.GetProposedString();
             }
+            
+            if (AscWParser.AscWRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || AscWParser.AscWRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var ascWParser = new AscWParser(currentString, ExpressionFieldOperator.AscW, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                ascWParser.Parse();
+                proposedString = ascWParser.GetProposedString();
+            }
 
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
