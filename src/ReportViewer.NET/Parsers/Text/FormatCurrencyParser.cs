@@ -1,5 +1,4 @@
 ﻿using ReportViewer.NET.DataObjects;
-using ReportViewer.NET.DataObjects.ReportItems;
 using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
@@ -34,39 +33,23 @@ namespace ReportViewer.NET.Parsers.Text
 
         public override void Parse()
         {
-            var fcMatch = FormatCurrencyRegex.Match(CurrentString);
+            var fcMatch = FormatCurrencyRegex.Match(this.CurrentString);
             var fcValue = fcMatch.Value.Replace("\n", "").Replace("\t", "");
 
             // Remove the surrounding FormatCurrency including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
             fcValue = fcValue.MatchValueSubString(15);
 
+            var foundParameters = this.ParseParenthesis(fcValue);
+
+            if (foundParameters.Item2.Count > 2)
+            {
+                // The FormatCurrency function expects at most 2 parameters.
+                return;
+            }
+
             // TODO: Handle additional parameters from FormatCurrency function. For now just default to system settings.
-            var commaMatches = RegexCommon.CommaNotInParenRegex.Matches(fcValue);            
-            var indexes = new List<int>();
-
-            foreach (Match commaMatch in commaMatches)
-            {
-                if (!ExpressionParser.WithinStringLiteral(fcValue, commaMatch.Index))
-                {
-                    indexes.Add(commaMatch.Index);
-                }
-            }
-
-            // Let's split our string into its relevant groups.
-            var stringGroups = new List<string>();
-            var removed = 0;
-
-            foreach (var index in indexes)
-            {
-                stringGroups.Add(fcValue.Substring(removed, index - removed));
-                removed += fcValue.Substring(removed, index - removed).Length + 1;
-            }
-
-            // Then grab the last of the string.
-            stringGroups.Add(fcValue.Substring(removed, fcValue.Length - removed));
-
             var parsedExpression = this.Report.Parser.ParseReportExpressionString(
-                stringGroups[0], 
+                foundParameters.Item2[0], 
                 this.DataSetResults, 
                 this.Values,
                 this.CurrentRowNumber,

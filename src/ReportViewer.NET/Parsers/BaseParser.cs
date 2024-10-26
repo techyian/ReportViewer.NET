@@ -100,12 +100,7 @@ namespace ReportViewer.NET.Parsers
             }
             
             var indexes = new List<int>();
-
-            if (commaMatches.Count == 0)
-            {            
-                return (0, null);
-            }
-
+                        
             // We've got more than we were looking for. So we must now look at commas found within quotes and strip out the ones we don't want.
             // This probably isn't the most performant way of doing this...
             foreach (int idx in commaMatches)
