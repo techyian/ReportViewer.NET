@@ -35,16 +35,16 @@ namespace ReportViewer.NET.Parsers.Text
         public override void Parse()
         {
             var fcMatch = FormatCurrencyRegex.Match(this.CurrentString);
-            var fcValue = fcMatch.Value.Replace("\n", "").Replace("\t", "");
+            var fcValue = fcMatch.Value;
 
             // Remove the surrounding FormatCurrency including closing brace so we can inspect inner members and see if they too contain program flow expressions. 
             fcValue = fcValue.MatchValueSubString(15);
 
             var foundParameters = this.ParseParenthesis(fcValue);
 
-            if (foundParameters.Item2.Count > 2)
+            if (foundParameters.Item2.Count > 5)
             {
-                // The FormatCurrency function expects at most 2 parameters.
+                // The FormatCurrency function expects at most 5 parameters.
                 return;
             }
 
