@@ -2,6 +2,7 @@
 using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers.Text
@@ -59,8 +60,20 @@ namespace ReportViewer.NET.Parsers.Text
             );
 
             this.CurrentExpression.Index = fcMatch.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = double.Parse(parsedExpression.ToString()).ToString("C");
+            this.CurrentExpression.ResolvedType = typeof(string);   
+            
+            if (parsedExpression is int)
+            {
+                this.CurrentExpression.Value = parsedExpression.ExpressionAsInt().ToString("C");
+            }
+            else if (parsedExpression is double)
+            {
+                this.CurrentExpression.Value = parsedExpression.ExpressionAsDouble().ToString("C");
+            }
+            else
+            {
+                this.CurrentExpression.Value = double.Parse(parsedExpression.ToString(), CultureInfo.InvariantCulture).ToString("C");
+            }                        
         }
     }
 }
