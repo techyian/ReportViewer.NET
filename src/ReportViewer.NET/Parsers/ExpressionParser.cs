@@ -553,6 +553,15 @@ namespace ReportViewer.NET.Parsers
                 proposedString = formatPercentParser.GetProposedString();
             }
 
+            if (GetCharParser.GetCharRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || GetCharParser.GetCharRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var getCharParser = new GetCharParser(currentString, ExpressionFieldOperator.GetChar, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                getCharParser.Parse();
+                proposedString = getCharParser.GetProposedString();
+            }
+
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )
