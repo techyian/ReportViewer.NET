@@ -55,10 +55,7 @@ namespace ReportViewer.NET.Parsers.Text
                 this.ActiveDataset,
                 null
             );
-
-            this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-
+                        
             int numDigitsAfterDecimal = -1;
             TriState includeLeadingDigit = TriState.UseDefault;
             TriState useParensForNegativeNumbers = TriState.UseDefault;
@@ -120,6 +117,8 @@ namespace ReportViewer.NET.Parsers.Text
                 ).ExpressionAsInt();
             }
 
+            this.CurrentExpression.Index = match.Index;
+            this.CurrentExpression.ResolvedType = typeof(string);
             this.CurrentExpression.Value = Strings.FormatNumber(
                 parsedExpression, 
                 numDigitsAfterDecimal, 

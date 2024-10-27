@@ -1,8 +1,8 @@
-﻿using ReportViewer.NET.DataObjects;
+﻿using Microsoft.VisualBasic;
+using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers.Text
@@ -47,8 +47,7 @@ namespace ReportViewer.NET.Parsers.Text
                 // The FormatCurrency function expects at most 5 parameters.
                 return;
             }
-
-            // TODO: Handle additional parameters from FormatCurrency function. For now just default to system settings.
+                        
             var parsedExpression = this.Report.Parser.ParseReportExpressionString(
                 foundParameters.Item2[0], 
                 this.DataSetResults, 
@@ -58,22 +57,77 @@ namespace ReportViewer.NET.Parsers.Text
                 this.ActiveDataset, 
                 null
             );
+                        
+            int numDigitsAfterDecimal = -1;
+            TriState includeLeadingDigit = TriState.UseDefault;
+            TriState useParensForNegativeNumbers = TriState.UseDefault;
+            TriState groupDigits = TriState.UseDefault;
+
+            if (foundParameters.Item2.Count > 1)
+            {
+                // Parse NumDigitsAfterDecimal
+                numDigitsAfterDecimal = this.Report.Parser.ParseReportExpressionString(
+                    foundParameters.Item2[1],
+                    this.DataSetResults,
+                    this.Values,
+                    this.CurrentRowNumber,
+                    this.DataSets,
+                    this.ActiveDataset,
+                    null
+                ).ExpressionAsInt();
+            }
+
+            if (foundParameters.Item2.Count > 2)
+            {
+                // Parse IncludeLeadingDigit
+                includeLeadingDigit = (TriState)this.Report.Parser.ParseReportExpressionString(
+                    foundParameters.Item2[2],
+                    this.DataSetResults,
+                    this.Values,
+                    this.CurrentRowNumber,
+                    this.DataSets,
+                    this.ActiveDataset,
+                    null
+                ).ExpressionAsInt();
+            }
+
+            if (foundParameters.Item2.Count > 3)
+            {
+                // Parse UseParensForNegativeNumbers
+                useParensForNegativeNumbers = (TriState)this.Report.Parser.ParseReportExpressionString(
+                    foundParameters.Item2[3],
+                    this.DataSetResults,
+                    this.Values,
+                    this.CurrentRowNumber,
+                    this.DataSets,
+                    this.ActiveDataset,
+                    null
+                ).ExpressionAsInt();
+            }
+
+            if (foundParameters.Item2.Count > 4)
+            {
+                // Parse GroupDigits
+                groupDigits = (TriState)this.Report.Parser.ParseReportExpressionString(
+                    foundParameters.Item2[4],
+                    this.DataSetResults,
+                    this.Values,
+                    this.CurrentRowNumber,
+                    this.DataSets,
+                    this.ActiveDataset,
+                    null
+                ).ExpressionAsInt();
+            }
 
             this.CurrentExpression.Index = fcMatch.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);   
-            
-            if (parsedExpression is int)
-            {
-                this.CurrentExpression.Value = parsedExpression.ExpressionAsInt().ToString("C");
-            }
-            else if (parsedExpression is double)
-            {
-                this.CurrentExpression.Value = parsedExpression.ExpressionAsDouble().ToString("C");
-            }
-            else
-            {
-                this.CurrentExpression.Value = double.Parse(parsedExpression.ToString(), CultureInfo.InvariantCulture).ToString("C");
-            }                        
+            this.CurrentExpression.ResolvedType = typeof(string);
+            this.CurrentExpression.Value = Strings.FormatCurrency(
+                parsedExpression, 
+                numDigitsAfterDecimal, 
+                includeLeadingDigit, 
+                useParensForNegativeNumbers, 
+                groupDigits
+            );
         }
     }
 }
