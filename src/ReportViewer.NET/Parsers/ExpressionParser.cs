@@ -544,6 +544,15 @@ namespace ReportViewer.NET.Parsers
                 proposedString = formatNumberParser.GetProposedString();
             }
 
+            if (FormatPercentParser.FormatPercentRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || FormatPercentParser.FormatPercentRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var formatPercentParser = new FormatPercentParser(currentString, ExpressionFieldOperator.FormatPercent, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                formatPercentParser.Parse();
+                proposedString = formatPercentParser.GetProposedString();
+            }
+
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )
