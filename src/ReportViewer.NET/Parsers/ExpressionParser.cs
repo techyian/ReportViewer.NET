@@ -272,10 +272,25 @@ namespace ReportViewer.NET.Parsers
             )
             {
                 var idx = currentString.IndexOf("-");
-                currentExpression.Index = idx;
-                currentExpression.Operator = ExpressionFieldOperator.Subtract;
+                bool continueSubtract = true;
 
-                proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
+                // Work back from found index and determine whether a number has come before this symbol.
+                for (var i = idx - 1; i >= 0; i--)
+                {
+                    if (currentString[i] != ' ' && !int.TryParse(currentString[i].ToString(), out var parsed))
+                    {
+                        continueSubtract = false;
+                        break;
+                    }
+                }
+
+                if (idx > 0 && continueSubtract)
+                {
+                    currentExpression.Index = idx;
+                    currentExpression.Operator = ExpressionFieldOperator.Subtract;
+
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
+                }                
             }
 
             if (currentString.IndexOf("*") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("*")) &&
@@ -518,6 +533,15 @@ namespace ReportViewer.NET.Parsers
                 var formatParser = new FormatParser(currentString, ExpressionFieldOperator.Format, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 formatParser.Parse();
                 proposedString = formatParser.GetProposedString();
+            }
+
+            if (FormatNumberParser.FormatNumberRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || FormatNumberParser.FormatNumberRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var formatNumberParser = new FormatNumberParser(currentString, ExpressionFieldOperator.FormatNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                formatNumberParser.Parse();
+                proposedString = formatNumberParser.GetProposedString();
             }
 
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
@@ -963,19 +987,19 @@ namespace ReportViewer.NET.Parsers
             switch (prev.Operator)
             {
                 case ExpressionFieldOperator.Add:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") + double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) + double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.Subtract:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") - double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) - double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.Multiply:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") * double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) * double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.Divide:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") / double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) / double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.Mod:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") % double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) % double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
             }
         }
@@ -991,16 +1015,16 @@ namespace ReportViewer.NET.Parsers
             switch (prev.Operator)
             {
                 case ExpressionFieldOperator.LessThan:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") < double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) < double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.LessThanEqualTo:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") <= double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) <= double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.GreaterThan:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") > double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) > double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.GreaterThanEqualTo:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "") >= double.Parse(next.Value?.ToString() ?? "");
+                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) >= double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
                     break;
                 case ExpressionFieldOperator.Equals:
                     switch (Type.GetTypeCode(prev.ResolvedType))
@@ -1014,7 +1038,7 @@ namespace ReportViewer.NET.Parsers
                         case TypeCode.Int16:
                         case TypeCode.Int32:
                         case TypeCode.Int64:
-                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString()) == double.Parse(next.Value.ToString()) : false;
+                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString(), CultureInfo.InvariantCulture) == double.Parse(next.Value.ToString(), CultureInfo.InvariantCulture) : false;
                             break;
                         case TypeCode.Object:
                             newExpr.Value = prev.Value == next.Value;
@@ -1034,7 +1058,7 @@ namespace ReportViewer.NET.Parsers
                         case TypeCode.Int16:
                         case TypeCode.Int32:
                         case TypeCode.Int64:
-                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString()) != double.Parse(next.Value.ToString()) : false;
+                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString(), CultureInfo.InvariantCulture) != double.Parse(next.Value.ToString(), CultureInfo.InvariantCulture) : false;
                             break;
                         case TypeCode.Object:
                             newExpr.Value = prev.Value != next.Value;
@@ -1132,7 +1156,7 @@ namespace ReportViewer.NET.Parsers
                     finalExpression.Value = int.Parse(finalExpression.Value.ToString()).ToString(requestedFormat);
                     return finalExpression;
                 case TypeCode.Double:
-                    finalExpression.Value = double.Parse(finalExpression.Value.ToString()).ToString(requestedFormat);
+                    finalExpression.Value = double.Parse(finalExpression.Value.ToString(), CultureInfo.InvariantCulture).ToString(requestedFormat);
                     return finalExpression;
             }
 
