@@ -1,5 +1,4 @@
 ﻿using ReportViewer.NET.DataObjects;
-using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -33,8 +32,8 @@ namespace ReportViewer.NET.Parsers.BuiltInFields
             var match = ExecutionTimeRegex.Match(this.CurrentString);
             
             this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = DateTime.Now.ToString();
+            this.CurrentExpression.ResolvedType = typeof(DateTime);
+            this.CurrentExpression.Value = DateTime.Now;
         }
     }
 }

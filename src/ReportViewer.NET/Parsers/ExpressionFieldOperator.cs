@@ -56,6 +56,7 @@ namespace ReportViewer.NET.Parsers
         AscW,
         Chr,
         ChrW,
+        Format,
         MonthName,
         CDate,
         DateAdd,

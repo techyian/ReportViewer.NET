@@ -10,6 +10,7 @@ using ReportViewer.NET.Parsers.ProgramFlow;
 using ReportViewer.NET.Parsers.Text;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -148,6 +149,16 @@ namespace ReportViewer.NET.Parsers
 
                         break;
                     }
+                    else if (double.TryParse(currentString, CultureInfo.InvariantCulture, out var parsedDouble))
+                    {
+                        // We found a double value, we can parse this and get out of the loop.
+                        currentExpression.ResolvedType = typeof(double);
+                        currentExpression.Operator = ExpressionFieldOperator.None;
+                        currentExpression.Value = parsedDouble;
+                        expressions.Add(currentExpression);
+
+                        break;
+                    }
                     else
                     {
                         // Take char by char and see if we can extract anything useful. If not, dump to a string and get out of loop.
@@ -164,6 +175,21 @@ namespace ReportViewer.NET.Parsers
                                 currentExpression.Value = parsedSplitInt;
                                 currentExpression.Index = currentString.IndexOf(split[i]);
                                 proposedString = currentString.Substring(currentExpression.Index + parsedSplitInt.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitInt.ToString().Length);
+
+                                // Clear up any whitespace not removed by statement above.
+                                proposedString = proposedString.TrimStart();
+
+                                found = true;
+
+                                break;
+                            }
+                            else if (double.TryParse(split[i], CultureInfo.InvariantCulture, out var parsedSplitDouble))
+                            {
+                                currentExpression.ResolvedType = typeof(double);
+                                currentExpression.Operator = ExpressionFieldOperator.None;
+                                currentExpression.Value = parsedSplitDouble;
+                                currentExpression.Index = currentString.IndexOf(split[i]);
+                                proposedString = currentString.Substring(currentExpression.Index + parsedSplitDouble.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitDouble.ToString().Length);
 
                                 // Clear up any whitespace not removed by statement above.
                                 proposedString = proposedString.TrimStart();
@@ -483,6 +509,15 @@ namespace ReportViewer.NET.Parsers
                 var chrWParser = new ChrWParser(currentString, ExpressionFieldOperator.ChrW, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 chrWParser.Parse();
                 proposedString = chrWParser.GetProposedString();
+            }
+
+            if (FormatParser.FormatRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || FormatParser.FormatRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var formatParser = new FormatParser(currentString, ExpressionFieldOperator.Format, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                formatParser.Parse();
+                proposedString = formatParser.GetProposedString();
             }
 
             if (LeftParser.LeftRegex.IsMatch(currentString) &&

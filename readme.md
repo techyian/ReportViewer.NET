@@ -246,7 +246,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Text  | Chr            | Complete      |                            |
 | Text  | ChrW           | Complete      |                            |
 | Text  | Filter         | Not started   |                            |
-| Text  | Format         | Not started   |                            |
+| Text  | Format         | Complete      | Culture specific DateTime, Int and Double format. Culture independent double parsing. Added code to handle VB specific formatters e.g. Percentage, Scientific.                             |
 | Text  | FormatCurrency | Complete      |                            |
 | Text  | FormatDateTime | Not started   |                            |
 | Text  | FormatNumber   | Not started   |                            |
