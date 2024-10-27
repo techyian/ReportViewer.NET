@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System;
 using ReportViewer.NET.Extensions;
 using System.Text;
+using Microsoft.VisualBasic;
 
 namespace ReportViewer.NET.Parsers.Text
 {
@@ -50,7 +51,7 @@ namespace ReportViewer.NET.Parsers.Text
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(int);
-            this.CurrentExpression.Value = !string.IsNullOrEmpty(str) ? Encoding.ASCII.GetBytes(str)[0] : 0;
+            this.CurrentExpression.Value = Strings.Asc(str);
         }
     }
 }

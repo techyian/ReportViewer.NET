@@ -1,4 +1,5 @@
-﻿using ReportViewer.NET.DataObjects;
+﻿using Microsoft.VisualBasic;
+using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.Extensions;
 using System;
 using System.Buffers.Binary;
@@ -51,13 +52,7 @@ namespace ReportViewer.NET.Parsers.Text
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);
-
-            var buffer = new byte[2];
-            var span = new Span<byte>(buffer);
-
-            BinaryPrimitives.WriteInt16LittleEndian(span, Convert.ToInt16(code));
-
-            this.CurrentExpression.Value = Encoding.Unicode.GetString(span);
+            this.CurrentExpression.Value = Strings.ChrW(code);
         }
     }
 }

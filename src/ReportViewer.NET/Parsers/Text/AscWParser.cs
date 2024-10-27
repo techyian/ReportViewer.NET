@@ -1,4 +1,5 @@
-﻿using ReportViewer.NET.DataObjects;
+﻿using Microsoft.VisualBasic;
+using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
@@ -50,7 +51,7 @@ namespace ReportViewer.NET.Parsers.Text
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(int);
-            this.CurrentExpression.Value = !string.IsNullOrEmpty(str) ? Encoding.Unicode.GetBytes(str)[0] : 0;
+            this.CurrentExpression.Value = Strings.AscW(str);
         }
     }
 }
