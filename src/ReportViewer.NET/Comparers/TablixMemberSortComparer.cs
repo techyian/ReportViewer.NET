@@ -48,16 +48,57 @@ namespace ReportViewer.NET.Comparers
             {
                 case TypeCode.String:
                     return string.Compare(x.ToString(), y.ToString());
+                case TypeCode.Int16:
                 case TypeCode.Int32:
-                    if ((int)x < (int)y)
+                case TypeCode.Int64:
+                case TypeCode.UInt16: 
+                case TypeCode.UInt32: 
+                case TypeCode.UInt64:
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                    x = long.Parse(x.ToString());
+                    y = long.Parse(y.ToString());
+
+                    if ((long)x < (long)y)
                     {
                         return -1;
                     }
-                    if ((int)x == (int)y)
+                    if ((long)x == (long)y)
                     {
                         return 0;
                     }
-                    if ((int)x > (int)y)
+                    if ((long)x > (long)y)
+                    {
+                        return 1;
+                    }
+
+                    return 0;
+                case TypeCode.Decimal:
+                    if ((decimal)x < (decimal)y)
+                    {
+                        return -1;
+                    }
+                    if ((decimal)x == (decimal)y)
+                    {
+                        return 0;
+                    }
+                    if ((decimal)x > (decimal)y)
+                    {
+                        return 1;
+                    }
+
+                    return 0;
+
+                case TypeCode.Double:
+                    if ((double)x < (double)y)
+                    {
+                        return -1;
+                    }
+                    if ((double)x == (double)y)
+                    {
+                        return 0;
+                    }
+                    if ((double)x > (double)y)
                     {
                         return 1;
                     }

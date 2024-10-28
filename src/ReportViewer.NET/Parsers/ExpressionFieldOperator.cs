@@ -23,6 +23,7 @@ namespace ReportViewer.NET.Parsers
         Parameter,
         Add,
         Subtract,
+        Negative,
         Multiply,
         Divide,
         Mod,

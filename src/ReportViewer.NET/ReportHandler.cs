@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -190,7 +191,9 @@ namespace ReportViewer.NET
             reportRdl.ReportBodyItems = reportBodyItems;
             reportRdl.ReportFooterItems = reportFooterItems;            
             reportRdl.ReportWidth = xml.Root.Descendants(reportRdl.Namespace + "ReportSections").Elements(reportRdl.Namespace + "ReportSection").Elements(reportRdl.Namespace + "Width").FirstOrDefault()?.Value;
-            
+
+            this.SyncReportParameters(reportParameters, userProvidedParameters.Parameters);
+
             return reportRdl;
         }
 
@@ -330,6 +333,24 @@ namespace ReportViewer.NET
                         case "Boolean":
                             reportParamObj.TypeName = reportParamObj.Nullable ? typeof(bool?) : typeof(bool);
                             break;
+                        case "Integer":
+                            reportParamObj.TypeName = reportParamObj.Nullable ? typeof(long?) : typeof(long);
+                            break;
+                        case "Float":
+                            reportParamObj.TypeName = reportParamObj.Nullable ? typeof(double?) : typeof(double);
+                            break;
+                        case "Binary":
+                            reportParamObj.TypeName = typeof(byte[]);
+                            break;
+                        case "Varient":
+                            reportParamObj.TypeName = typeof(object);
+                            break;
+                        case "VarientArray":
+                            reportParamObj.TypeName = typeof(object[]);
+                            break;
+                        case "Serializable":
+                            reportParamObj.TypeName = typeof(ISerializable);
+                            break;
                     }
                 }
 
@@ -391,6 +412,26 @@ namespace ReportViewer.NET
             }
 
             return embeddedImages;
+        }
+
+        private void SyncReportParameters(List<ReportParameter> reportParameters, List<ReportParameter> userProvidedParameters)
+        {
+            if (userProvidedParameters != null)
+            {
+                foreach (var upp in userProvidedParameters)
+                {
+                    var foundReportParam = reportParameters.FirstOrDefault(rp => !string.IsNullOrEmpty(rp.Name) && !string.IsNullOrEmpty(upp.Name) && rp.Name?.ToLower() == upp.Name?.ToLower());
+
+                    if (foundReportParam != null)
+                    {
+                        upp.DataType = foundReportParam.DataType;
+                        upp.TypeName = foundReportParam.TypeName;
+                        upp.Nullable = foundReportParam.Nullable;
+                        upp.DefaultValue = foundReportParam.DefaultValue;
+                        upp.Value = string.IsNullOrEmpty(upp.Value) ? foundReportParam.DefaultValue : upp.Value;
+                    }
+                }
+            }            
         }
     }
 }

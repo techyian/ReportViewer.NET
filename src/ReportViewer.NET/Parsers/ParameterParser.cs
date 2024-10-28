@@ -1,7 +1,7 @@
 ﻿using ReportViewer.NET.DataObjects;
-using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -34,22 +34,37 @@ namespace ReportViewer.NET.Parsers
                 return (typeof(object), null);
             }
 
-            if (DateTime.TryParse(parameter.Value, out var dttValue))
+            switch (parameter.DataType.ToLower())
             {
-                return (typeof(DateTime), dttValue);
+                case "string":
+                    return (typeof(string), parameter.Value);
+                case "boolean":
+                    bool.TryParse(parameter.Value, out var bValue);
+                    return (typeof(bool), bValue);
+                case "integer":
+                    long.TryParse(parameter.Value, out var lValue);
+                    return (typeof(long), lValue);
+                case "datetime":
+                    DateTime.TryParse(parameter.Value, out var dttValue);
+                    return (typeof(DateTime), dttValue);
+                case "float":
+                    double.TryParse(parameter.Value, CultureInfo.InvariantCulture, out var dValue);
+                    return (typeof(double), dValue);
+                //case "binary":
+                //    // TODO
+                //    break;
+                //case "varient":
+                //    // TODO
+                //    break;
+                //case "varientarray":
+                //    // TODO
+                //    break;
+                //case "serializable":
+                //    // TODO
+                //    break;
+                default:
+                    return (typeof(object), parameter.Value);
             }
-
-            if (bool.TryParse(parameter.Value, out var bValue))
-            {
-                return (typeof(bool), bValue);
-            }
-
-            if (int.TryParse(parameter.Value, out var iValue))
-            {
-                return (typeof(int), iValue);
-            }
-
-            return (typeof(string), parameter.Value);
         }
 
         public override void Parse()

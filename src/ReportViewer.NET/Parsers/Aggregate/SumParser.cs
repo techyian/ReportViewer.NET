@@ -1,5 +1,4 @@
 ﻿using ReportViewer.NET.DataObjects;
-using ReportViewer.NET.DataObjects.ReportItems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,18 +27,11 @@ namespace ReportViewer.NET.Parsers.Aggregate
         public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
         {
             fieldName = fieldName.ToLower();
+            IEnumerable<object> results = null;
 
             if (DataSetResults != null)
             {
-                var results = DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);
-                double total = 0;
-
-                foreach (var res in results)
-                {
-                    total += double.Parse(res.ToString());
-                }
-
-                return (typeof(double), total);
+                results = DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);                                
             }
             else
             {
@@ -47,15 +39,47 @@ namespace ReportViewer.NET.Parsers.Aggregate
 
                 if (dataSet != null && dataSet.DataSetResults != null)
                 {
-                    var results = dataSet.DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);
+                    results = dataSet.DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);                    
+                }
+            }
+
+            if (results.Count() > 0)
+            {
+                var first = results.First();
+
+                if (first is decimal)
+                {
+                    decimal total = 0;
+
+                    foreach (var res in results)
+                    {
+                        total += (decimal)res;
+                    }
+
+                    return (typeof(decimal), total);
+                }
+                else if (first is double)
+                {
                     double total = 0;
 
                     foreach (var res in results)
                     {
-                        total += double.Parse(res.ToString());
+                        total += (double)res;
                     }
 
                     return (typeof(double), total);
+                }                
+                else
+                {
+                    // Fallback and parse on long.
+                    long total = 0;
+
+                    foreach (var res in results)
+                    {
+                        total += long.Parse(res.ToString());
+                    }
+
+                    return (typeof(long), total);
                 }
             }
 

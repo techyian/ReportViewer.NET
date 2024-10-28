@@ -1,5 +1,4 @@
 ﻿using ReportViewer.NET.DataObjects;
-using ReportViewer.NET.DataObjects.ReportItems;
 using ReportViewer.NET.Extensions;
 using ReportViewer.NET.Parsers.Aggregate;
 using ReportViewer.NET.Parsers.BuiltInFields;
@@ -42,6 +41,7 @@ namespace ReportViewer.NET.Parsers
         };
 
         private ReportRDL _report;
+        private List<ReportExpression> _expressions;
 
         public ExpressionParser(ReportRDL report)
         {
@@ -84,7 +84,7 @@ namespace ReportViewer.NET.Parsers
             }
             
             string currentString = tablixText.TrimStart('=').TrimStart();
-            List<ReportExpression> expressions = new List<ReportExpression>();
+            _expressions = new List<ReportExpression>();
 
             // TODO: Parse built in expressions, e.g. Globals.
 
@@ -139,13 +139,17 @@ namespace ReportViewer.NET.Parsers
                         // Clear up any whitespace not removed by statement above.
                         proposedString = proposedString.TrimStart();
                     }
-                    else if (int.TryParse(currentString, out var parsedInt))
+
+                    // If what we've been left with isn't in a string literal so remove any parenthesis that it's been wrapped in.
+                    currentString = currentString.Replace("(", "").Replace(")", "");
+
+                    if (long.TryParse(currentString, out var parsedLong))
                     {
                         // We found an integer value, we can parse this and get out of the loop.
-                        currentExpression.ResolvedType = typeof(int);
+                        currentExpression.ResolvedType = typeof(long);
                         currentExpression.Operator = ExpressionFieldOperator.None;
-                        currentExpression.Value = parsedInt;
-                        expressions.Add(currentExpression);
+                        currentExpression.Value = parsedLong;
+                        _expressions.Add(currentExpression);
 
                         break;
                     }
@@ -155,7 +159,7 @@ namespace ReportViewer.NET.Parsers
                         currentExpression.ResolvedType = typeof(double);
                         currentExpression.Operator = ExpressionFieldOperator.None;
                         currentExpression.Value = parsedDouble;
-                        expressions.Add(currentExpression);
+                        _expressions.Add(currentExpression);
 
                         break;
                     }
@@ -168,13 +172,13 @@ namespace ReportViewer.NET.Parsers
                         for (var i = 0; i < split.Length; i++)
                         {
                             // Add in other possibilities? What about boolean expression?
-                            if (int.TryParse(split[i], out var parsedSplitInt))
+                            if (long.TryParse(split[i], out var parsedSplitLong))
                             {
-                                currentExpression.ResolvedType = typeof(int);
+                                currentExpression.ResolvedType = typeof(long);
                                 currentExpression.Operator = ExpressionFieldOperator.None;
-                                currentExpression.Value = parsedSplitInt;
+                                currentExpression.Value = parsedSplitLong;
                                 currentExpression.Index = currentString.IndexOf(split[i]);
-                                proposedString = currentString.Substring(currentExpression.Index + parsedSplitInt.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitInt.ToString().Length);
+                                proposedString = currentString.Substring(currentExpression.Index + parsedSplitLong.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitLong.ToString().Length);
 
                                 // Clear up any whitespace not removed by statement above.
                                 proposedString = proposedString.TrimStart();
@@ -205,18 +209,18 @@ namespace ReportViewer.NET.Parsers
                             currentExpression.ResolvedType = typeof(string);
                             currentExpression.Operator = ExpressionFieldOperator.None;
                             currentExpression.Value = currentString.TrimStart('"').TrimEnd('"');
-                            expressions.Add(currentExpression);
+                            _expressions.Add(currentExpression);
 
                             break;
                         }
                     }
                 }
 
-                expressions.Add(currentExpression);
+                _expressions.Add(currentExpression);
                 currentString = proposedString;
             }
 
-            return expressions;
+            return _expressions;
         }
 
         private void SearchBuiltInFields(
@@ -271,26 +275,20 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("-") < currentExpression.Index)
             )
             {
-                var idx = currentString.IndexOf("-");
-                bool continueSubtract = true;
+                var idx = currentString.IndexOf("-");                
+                var lastExpression = _expressions.LastOrDefault();
 
-                // Work back from found index and determine whether a number has come before this symbol.
-                for (var i = idx - 1; i >= 0; i--)
-                {
-                    if (currentString[i] != ' ' && !int.TryParse(currentString[i].ToString(), out var parsed))
-                    {
-                        continueSubtract = false;
-                        break;
-                    }
+                currentExpression.Index = idx;
+                proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
+
+                if ((lastExpression != null && lastExpression.Value == null) || lastExpression == null)
+                {                    
+                    currentExpression.Operator = ExpressionFieldOperator.Negative;
                 }
-
-                if (idx > 0 && continueSubtract)
-                {
-                    currentExpression.Index = idx;
+                else
+                {                    
                     currentExpression.Operator = ExpressionFieldOperator.Subtract;
-
-                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
-                }                
+                }
             }
 
             if (currentString.IndexOf("*") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("*")) &&
@@ -984,7 +982,7 @@ namespace ReportViewer.NET.Parsers
 
                     if (AggregateOperators.Contains(next.Operator))
                     {
-                        newExpr.Value = double.Parse(prev.Value?.ToString() ?? "");
+                        newExpr.Value = prev.Value;
                     }
 
                     this.ArithmeticOperatorAggregator(prev, next, newExpr);
@@ -1014,32 +1012,174 @@ namespace ReportViewer.NET.Parsers
                 newExpr.Operator = next.Operator;
                 newExpr.Value = prev.Value;
             }
-
+                         
             if (ComparisonOperators.Contains(prev.Operator))
             {
-                newExpr.ResolvedType = typeof(double);
+                var nextTypeValue = ExtractTypeFromValue(next.Value?.ToString());
+
+                if (prev.ResolvedType == typeof(decimal) || nextTypeValue.Item1 == typeof(decimal))
+                {
+                    newExpr.ResolvedType = typeof(decimal);
+                }
+                else if (prev.ResolvedType == typeof(double) || nextTypeValue.Item1 == typeof(double))
+                {
+                    newExpr.ResolvedType = typeof(double);
+                }                
+                else
+                {
+                    newExpr.ResolvedType = typeof(long);
+                }
             }
 
             switch (prev.Operator)
             {
                 case ExpressionFieldOperator.Add:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) + double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.AddExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.Subtract:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) - double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.SubtractExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.Multiply:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) * double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.MultiplyExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.Divide:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) / double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.DivideExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.Mod:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) % double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.ModuloExpression(prev, next);
                     break;
             }
         }
 
+        private object AddExpression(ReportExpression a, ReportExpression b)
+        {            
+            if (a.Value == null || b.Value == null)
+            {
+                return null;
+            }
+
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.AddDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.AddDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }                        
+            else if (a.ResolvedType == typeof(string) || b.ResolvedType == typeof(string))
+            {
+                return string.Concat(a.Value ?? "", b.Value ?? "");
+            }
+            else
+            {
+                return this.AddLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object SubtractExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.Value == null || b.Value == null)
+            {
+                return null;
+            }
+
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.SubtractDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.SubtractDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }            
+            else
+            {
+                return this.SubtractLong((long)a.Value, (long)b.Value);
+            }
+        }
+
+        private object MultiplyExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.Value == null || b.Value == null)
+            {
+                return null;
+            }
+
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.MultiplyDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.MultiplyDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                return this.MultiplyLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object DivideExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.Value == null || b.Value == null)
+            {
+                return null;
+            }
+
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.DivideDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.DivideDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                return this.DivideLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object ModuloExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.Value == null || b.Value == null)
+            {
+                return null;
+            }
+
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.ModuloDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.ModuloDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                return this.ModuloLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private double AddDouble(double a, double b) => a + b;
+        private decimal AddDecimal(decimal a, decimal b) => a + b;
+        private long AddLong(long a, long b) => a + b;
+       
+        private double SubtractDouble(double a, double b) => a - b;
+        private decimal SubtractDecimal(decimal a, decimal b) => a - b;
+        private long SubtractLong(long a, long b) => a - b;
+       
+        private double MultiplyDouble(double a, double b) => a * b;
+        private decimal MultiplyDecimal(decimal a, decimal b) => a * b;
+        private long MultiplyLong(long a, long b) => a * b;
+       
+        private double DivideDouble(double a, double b) => a / b;
+        private decimal DivideDecimal(decimal a, decimal b) => a / b;
+        private long DivideLong(long a, long b) => a / b;
+       
+        private double ModuloDouble(double a, double b) => a % b;
+        private decimal ModuloDecimal(decimal a, decimal b) => a % b;
+        private double ModuloLong(long a, long b) => a % b;
+        
         private void ComparisonOperatorAggregator(ReportExpression prev, ReportExpression next, ReportExpression newExpr, ExpressionFieldOperator lastLogicalOperator, ref bool booleanOperator)
         {
             if (ComparisonOperators.Contains(next.Operator))
@@ -1051,56 +1191,22 @@ namespace ReportViewer.NET.Parsers
             switch (prev.Operator)
             {
                 case ExpressionFieldOperator.LessThan:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) < double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.LessThanExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.LessThanEqualTo:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) <= double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.LessThanEqualToExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.GreaterThan:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) > double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.GreaterThanExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.GreaterThanEqualTo:
-                    newExpr.Value = double.Parse(prev.Value?.ToString() ?? "", CultureInfo.InvariantCulture) >= double.Parse(next.Value?.ToString() ?? "", CultureInfo.InvariantCulture);
+                    newExpr.Value = this.GreaterThanEqualToExpression(prev, next);
                     break;
                 case ExpressionFieldOperator.Equals:
-                    switch (Type.GetTypeCode(prev.ResolvedType))
-                    {
-                        case TypeCode.DateTime:
-                            newExpr.Value = prev.Value != null && next.Value != null ? DateTime.Parse(prev.Value.ToString()) == DateTime.Parse(next.Value.ToString()) : false;
-                            break;
-                        case TypeCode.String:
-                            newExpr.Value = prev.Value != null && next.Value != null ? string.Compare(prev.Value.ToString(), next.Value.ToString()) == 0 : false;
-                            break;
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString(), CultureInfo.InvariantCulture) == double.Parse(next.Value.ToString(), CultureInfo.InvariantCulture) : false;
-                            break;
-                        case TypeCode.Object:
-                            newExpr.Value = prev.Value == next.Value;
-                            break;
-                    }
-
+                    newExpr.Value = this.EqualToExpression(prev, next);                    
                     break;
                 case ExpressionFieldOperator.NotEqual:
-                    switch (Type.GetTypeCode(prev.ResolvedType))
-                    {
-                        case TypeCode.DateTime:
-                            newExpr.Value = prev.Value != null && next.Value != null ? DateTime.Parse(prev.Value.ToString()) != DateTime.Parse(next.Value.ToString()) : false;
-                            break;
-                        case TypeCode.String:
-                            newExpr.Value = prev.Value != null && next.Value != null ? string.Compare(prev.Value.ToString(), next.Value.ToString()) != 0 : false;
-                            break;
-                        case TypeCode.Int16:
-                        case TypeCode.Int32:
-                        case TypeCode.Int64:
-                            newExpr.Value = prev.Value != null && next.Value != null ? double.Parse(prev.Value.ToString(), CultureInfo.InvariantCulture) != double.Parse(next.Value.ToString(), CultureInfo.InvariantCulture) : false;
-                            break;
-                        case TypeCode.Object:
-                            newExpr.Value = prev.Value != next.Value;
-                            break;
-                    }
-
+                    newExpr.Value = this.NotEqualToExpression(prev, next);                    
                     break;
             }
 
@@ -1110,6 +1216,172 @@ namespace ReportViewer.NET.Parsers
                 booleanOperator = this.EvaluateLogicalOperator(lastLogicalOperator, (bool)newExpr.Value, booleanOperator);
             }
         }
+
+        private object LessThanExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.LessThanDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.LessThanDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }            
+            else if (a.ResolvedType == typeof(DateTime) && b.ResolvedType == typeof(DateTime))
+            {
+                return this.LessThanDateTime(DateTime.Parse(a.Value.ToString()), DateTime.Parse(b.Value.ToString()));
+            }
+            else
+            {
+                return this.LessThanLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object LessThanEqualToExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.LessThanEqualToDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.LessThanEqualToDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(DateTime) && b.ResolvedType == typeof(DateTime))
+            {
+                return this.LessThanEqualToDateTime(DateTime.Parse(a.Value.ToString()), DateTime.Parse(b.Value.ToString()));
+            }
+            else
+            {
+                return this.LessThanEqualToLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object GreaterThanExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.GreaterThanDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.GreaterThanDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(DateTime) && b.ResolvedType == typeof(DateTime))
+            {
+                return this.GreaterThanDateTime(DateTime.Parse(a.Value.ToString()), DateTime.Parse(b.Value.ToString()));
+            }
+            else
+            {
+                return this.GreaterThanLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object GreaterThanEqualToExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.GreaterThanEqualToDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.GreaterThanEqualToDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(DateTime) && b.ResolvedType == typeof(DateTime))
+            {
+                return this.GreaterThanEqualToDateTime(DateTime.Parse(a.Value.ToString()), DateTime.Parse(b.Value.ToString()));
+            }
+            else
+            {
+                return this.GreaterThanEqualToLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object EqualToExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.EqualToDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.EqualToDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(DateTime) && b.ResolvedType == typeof(DateTime))
+            {
+                return this.EqualToDateTime(DateTime.Parse(a.Value.ToString()), DateTime.Parse(b.Value.ToString()));
+            }            
+            else if (a.ResolvedType == typeof(string) || b.ResolvedType == typeof(string))
+            {
+                return a.Value.ToString() == b.Value.ToString();
+            }
+            else if (a.ResolvedType == typeof(bool) && b.ResolvedType == typeof(bool))
+            {
+                return (bool)a.Value == (bool)b.Value;
+            }
+            else
+            {
+                return this.EqualToLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private object NotEqualToExpression(ReportExpression a, ReportExpression b)
+        {
+            if (a.ResolvedType == typeof(decimal) || b.ResolvedType == typeof(decimal))
+            {
+                return this.NotEqualToDecimal(decimal.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), decimal.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(double) || b.ResolvedType == typeof(double))
+            {
+                return this.NotEqualToDouble(double.Parse(a.Value.ToString(), CultureInfo.InvariantCulture), double.Parse(b.Value.ToString(), CultureInfo.InvariantCulture));
+            }
+            else if (a.ResolvedType == typeof(DateTime) && b.ResolvedType == typeof(DateTime))
+            {
+                return this.NotEqualToDateTime(DateTime.Parse(a.Value.ToString()), DateTime.Parse(b.Value.ToString()));
+            }            
+            else if (a.ResolvedType == typeof(string) || b.ResolvedType == typeof(string))
+            {
+                return a.Value.ToString() != b.Value.ToString();
+            }
+            else if (a.ResolvedType == typeof(bool) && b.ResolvedType == typeof(bool))
+            {
+                return (bool)a.Value != (bool)b.Value;
+            }
+            else
+            {
+                return this.NotEqualToLong(long.Parse(a.Value.ToString()), long.Parse(b.Value.ToString()));
+            }
+        }
+
+        private bool LessThanDouble(double a, double b) => a < b;
+        private bool LessThanDecimal(decimal a, decimal b) => a < b;
+        private bool LessThanLong(long a, long b) => a < b;     
+        private bool LessThanDateTime(DateTime a, DateTime b) => a.CompareTo(b) < 0;
+
+        private bool LessThanEqualToDouble(double a, double b) => a <= b;
+        private bool LessThanEqualToDecimal(decimal a, decimal b) => a <= b;
+        private bool LessThanEqualToLong(long a, long b) => a <= b;     
+        private bool LessThanEqualToDateTime(DateTime a, DateTime b) => a.CompareTo(b) <= 0;
+        
+        private bool GreaterThanDouble(double a, double b) => a > b;
+        private bool GreaterThanDecimal(decimal a, decimal b) => a > b;
+        private bool GreaterThanLong(long a, long b) => a > b;       
+        private bool GreaterThanDateTime(DateTime a, DateTime b) => a.CompareTo(b) > 0;
+
+        private bool GreaterThanEqualToDouble(double a, double b) => a >= b;
+        private bool GreaterThanEqualToDecimal(decimal a, decimal b) => a >= b;
+        private bool GreaterThanEqualToLong(long a, long b) => a >= b;     
+        private bool GreaterThanEqualToDateTime(DateTime a, DateTime b) => a.CompareTo(b) >= 0;
+
+        private bool EqualToDouble(double a, double b) => a == b;
+        private bool EqualToDecimal(decimal a, decimal b) => a == b;
+        private bool EqualToLong(long a, long b) => a == b;       
+        private bool EqualToDateTime(DateTime a, DateTime b) => a.CompareTo(b) == 0;
+
+        private bool NotEqualToDouble(double a, double b) => a != b;
+        private bool NotEqualToDecimal(decimal a, decimal b) => a != b;
+        private bool NotEqualToLong(long a, long b) => a != b;     
+        private bool NotEqualToDateTime(DateTime a, DateTime b) => a.CompareTo(b) != 0;
 
         private void LogicalOperatorAggregator(ReportExpression prev, ReportExpression next, ReportExpression newExpr, bool booleanOperator, ref ExpressionFieldOperator lastLogicalOperator)
         {
@@ -1145,16 +1417,8 @@ namespace ReportViewer.NET.Parsers
                 case ExpressionFieldOperator.ConcatAnd:
                     newExpr.Value = prev.Value.ToString() + next.Value.ToString();
                     break;
-                case ExpressionFieldOperator.ConcatPlus:
-                    if (int.TryParse(prev.Value.ToString(), out var prevInt) && int.TryParse(next.Value.ToString(), out var nextInt))
-                    {
-                        newExpr.Value = prevInt + nextInt;
-                    }
-                    else
-                    {
-                        newExpr.Value = prev.Value.ToString() + next.Value.ToString();
-                    }
-
+                case ExpressionFieldOperator.ConcatPlus:                    
+                    newExpr.Value = this.AddExpression(prev, next);                    
                     break;
             }
         }
@@ -1188,15 +1452,55 @@ namespace ReportViewer.NET.Parsers
                 case TypeCode.DateTime:
                     finalExpression.Value = ((DateTime)finalExpression.Value).ToString(requestedFormat);
                     return finalExpression;
-                case TypeCode.Int32:
-                    finalExpression.Value = int.Parse(finalExpression.Value.ToString()).ToString(requestedFormat);
+                case TypeCode.Decimal:
+                    finalExpression.Value = decimal.Parse(finalExpression.Value.ToString(), CultureInfo.InvariantCulture).ToString(requestedFormat);
                     return finalExpression;
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                    finalExpression.Value = long.Parse(finalExpression.Value.ToString()).ToString(requestedFormat);
+                    return finalExpression;                
                 case TypeCode.Double:
                     finalExpression.Value = double.Parse(finalExpression.Value.ToString(), CultureInfo.InvariantCulture).ToString(requestedFormat);
                     return finalExpression;
             }
 
             return finalExpression;
+        }
+
+        public static (Type, object) ExtractTypeFromValue(object value)
+        {
+            if (value == null)
+            {
+                return (typeof(object), null);
+            }
+
+            if (DateTime.TryParse(value.ToString(), out var dttValue))
+            {
+                return (typeof(DateTime), dttValue);
+            }
+
+            if (bool.TryParse(value.ToString(), out var bValue))
+            {
+                return (typeof(bool), bValue);
+            }
+
+            if (double.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var dValue))
+            {
+                return (typeof(double), dValue);
+            }
+
+            if (long.TryParse(value.ToString(), out var lValue))
+            {
+                return (typeof(long), lValue);
+            }
+
+            return (typeof(string), value);
         }
 
         public static bool WithinStringLiteral(string currentString, int idx)
