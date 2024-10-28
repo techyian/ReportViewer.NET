@@ -252,7 +252,7 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | Text  | FormatNumber   | Complete      |                            |
 | Text  | FormatPercent  | Complete      |                            |
 | Text  | GetChar        | Complete      |                            |
-| Text  | InStr          | Not started   |                            |
+| Text  | InStr          | Complete      |                            |
 | Text  | InStrRev       | Not started   |                            |
 | Text  | Join           | Not started   |                            |
 | Text  | LCase          | Not started   |                            |
