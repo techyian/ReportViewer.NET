@@ -96,7 +96,7 @@ namespace ReportViewer.NET.Parsers.Text
                 }
                 else
                 {
-                    includeLeadingDigit = (TriState)Enum.Parse(typeof(TriState), parsed.ToString());
+                    includeLeadingDigit = (TriState)Enum.Parse(typeof(TriState), expr.ToString());
                 }
             }
 
@@ -119,7 +119,7 @@ namespace ReportViewer.NET.Parsers.Text
                 }
                 else
                 {
-                    useParensForNegativeNumbers = (TriState)Enum.Parse(typeof(TriState), parsed.ToString());
+                    useParensForNegativeNumbers = (TriState)Enum.Parse(typeof(TriState), expr.ToString());
                 }
             }
 
@@ -142,7 +142,7 @@ namespace ReportViewer.NET.Parsers.Text
                 }
                 else
                 {
-                    groupDigits = (TriState)Enum.Parse(typeof(TriState), parsed.ToString());
+                    groupDigits = (TriState)Enum.Parse(typeof(TriState), expr.ToString());
                 }
             }
 
