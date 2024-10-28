@@ -80,7 +80,7 @@ namespace ReportViewer.NET.Parsers.Text
             if (foundParameters.Item2.Count > 2)
             {
                 // Parse IncludeLeadingDigit
-                includeLeadingDigit = (TriState)this.Report.Parser.ParseReportExpressionString(
+                var expr = this.Report.Parser.ParseReportExpressionString(
                     foundParameters.Item2[2],
                     this.DataSetResults,
                     this.Values,
@@ -88,13 +88,22 @@ namespace ReportViewer.NET.Parsers.Text
                     this.DataSets,
                     this.ActiveDataset,
                     null
-                ).ExpressionAsInt();
+                );
+
+                if (int.TryParse(expr.ToString(), out var parsed))
+                {
+                    includeLeadingDigit = (TriState)parsed;
+                }
+                else
+                {
+                    includeLeadingDigit = (TriState)Enum.Parse(typeof(TriState), parsed.ToString());
+                }
             }
 
             if (foundParameters.Item2.Count > 3)
             {
                 // Parse UseParensForNegativeNumbers
-                useParensForNegativeNumbers = (TriState)this.Report.Parser.ParseReportExpressionString(
+                var expr = this.Report.Parser.ParseReportExpressionString(
                     foundParameters.Item2[3],
                     this.DataSetResults,
                     this.Values,
@@ -102,13 +111,22 @@ namespace ReportViewer.NET.Parsers.Text
                     this.DataSets,
                     this.ActiveDataset,
                     null
-                ).ExpressionAsInt();
+                );
+
+                if (int.TryParse(expr.ToString(), out var parsed))
+                {
+                    useParensForNegativeNumbers = (TriState)parsed;
+                }
+                else
+                {
+                    useParensForNegativeNumbers = (TriState)Enum.Parse(typeof(TriState), parsed.ToString());
+                }
             }
 
             if (foundParameters.Item2.Count > 4)
             {
                 // Parse GroupDigits
-                groupDigits = (TriState)this.Report.Parser.ParseReportExpressionString(
+                var expr = this.Report.Parser.ParseReportExpressionString(
                     foundParameters.Item2[4],
                     this.DataSetResults,
                     this.Values,
@@ -116,7 +134,16 @@ namespace ReportViewer.NET.Parsers.Text
                     this.DataSets,
                     this.ActiveDataset,
                     null
-                ).ExpressionAsInt();
+                );
+
+                if (int.TryParse(expr.ToString(), out var parsed))
+                {
+                    groupDigits = (TriState)parsed;
+                }
+                else
+                {
+                    groupDigits = (TriState)Enum.Parse(typeof(TriState), parsed.ToString());
+                }
             }
 
             this.CurrentExpression.Index = fcMatch.Index;
