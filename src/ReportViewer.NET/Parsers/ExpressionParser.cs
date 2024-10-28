@@ -571,6 +571,15 @@ namespace ReportViewer.NET.Parsers
                 proposedString = inStrParser.GetProposedString();
             }
 
+            if (InStrRevParser.InStrRevRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || InStrRevParser.InStrRevRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var inStrRevParser = new InStrRevParser(currentString, ExpressionFieldOperator.InStrRev, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                inStrRevParser.Parse();
+                proposedString = inStrRevParser.GetProposedString();
+            }
+
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )

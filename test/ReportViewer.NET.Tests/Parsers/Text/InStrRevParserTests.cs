@@ -6,12 +6,12 @@ using ReportViewer.NET.Parsers;
 namespace ReportViewer.NET.Tests.Parsers.Text
 {
     [TestClass]
-    public class InStrParserTests
+    public class InStrRevParserTests
     {
         private ExpressionParser _expressionParser;
         private ReportRDL _report;
 
-        public InStrParserTests()
+        public InStrRevParserTests()
         {
             var report = TestHelper.PrimeReport();
 
@@ -20,12 +20,12 @@ namespace ReportViewer.NET.Tests.Parsers.Text
         }
 
         [TestMethod]
-        public void InStr_Returns_Int_No_Start_Indx()
-        {            
+        public void InStrRev_Returns_Int_No_Start_Indx()
+        {
             // InStr is not 0 based.
 
             // Arrange
-            var expr = "=InStr(\"Brian\", \"ian\")";
+            var expr = "=InStrRev(\"Brian\", \"ian\")";
 
             // Act
             var result = _expressionParser.ParseReportExpressionString(
@@ -43,14 +43,14 @@ namespace ReportViewer.NET.Tests.Parsers.Text
         }
 
         [TestMethod]
-        public void InStr_Returns_Int_With_Start_Indx_Text_Comparer()
+        public void InStrRev_Returns_Int_With_Start_Indx_Text_Comparer()
         {
             // The start index is 0 based (VB method removes 1 from it)
             // Resulting index is not 0 based.
 
             // Arrange
-            var expr = "=InStr(5, \"Brian Adams\", \"a\", 1)";            
-            
+            var expr = "=InStrRev(5, \"Brian Adams\", \"a\", 1)";
+
             // Act
             var result = _expressionParser.ParseReportExpressionString(
                 expr,
@@ -63,7 +63,7 @@ namespace ReportViewer.NET.Tests.Parsers.Text
             ).ExpressionAsInt();
 
             // Assert
-            Assert.AreEqual(7, result);
+            Assert.AreEqual(4, result);
         }
     }
 }

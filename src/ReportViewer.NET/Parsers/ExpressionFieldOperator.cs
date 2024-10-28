@@ -61,6 +61,7 @@ namespace ReportViewer.NET.Parsers
         FormatPercent,
         GetChar,
         InStr,
+        InStrRev,
         MonthName,
         CDate,
         DateAdd,

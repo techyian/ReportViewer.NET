@@ -7,11 +7,11 @@ using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers.Text
 {
-    public class InStrParser : BaseParser
+    public class InStrRevParser : BaseParser
     {
-        public static Regex InStrRegex = RegexCommon.GenerateMultiParamParserRegex("InStr");
+        public static Regex InStrRevRegex = RegexCommon.GenerateMultiParamParserRegex("InStrRev");
 
-        public InStrParser(
+        public InStrRevParser(
             string currentString,
             ExpressionFieldOperator op,
             ReportExpression currentExpression,
@@ -21,7 +21,7 @@ namespace ReportViewer.NET.Parsers.Text
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, InStrRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, InStrRevRegex, report)
         {
         }
 
@@ -32,11 +32,11 @@ namespace ReportViewer.NET.Parsers.Text
 
         public override void Parse()
         {
-            var match = InStrRegex.Match(this.CurrentString);
+            var match = InStrRevRegex.Match(this.CurrentString);
             var matchValue = match.Value;
 
-            // Remove the surrounding InStr including opening/closing brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.MatchValueSubString(6);
+            // Remove the surrounding InStrRev including opening/closing brace so we can inspect inner members and see if they too contain program flow expressions. 
+            matchValue = matchValue.MatchValueSubString(9);
 
             var foundParameters = this.ParseParenthesis(matchValue);
 
@@ -63,7 +63,7 @@ namespace ReportViewer.NET.Parsers.Text
             {
                 // We've been provided with start index.
                 var startIndx = parsedExpression.ExpressionAsInt();
-                
+
                 var string1 = this.Report.Parser.ParseReportExpressionString(
                     foundParameters.Item2[1],
                     this.DataSetResults,
@@ -99,7 +99,7 @@ namespace ReportViewer.NET.Parsers.Text
                     ).ExpressionAsInt();
                 }
 
-                this.CurrentExpression.Value = Strings.InStr(startIndx, string1, string2, compareMethod);
+                this.CurrentExpression.Value = Strings.InStrRev(string1, string2, startIndx, compareMethod);
             }
             else
             {
@@ -130,7 +130,7 @@ namespace ReportViewer.NET.Parsers.Text
                     ).ExpressionAsInt();
                 }
 
-                this.CurrentExpression.Value = Strings.InStr(string1, string2, compareMethod);
+                this.CurrentExpression.Value = Strings.InStrRev(string1, string2, -1, compareMethod);
             }
 
         }
