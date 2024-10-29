@@ -7,7 +7,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class TodayParser : BaseParser
     {
-        public static Regex TodayRegex = RegexCommon.GenerateParserRegex("Today");
+        public static Regex TodayRegex = RegexCommon.GenerateMultiParamParserRegex("Today");
 
         public TodayParser(
             string currentString,

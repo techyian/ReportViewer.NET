@@ -11,7 +11,7 @@ namespace ReportViewer.NET.Parsers.Text
 {
     public class ChrWParser : BaseParser
     {
-        public static Regex ChrWRegex = RegexCommon.GenerateParserRegex("ChrW");
+        public static Regex ChrWRegex = RegexCommon.GenerateMultiParamParserRegex("ChrW");
 
         public ChrWParser(
             string currentString,
@@ -52,7 +52,7 @@ namespace ReportViewer.NET.Parsers.Text
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = Strings.ChrW(code);
+            this.CurrentExpression.Value = Strings.ChrW(code).ExpressionAsString();
         }
     }
 }

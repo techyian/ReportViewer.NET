@@ -1,4 +1,5 @@
 ﻿using ReportViewer.NET.DataObjects;
+using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -17,7 +18,8 @@ namespace ReportViewer.NET.Parsers
         protected DataSet ActiveDataset { get; private set; }        
         protected Match RegexMatch { get; private set; }
         protected ReportRDL Report { get; private set; }
-        
+
+        private int _startIndx;
         private int _endIndx;
 
 
@@ -46,7 +48,7 @@ namespace ReportViewer.NET.Parsers
             this.Report = report;
 
             var group = this.RegexMatch.Groups[0];
-            var idx = group.Index;
+            var idx = _startIndx = group.Index;
 
             currentExpression.Index = idx;
             currentExpression.Operator = op;
@@ -73,6 +75,7 @@ namespace ReportViewer.NET.Parsers
         /// <returns>Remaining text following the expression we intend to parse</returns>
         public string GetProposedString()
         {
+            //return this.CurrentString.Remove(_startIndx, _endIndx - _startIndx - 1).Insert(_startIndx, this.CurrentExpression.Value.ExpressionAsString());
             return _endIndx == this.CurrentString.Length ? "" : this.CurrentString.Substring(_endIndx, this.CurrentString.Length - _endIndx).TrimStart();
         }
 

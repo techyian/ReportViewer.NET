@@ -8,7 +8,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class DateValueParser : BaseParser
     {
-        public static Regex DateValueRegex = RegexCommon.GenerateParserRegex("DateValue");
+        public static Regex DateValueRegex = RegexCommon.GenerateMultiParamParserRegex("DateValue");
 
         public DateValueParser(
             string currentString,

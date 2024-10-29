@@ -9,7 +9,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 {
     public class FirstParser : BaseParser
     {
-        public static Regex FirstRegex = RegexCommon.GenerateParserRegex("First");
+        public static Regex FirstRegex = RegexCommon.GenerateMultiParamParserRegex("First");
 
         public FirstParser(
             string currentString,

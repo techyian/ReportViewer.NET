@@ -9,7 +9,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 {
     public class CountParser : BaseParser
     {
-        public static Regex CountRegex = RegexCommon.GenerateParserRegex("Count");
+        public static Regex CountRegex = RegexCommon.GenerateMultiParamParserRegex("Count");
 
         public CountParser(
             string currentString,

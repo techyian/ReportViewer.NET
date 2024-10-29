@@ -9,7 +9,7 @@ namespace ReportViewer.NET.Parsers.Misc
 {
     internal class RowNumberParser : BaseParser
     {
-        public static Regex RowNumberRegex = RegexCommon.GenerateParserRegex("RowNumber");
+        public static Regex RowNumberRegex = RegexCommon.GenerateMultiParamParserRegex("RowNumber");
 
         public RowNumberParser(
             string currentString, 

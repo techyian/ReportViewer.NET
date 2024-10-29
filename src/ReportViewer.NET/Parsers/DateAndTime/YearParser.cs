@@ -8,7 +8,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class YearParser : BaseParser
     {
-        public static Regex YearRegex = RegexCommon.GenerateParserRegex("Year");
+        public static Regex YearRegex = RegexCommon.GenerateMultiParamParserRegex("Year");
 
         public YearParser(
             string currentString,

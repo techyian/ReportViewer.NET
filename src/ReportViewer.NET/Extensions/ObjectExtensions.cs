@@ -22,27 +22,27 @@ namespace ReportViewer.NET.Extensions
 
         public static int ExpressionAsInt(this object obj) 
         {
-            return int.Parse(obj.ToString());
+            return int.Parse(obj.ExpressionAsString());
         }
 
         public static long ExpressionAsLong(this object obj)
         {
-            return long.Parse(obj.ToString());
+            return long.Parse(obj.ExpressionAsString());
         }
 
         public static string ExpressionAsString(this object obj) 
         {
-            return obj.ToString();
+            return Convert.ToString(obj, CultureInfo.InvariantCulture);
         }
 
         public static double ExpressionAsDouble(this object obj)
-        {
-            return double.Parse(obj.ToString(), CultureInfo.InvariantCulture);
+        {            
+            return double.Parse(obj.ExpressionAsString(), NumberStyles.Number, CultureInfo.InvariantCulture);
         }
 
         public static decimal ExpressionAsDecimal(this object obj)
         {
-            return decimal.Parse(obj.ToString(), CultureInfo.InvariantCulture);
+            return decimal.Parse(obj.ExpressionAsString(), NumberStyles.Number, CultureInfo.InvariantCulture);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class SecondParser : BaseParser
     {
-        public static Regex SecondRegex = RegexCommon.GenerateParserRegex("Second");
+        public static Regex SecondRegex = RegexCommon.GenerateMultiParamParserRegex("Second");
 
         public SecondParser(
             string currentString,

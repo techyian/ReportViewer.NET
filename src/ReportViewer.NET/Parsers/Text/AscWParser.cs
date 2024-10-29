@@ -10,7 +10,7 @@ namespace ReportViewer.NET.Parsers.Text
 {
     public class AscWParser : BaseParser
     {
-        public static Regex AscWRegex = RegexCommon.GenerateParserRegex("AscW");
+        public static Regex AscWRegex = RegexCommon.GenerateMultiParamParserRegex("AscW");
 
         public AscWParser(
             string currentString,

@@ -3,7 +3,6 @@ using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
 namespace ReportViewer.NET.Parsers.Text
@@ -107,7 +106,7 @@ namespace ReportViewer.NET.Parsers.Text
 
                 this.CurrentExpression.Value = parsedExpression.ExpressionAsDateTime().ToString(format, CultureInfo.CurrentCulture);
             }
-            else if (parsedExpression is int)
+            else if (parsedExpression is long)
             {                
                 format = this.ConvertVBFormatToCSharpForNumeric(format);
                 
@@ -128,6 +127,24 @@ namespace ReportViewer.NET.Parsers.Text
                     this.CurrentExpression.Value = parsedExpression.ExpressionAsInt().ToString(format, CultureInfo.CurrentCulture);
                 }
             }
+            else if (parsedExpression is decimal)
+            {
+                format = this.ConvertVBFormatToCSharpForNumeric(format);
+
+                // Handle percent symbol placement for "Percentage" format specifier.
+                if (format.EqualsIgnore("Percentage"))
+                {
+                    this.CurrentExpression.Value = parsedExpression.ExpressionAsDecimal().ToString("p", new NumberFormatInfo()
+                    {
+                        PercentPositivePattern = 1
+                    });
+                }
+                else
+                {
+                    var dcm = parsedExpression.ExpressionAsDecimal();
+                    this.CurrentExpression.Value = parsedExpression.ExpressionAsDecimal().ToString(format, CultureInfo.CurrentCulture);
+                }
+            }
             else if (parsedExpression is double)
             {                   
                 format = this.ConvertVBFormatToCSharpForNumeric(format);
@@ -137,11 +154,11 @@ namespace ReportViewer.NET.Parsers.Text
                 {
                     this.CurrentExpression.Value = parsedExpression.ExpressionAsDouble().ToString("p", new NumberFormatInfo()
                     {
-                        PercentPositivePattern = 1
+                        PercentPositivePattern = 1                        
                     });
                 }
                 else
-                {
+                {                    
                     this.CurrentExpression.Value = parsedExpression.ExpressionAsDouble().ToString(format, CultureInfo.CurrentCulture);
                 }                
             }

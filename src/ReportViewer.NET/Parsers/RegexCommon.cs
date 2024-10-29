@@ -19,11 +19,7 @@ namespace ReportViewer.NET.Parsers
             return new Regex(pattern, RegexOptions.IgnoreCase);
         }
 
-        public static Regex GenerateParserRegex(string parserName)
-        {
-            var pattern = "(?:\\(*?)(?:PARSERNAME?)(\\((.*?)\\)\\)*)".Replace("PARSERNAME", parserName);
-            
-            return new Regex(pattern, RegexOptions.IgnoreCase);
-        }
+        // Credit to: https://stackoverflow.com/a/76614259
+        //public static Regex InnerMemberRegex = new Regex("[A-Za-z]+\\s*\\([0-9\\+\\*\\-\\s]+\\)");
     }
 }

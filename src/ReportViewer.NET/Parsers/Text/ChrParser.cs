@@ -10,7 +10,7 @@ namespace ReportViewer.NET.Parsers.Text
 {
     public class ChrParser : BaseParser
     {
-        public static Regex ChrRegex = RegexCommon.GenerateParserRegex("Chr");
+        public static Regex ChrRegex = RegexCommon.GenerateMultiParamParserRegex("Chr");
 
         public ChrParser(
             string currentString,
@@ -51,7 +51,7 @@ namespace ReportViewer.NET.Parsers.Text
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = Strings.Chr(code);
+            this.CurrentExpression.Value = Strings.Chr(code).ExpressionAsString();
         }
     }
 }

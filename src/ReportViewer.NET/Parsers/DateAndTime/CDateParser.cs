@@ -9,7 +9,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class CDateParser : BaseParser
     {
-        public static Regex CDateRegex = RegexCommon.GenerateParserRegex("CDate");
+        public static Regex CDateRegex = RegexCommon.GenerateMultiParamParserRegex("CDate");
 
         public CDateParser(
             string currentString,

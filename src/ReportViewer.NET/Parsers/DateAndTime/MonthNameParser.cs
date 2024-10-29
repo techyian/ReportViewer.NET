@@ -45,7 +45,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             if (foundParameters.Item1 == 0)
             {
                 // No need to abbreviate, just return full month name.
-                monthNum = (int)this.Report.Parser.ParseReportExpressionString(
+                monthNum = this.Report.Parser.ParseReportExpressionString(
                     matchValue, 
                     this.DataSetResults,
                     this.Values,
@@ -53,7 +53,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
                     this.DataSets, 
                     this.ActiveDataset, 
                     null
-                );
+                ).ExpressionAsInt();
 
                 CurrentExpression.Index = match.Index;
                 CurrentExpression.ResolvedType = typeof(string);
@@ -68,7 +68,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
                 return;
             }
 
-            monthNum = (int)this.Report.Parser.ParseReportExpressionString(
+            monthNum = this.Report.Parser.ParseReportExpressionString(
                 foundParameters.Item2[0],
                 this.DataSetResults,
                 this.Values,
@@ -76,7 +76,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
                 this.DataSets, 
                 this.ActiveDataset, 
                 null
-            );
+            ).ExpressionAsInt();
 
             CurrentExpression.Index = match.Index;
             CurrentExpression.ResolvedType = typeof(string);

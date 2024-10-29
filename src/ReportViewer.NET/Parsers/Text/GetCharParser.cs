@@ -68,7 +68,7 @@ namespace ReportViewer.NET.Parsers.Text
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = Strings.GetChar(parsedExpression, indx);
+            this.CurrentExpression.Value = Strings.GetChar(parsedExpression, indx).ExpressionAsString();
         }
     }
 }

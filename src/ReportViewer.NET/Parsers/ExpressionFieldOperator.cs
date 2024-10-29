@@ -11,6 +11,7 @@ namespace ReportViewer.NET.Parsers
         public Type ResolvedType { get; set; }
         public object Value { get; set; }
         public string DataSetName { get; set; }
+        public bool NestedParenthesis { get; set; }
     }
 
     public enum ExpressionFieldOperator
@@ -88,6 +89,7 @@ namespace ReportViewer.NET.Parsers
         WeekdayName,
         Year,
         FormatCurrency,
-        RowNumber
+        RowNumber,
+        CInt
     }
 }

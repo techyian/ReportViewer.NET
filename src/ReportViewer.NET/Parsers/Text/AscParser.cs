@@ -10,7 +10,7 @@ namespace ReportViewer.NET.Parsers.Text
 {
     public class AscParser : BaseParser
     {
-        public static Regex AscRegex = RegexCommon.GenerateParserRegex("Asc");
+        public static Regex AscRegex = RegexCommon.GenerateMultiParamParserRegex("Asc");
 
         public AscParser(
             string currentString,
@@ -34,6 +34,7 @@ namespace ReportViewer.NET.Parsers.Text
         public override void Parse()
         {
             var match = AscRegex.Match(CurrentString);
+            var group = match.Groups[0];
             var matchValue = match.Value;
 
             // Remove the surrounding Asc including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 

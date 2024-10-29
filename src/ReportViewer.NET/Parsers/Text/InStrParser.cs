@@ -59,7 +59,7 @@ namespace ReportViewer.NET.Parsers.Text
                 null
             );
 
-            if (parsedExpression is int)
+            if (parsedExpression is long)
             {
                 // We've been provided with start index.
                 var startIndx = parsedExpression.ExpressionAsInt();

@@ -8,7 +8,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 {
     public class CountDistinctParser : BaseParser
     {
-        public static Regex CountDistinctRegex = RegexCommon.GenerateParserRegex("CountDistinct");
+        public static Regex CountDistinctRegex = RegexCommon.GenerateMultiParamParserRegex("CountDistinct");
 
         private string RequestedDataset { get; set; }
 

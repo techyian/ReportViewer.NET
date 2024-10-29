@@ -7,7 +7,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 {
     public class TimeOfDayParser : BaseParser
     {
-        public static Regex TimeOfDayRegex = RegexCommon.GenerateParserRegex("TimeOfDay");
+        public static Regex TimeOfDayRegex = RegexCommon.GenerateMultiParamParserRegex("TimeOfDay");
 
         public TimeOfDayParser(
             string currentString,

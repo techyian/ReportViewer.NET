@@ -171,7 +171,5 @@ namespace ReportViewer.NET.Tests.Parsers.Text
             CultureInfo.DefaultThreadCurrentCulture = originalCulture;
             CultureInfo.DefaultThreadCurrentUICulture = originalCulture;
         }
-
-
     }
 }

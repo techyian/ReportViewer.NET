@@ -80,7 +80,7 @@ namespace ReportViewer.NET.Tests.Parsers.Text
         public void FormatNumber_IncludeLeadingDigit_True_Returns_String()
         {
             // Arrange
-            var expr = "=FormatNumber(.3, 1, -1)";
+            var expr = "=FormatNumber(.3, 1, (-1))";
             var cultureInfo = new CultureInfo("en-GB");
             CultureInfo originalCulture = Thread.CurrentThread.CurrentCulture;
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;

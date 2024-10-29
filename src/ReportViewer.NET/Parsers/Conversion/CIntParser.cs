@@ -2,15 +2,16 @@
 using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers.DateAndTime
+namespace ReportViewer.NET.Parsers.Conversion
 {
-    public class MonthParser : BaseParser
+    public class CIntParser : BaseParser
     {
-        public static Regex MonthRegex = RegexCommon.GenerateMultiParamParserRegex("Month");
+        public static Regex CIntRegex = RegexCommon.GenerateMultiParamParserRegex("CInt");
 
-        public MonthParser(
+        public CIntParser(
             string currentString,
             ExpressionFieldOperator op,
             ReportExpression currentExpression,
@@ -20,7 +21,7 @@ namespace ReportViewer.NET.Parsers.DateAndTime
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, MonthRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, CIntRegex, report)
         {
         }
 
@@ -31,13 +32,13 @@ namespace ReportViewer.NET.Parsers.DateAndTime
 
         public override void Parse()
         {
-            var match = MonthRegex.Match(this.CurrentString);
+            var match = CIntRegex.Match(CurrentString);
             var matchValue = match.Value;
 
-            // Remove the surrounding Month including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.MatchValueSubString(6);
-
-            var dtt = this.Report.Parser.ParseReportExpressionString(
+            // Remove the surrounding CInt including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
+            matchValue = matchValue.MatchValueSubString(5);
+                        
+            var expr = this.Report.Parser.ParseReportExpressionString(
                 matchValue,
                 this.DataSetResults,
                 this.Values,
@@ -45,11 +46,11 @@ namespace ReportViewer.NET.Parsers.DateAndTime
                 this.DataSets,
                 this.ActiveDataset,
                 null
-            ).ExpressionAsDateTime();
+            );
 
             this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(int);
-            this.CurrentExpression.Value = dtt.Month;
+            this.CurrentExpression.ResolvedType = typeof(long);
+            this.CurrentExpression.Value = Convert.ToInt64(expr, CultureInfo.InvariantCulture);
         }
     }
 }
