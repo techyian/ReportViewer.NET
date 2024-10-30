@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace ReportViewer.NET.Parsers
 {
@@ -1085,6 +1084,7 @@ namespace ReportViewer.NET.Parsers
             {
                 var finalExpr = new StringBuilder();
                 var interpreterParams = new List<Parameter>();
+                var indx = 0;
 
                 foreach (var exp in expressions)
                 {
@@ -1093,23 +1093,36 @@ namespace ReportViewer.NET.Parsers
                         continue;
                     }
 
-                    if (exp.Value != null)
-                    {
-                        var param = RandomString(2);
+                    if (exp.Value != null && 
+                        !ArithmeticOperators.Contains(exp.Operator) &&
+                        !ComparisonOperators.Contains(exp.Operator) && 
+                        !LogicalOperators.Contains(exp.Operator) && 
+                        !ConcatenationOperators.Contains(exp.Operator))
+                    {                        
+                        var param =  $"exp{indx}";
                         interpreterParams.Add(new Parameter(param, exp.ResolvedType, exp.Value));
-                        finalExpr.Append(param);
+                        finalExpr.Append(param + " ");
                     }
 
                     finalExpr.Append(this.ParseArithmeticOperator(exp));
                     finalExpr.Append(this.ParseComparisonOperator(exp));
                     finalExpr.Append(this.ParseLogicalOperator(exp));
                     finalExpr.Append(this.ParseConcatenationOperator(exp));
+
+                    indx++;
                 }
 
-                var interpreter = new Interpreter();
-                var result = interpreter.Eval(finalExpr.ToString(), interpreterParams.ToArray());
+                try
+                {
+                    var interpreter = new Interpreter();
+                    var result = interpreter.Eval(finalExpr.ToString(), interpreterParams.ToArray());
 
-                return EvaluateRequestedFormat(result, requestedFormat);
+                    return EvaluateRequestedFormat(result, requestedFormat);
+                }
+                catch (Exception e)
+                {
+                    return "Could not parse, please check expression.";
+                }
             }
 
             return null;
@@ -1202,24 +1215,25 @@ namespace ReportViewer.NET.Parsers
             if (string.IsNullOrEmpty(requestedFormat))
                 return finalExpr;
 
-            if (DateTime.TryParse(finalExpr.ToString(), out var dtt))
+            switch (Type.GetTypeCode(finalExpr.GetType()))
             {
-                return dtt.ToString(requestedFormat);
-            }
-
-            if (decimal.TryParse(finalExpr.ToString(), out var dec))
-            {
-                return dec.ToString(requestedFormat);
-            }
-
-            if (double.TryParse(finalExpr.ToString(), out var dbl))
-            {
-                return dbl.ToString(requestedFormat);
-            }
-
-            if (long.TryParse(finalExpr.ToString(), out var lng))
-            {
-                return lng.ToString(requestedFormat);
+                case TypeCode.String:
+                    return finalExpr;
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                    return long.Parse(finalExpr.ToString()).ToString(requestedFormat);
+                case TypeCode.Decimal:
+                    return decimal.Parse(finalExpr.ToString()).ToString(requestedFormat);
+                case TypeCode.Double:
+                    return double.Parse(finalExpr.ToString()).ToString(requestedFormat);
+                case TypeCode.DateTime:
+                    return DateTime.Parse(finalExpr.ToString()).ToString(requestedFormat);
             }
 
             return finalExpr;
