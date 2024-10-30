@@ -2,9 +2,13 @@
 
 Welcome to ReportViewer.NET, a C#/.NET library which allows you to render SQL Server Reporting Services (SSRS) reports from within a web page.
 
-The library works by parsing RDL files which you must register, along with DataSources, and the elements and expressions within the RDL file are then transformed into HTML.
+The library works by parsing RDL files which you must register, along with DataSources, and the elements and expressions within the RDL file are then transformed into HTML. The library has a number of parsers which extract values from expressions which are then used to build up a final expression, before being run through a C# interpreter called DynamicExpresso (https://github.com/dynamicexpresso/DynamicExpresso). 
 
-**Please Note**: This is currently recognised as Alpha state software and is not guaranteed to work with your report. Although many of the common elements and expressions available via Report Builder have been included in ReportViewer.NET, there will be gaps in functionality and the rendered HTML is not intended to be a clone of that returned by the official Microsoft SSRS Report Web Viewer.
+**Please Note**: 
+
+1. This is currently recognised as Alpha state software and is not guaranteed to work with your report. Although many of the common elements and expressions available via Report Builder have been included in ReportViewer.NET, there will be gaps in functionality and the rendered HTML is not intended to be a clone of that returned by the official Microsoft SSRS Report Web Viewer.
+
+1. As ReportViewer.NET uses a C# interpreter for expressions, you must ensure that you are not performing any comparisons on non-compatible data types. More information in the Help/FAQ section below.
 
 ReportViewer.NET is currently designed to target .NET 8.
 
@@ -115,6 +119,10 @@ Additional reports are available in the `/test/reports/` directory of this repos
 1. Q: When I have a tall element which spans multiple rows in my report, stacked members sharing the same row(s) aren't positioned correctly.
    
    A: Due to the way ReportViewer.NET calculates the position of elements, if you have a tall element which spans many rows, stacked members on the same row will not display as you may expect. Try wrapping stacked elements in a Rectangle. You will need to explicitly paste your elements into the Rectangle for this to work.
+
+1. Q: The library returns "Could not parse, please check expression." when printing the value of an expression.
+
+   A: Please examine your expression and ensure that you are not doing any comparisons on data types which are not compatible. ReportViewer.NET uses a C# interpreter to retrieve the final expression value and therefore will not allow implicit casting between two non-compatible data types, e.g. 1 == "1" which is allowed in VB.NET. If your expression looks sound and you're unable to determine the cause, please raise a ticket so I can investigate.
 
 ## Screenshots
 
