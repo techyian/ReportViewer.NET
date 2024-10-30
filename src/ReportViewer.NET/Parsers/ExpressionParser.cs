@@ -1099,7 +1099,7 @@ namespace ReportViewer.NET.Parsers
                         !LogicalOperators.Contains(exp.Operator) && 
                         !ConcatenationOperators.Contains(exp.Operator))
                     {                        
-                        var param =  $"exp{indx}";
+                        var param =  $"exp{indx}";                        
                         interpreterParams.Add(new Parameter(param, exp.ResolvedType, exp.Value));
                         finalExpr.Append(param + " ");
                     }
@@ -1212,7 +1212,7 @@ namespace ReportViewer.NET.Parsers
 
         private object EvaluateRequestedFormat(object finalExpr, string requestedFormat)
         {
-            if (string.IsNullOrEmpty(requestedFormat))
+            if (string.IsNullOrEmpty(requestedFormat) || finalExpr == null)
                 return finalExpr;
 
             switch (Type.GetTypeCode(finalExpr.GetType()))
@@ -1245,25 +1245,30 @@ namespace ReportViewer.NET.Parsers
             {
                 return (typeof(object), null);
             }
-
-            if (DateTime.TryParse(value.ToString(), out var dttValue))
-            {
-                return (typeof(DateTime), dttValue);
-            }
-
+                        
             if (bool.TryParse(value.ToString(), out var bValue))
             {
                 return (typeof(bool), bValue);
+            }
+
+            if (long.TryParse(value.ToString(), out var lValue))
+            {
+                return (typeof(long), lValue);
+            }
+
+            if (decimal.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var decValue))
+            {
+                return (typeof(decimal), decValue);
             }
 
             if (double.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var dValue))
             {
                 return (typeof(double), dValue);
             }
-
-            if (long.TryParse(value.ToString(), out var lValue))
+                        
+            if (DateTime.TryParse(value.ToString(), out var dttValue))
             {
-                return (typeof(long), lValue);
+                return (typeof(DateTime), dttValue);
             }
 
             return (typeof(string), value);
