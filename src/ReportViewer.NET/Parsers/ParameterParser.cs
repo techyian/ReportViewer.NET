@@ -34,37 +34,71 @@ namespace ReportViewer.NET.Parsers
                 return (typeof(object), null);
             }
 
-            switch (parameter.DataType.ToLower())
+            if (!string.IsNullOrEmpty(parameter.DataType))
             {
-                case "string":
-                    return (typeof(string), parameter.Value);
-                case "boolean":
-                    bool.TryParse(parameter.Value, out var bValue);
-                    return (typeof(bool), bValue);
-                case "integer":
-                    long.TryParse(parameter.Value, out var lValue);
-                    return (typeof(long), lValue);
-                case "datetime":
-                    DateTime.TryParse(parameter.Value, out var dttValue);
-                    return (typeof(DateTime), dttValue);
-                case "float":
-                    double.TryParse(parameter.Value, CultureInfo.InvariantCulture, out var dValue);
-                    return (typeof(double), dValue);
-                //case "binary":
-                //    // TODO
-                //    break;
-                //case "varient":
-                //    // TODO
-                //    break;
-                //case "varientarray":
-                //    // TODO
-                //    break;
-                //case "serializable":
-                //    // TODO
-                //    break;
-                default:
-                    return (typeof(object), parameter.Value);
+                switch (parameter.DataType.ToLower())
+                {
+                    case "string":
+                        return (typeof(string), parameter.Value);
+                    case "boolean":
+                        bool.TryParse(parameter.Value, out var bValue);
+                        return (typeof(bool), bValue);
+                    case "integer":
+                        long.TryParse(parameter.Value, out var lValue);
+                        return (typeof(long), lValue);
+                    case "datetime":
+                        DateTime.TryParse(parameter.Value, out var dttValue);
+                        return (typeof(DateTime), dttValue);
+                    case "float":
+                        double.TryParse(parameter.Value, CultureInfo.InvariantCulture, out var dValue);
+                        return (typeof(double), dValue);
+                    //case "binary":
+                    //    // TODO
+                    //    break;
+                    //case "varient":
+                    //    // TODO
+                    //    break;
+                    //case "varientarray":
+                    //    // TODO
+                    //    break;
+                    //case "serializable":
+                    //    // TODO
+                    //    break;
+                    default:
+                        return (typeof(object), parameter.Value);
+                }
             }
+            else
+            {
+                // Parameter didn't tell us what the type was so try and determine for ourselves.                
+                if (bool.TryParse(parameter.Value, out var bValue))
+                {
+                    return (typeof(bool), bValue);
+                }
+
+                if (long.TryParse(parameter.Value, out var iValue))
+                {
+                    return (typeof(int), iValue);
+                }
+
+                if (decimal.TryParse(parameter.Value, out var decValue))
+                {
+                    return (typeof(decimal), decValue);
+                }
+
+                if (double.TryParse(parameter.Value, out var dblValue))
+                {
+                    return (typeof(double), dblValue);
+                }
+
+                if (DateTime.TryParse(parameter.Value, out var dttValue))
+                {
+                    return (typeof(DateTime), dttValue);
+                }
+
+                return (typeof(string), parameter.Value);
+            }
+            
         }
 
         public override void Parse()
