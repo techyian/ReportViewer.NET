@@ -1047,6 +1047,15 @@ namespace ReportViewer.NET.Parsers
             ref string proposedString
         )
         {
+            if (CBoolParser.CBoolRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || CBoolParser.CBoolRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var cBoolParser = new CBoolParser(currentString, ExpressionFieldOperator.CBool, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                cBoolParser.Parse();
+                proposedString = cBoolParser.GetProposedString();
+            }
+
             if (CIntParser.CIntRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || CIntParser.CIntRegex.Match(currentString).Index < currentExpression.Index)
             )

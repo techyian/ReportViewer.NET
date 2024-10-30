@@ -2,7 +2,7 @@
 
 Welcome to ReportViewer.NET, a C#/.NET library which allows you to render SQL Server Reporting Services (SSRS) reports from within a web page.
 
-The library works by parsing RDL files which you must register, along with DataSources, and the elements and expressions within the RDL file are then transformed into HTML. The library has a number of parsers which extract values from expressions which are then used to build up a final expression, before being run through a C# interpreter called DynamicExpresso (https://github.com/dynamicexpresso/DynamicExpresso). 
+The library works by parsing RDL files which you must register, along with DataSources, and the elements and expressions within the RDL file are then transformed into HTML. The library has a number of parsers which extract values from functions which are then used to build up a final expression, before being run through a C# interpreter called DynamicExpresso (https://github.com/dynamicexpresso/DynamicExpresso). 
 
 **Please Note**: 
 
@@ -398,14 +398,14 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 
 | Group         | Expression        | Status        | Comments                   |
 | -----         | -------           | ------        | --------                   |
-| Conversion    | CBool             | Not started   |                            |
+| Conversion    | CBool             | Complete      |                            |
 | Conversion    | CByte             | Not started   |                            |
 | Conversion    | CChar             | Not started   |                            |
 | Conversion    | CDate             | Not started   |                            |
 | Conversion    | CDbl              | Not started   |                            |
 | Conversion    | CDec              | Not started   |                            |
 | Conversion    | CDec              | Not started   |                            |
-| Conversion    | CInt              | Not started   |                            |
+| Conversion    | CInt              | Complete      |                            |
 | Conversion    | CLng              | Not started   |                            |
 | Conversion    | CObj              | Not started   |                            |
 | Conversion    | CShort            | Not started   |                            |
