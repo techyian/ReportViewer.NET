@@ -1497,7 +1497,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                                 dataSetResults, 
                                 (IDictionary<string, object>)this.Values,
                                 this.CurrentRowNumber,
-                                null, 
+                                this.DataSets, 
                                 this.DataSetReference?.DataSet, 
                                 null
                             );
