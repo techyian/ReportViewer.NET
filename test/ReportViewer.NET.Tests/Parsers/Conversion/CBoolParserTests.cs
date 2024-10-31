@@ -19,10 +19,10 @@ namespace ReportViewer.NET.Tests.Parsers.Conversion
         }
 
         [TestMethod]
-        public void CBool_From_String_Returns_Boolean()
+        public void CBool_From_Char_Comparison_Returns_Boolean()
         {
             // Arrange
-            var expr = "=CBool(GetChar(\"Brian\", 1) = \"B\")";
+            var expr = "=CBool(GetChar(\"Brian\", 1) = \'B\')";
 
             // Act
             var result = _expressionParser.ParseReportExpressionString(

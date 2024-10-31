@@ -217,7 +217,7 @@ namespace ReportViewer.NET.Parsers
             var lastExpression = currentExpressions.LastOrDefault();
             var found = false;
             proposedString = string.Empty;
-
+            
             if (long.TryParse(currentString, out var parsedLong))
             {
                 // We found an integer value, we can parse this and get out of the loop.
@@ -254,12 +254,12 @@ namespace ReportViewer.NET.Parsers
 
                 found = true;
             }
-            else if (currentString.TrimStart('\'').TrimEnd('\'').Length == 1 && char.TryParse(currentString.TrimStart('\'').TrimEnd('\''), out var parsedChar))
+            else if (bool.TryParse(currentString, out var parsedBool))
             {
-                // We found a double value, we can parse this and get out of the loop.
-                currentExpression.ResolvedType = typeof(char);
+                // We found a boolean value, we can parse this and get out of the loop.
+                currentExpression.ResolvedType = typeof(bool);
                 currentExpression.Operator = ExpressionFieldOperator.None;
-                currentExpression.Value = parsedChar;
+                currentExpression.Value = parsedBool;
                 found = true;
             }
             else
@@ -320,21 +320,52 @@ namespace ReportViewer.NET.Parsers
                         
                         break;
                     }
-                    else if (split[i].TrimStart('\'').TrimEnd('\'').Length == 1 && char.TryParse(split[i].TrimStart('\'').TrimEnd('\''), out var parsedSplitChar))
+                    else if (bool.TryParse(currentString, out var parsedSplitBool))
                     {
-                        // We found a double value, we can parse this and get out of the loop.
-                        currentExpression.ResolvedType = typeof(char);
+                        // We found a boolean value, we can parse this and get out of the loop.
+                        currentExpression.ResolvedType = typeof(bool);
                         currentExpression.Operator = ExpressionFieldOperator.None;
-                        currentExpression.Value = parsedSplitChar;
+                        currentExpression.Value = parsedSplitBool;
+
+                        proposedString = currentString.Substring(currentExpression.Index + parsedSplitBool.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitBool.ToString().Length);
+
+                        // Clear up any whitespace not removed by statement above.
+                        proposedString = proposedString.TrimStart();
+
                         found = true;
-                    }
+
+                        break;
+                    }                    
                 }
 
                 if (!found)
                 {
-                    currentExpression.ResolvedType = typeof(string);
-                    currentExpression.Operator = ExpressionFieldOperator.None;
-                    currentExpression.Value = currentString.TrimStart('"').TrimEnd('"');                                        
+                    // See if DynamicExpresso can parse.
+                    object dynFound = null;
+                    var interpreter = new Interpreter();
+                    try
+                    {
+                        dynFound = interpreter.Eval(currentString);
+                    }
+                    catch
+                    {
+                    }
+
+                    if (dynFound == null)
+                    {
+                        // Fallback on string.
+                        currentExpression.ResolvedType = typeof(string);
+                        currentExpression.Operator = ExpressionFieldOperator.None;
+                        currentExpression.Value = currentString.TrimStart('"').TrimEnd('"');
+                    }
+                    else
+                    {
+                        currentExpression.ResolvedType = dynFound.GetType();
+                        currentExpression.Operator = ExpressionFieldOperator.None;
+                        currentExpression.Value = dynFound;
+                    }
+
+                    proposedString = "";
                 }
             }
 
