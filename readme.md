@@ -10,6 +10,8 @@ The library works by parsing RDL files which you must register, along with DataS
 
 1. As ReportViewer.NET uses a C# interpreter for expressions, you must ensure that you are not performing any comparisons on non-compatible data types. More information in the Help/FAQ section below.
 
+1. This project does not use any Microsoft proprietary code related to the original Report Viewer library and is my attempt at reverse engineering how RDL files should be processed without any knowledge of how the original Report Viewer library functions internally. If you want a full featured offering based on the original library but built for .NET Core 3.1 and later, check out reportviewercore https://github.com/lkosson/reportviewercore, but please note the repository owner's warning on the legality of distributing code with this package installed.
+
 ReportViewer.NET is currently designed to target .NET 8.
 
 ## How to use
