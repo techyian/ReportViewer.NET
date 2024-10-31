@@ -400,10 +400,9 @@ https://github.com/Apress/beg-sql-server-reporting-services/blob/master/Beginnin
 | -----         | -------           | ------        | --------                   |
 | Conversion    | CBool             | Complete      |                            |
 | Conversion    | CByte             | Not started   |                            |
-| Conversion    | CChar             | Not started   |                            |
-| Conversion    | CDate             | Not started   |                            |
+| Conversion    | CChar             | Complete      |                            |
+| Conversion    | CDate             | Complete      |                            |
 | Conversion    | CDbl              | Not started   |                            |
-| Conversion    | CDec              | Not started   |                            |
 | Conversion    | CDec              | Not started   |                            |
 | Conversion    | CInt              | Complete      |                            |
 | Conversion    | CLng              | Not started   |                            |
