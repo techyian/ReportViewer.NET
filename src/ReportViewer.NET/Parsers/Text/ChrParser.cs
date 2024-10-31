@@ -50,8 +50,8 @@ namespace ReportViewer.NET.Parsers.Text
             ).ExpressionAsInt();
 
             this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = Strings.Chr(code).ExpressionAsString();
+            this.CurrentExpression.ResolvedType = typeof(char);
+            this.CurrentExpression.Value = Strings.Chr(code);
         }
     }
 }

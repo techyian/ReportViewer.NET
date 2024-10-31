@@ -1,19 +1,17 @@
-﻿using Microsoft.VisualBasic;
-using ReportViewer.NET.DataObjects;
+﻿using ReportViewer.NET.DataObjects;
 using ReportViewer.NET.Extensions;
 using System;
-using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Text;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace ReportViewer.NET.Parsers.Text
+namespace ReportViewer.NET.Parsers.Conversion
 {
-    public class ChrWParser : BaseParser
+    public class CCharParser : BaseParser
     {
-        public static Regex ChrWRegex = RegexCommon.GenerateMultiParamParserRegex("ChrW");
+        public static Regex CCharRegex = RegexCommon.GenerateMultiParamParserRegex("CChar");
 
-        public ChrWParser(
+        public CCharParser(
             string currentString,
             ExpressionFieldOperator op,
             ReportExpression currentExpression,
@@ -23,7 +21,7 @@ namespace ReportViewer.NET.Parsers.Text
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
             ReportRDL report
-        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ChrWRegex, report)
+        ) : base(currentString, op, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, CCharRegex, report)
         {
         }
 
@@ -34,13 +32,13 @@ namespace ReportViewer.NET.Parsers.Text
 
         public override void Parse()
         {
-            var match = ChrWRegex.Match(this.CurrentString);
+            var match = CCharRegex.Match(CurrentString);
             var matchValue = match.Value;
 
-            // Remove the surrounding ChrW including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
-            matchValue = matchValue.MatchValueSubString(5);
+            // Remove the surrounding CChar including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
+            matchValue = matchValue.MatchValueSubString(6);
 
-            var code = this.Report.Parser.ParseReportExpressionString(
+            var expr = this.Report.Parser.ParseReportExpressionString(
                 matchValue,
                 this.DataSetResults,
                 this.Values,
@@ -48,11 +46,11 @@ namespace ReportViewer.NET.Parsers.Text
                 this.DataSets,
                 this.ActiveDataset,
                 null
-            ).ExpressionAsInt();
+            );
 
             this.CurrentExpression.Index = match.Index;
             this.CurrentExpression.ResolvedType = typeof(char);
-            this.CurrentExpression.Value = Strings.ChrW(code);
+            this.CurrentExpression.Value = Convert.ToChar(expr);
         }
     }
 }

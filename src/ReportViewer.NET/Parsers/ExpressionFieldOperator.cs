@@ -91,6 +91,7 @@ namespace ReportViewer.NET.Parsers
         FormatCurrency,
         RowNumber,
         CBool,
+        CChar,
         CInt
     }
 }

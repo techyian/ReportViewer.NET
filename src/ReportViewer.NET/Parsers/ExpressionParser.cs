@@ -254,6 +254,14 @@ namespace ReportViewer.NET.Parsers
 
                 found = true;
             }
+            else if (currentString.TrimStart('\'').TrimEnd('\'').Length == 1 && char.TryParse(currentString.TrimStart('\'').TrimEnd('\''), out var parsedChar))
+            {
+                // We found a double value, we can parse this and get out of the loop.
+                currentExpression.ResolvedType = typeof(char);
+                currentExpression.Operator = ExpressionFieldOperator.None;
+                currentExpression.Value = parsedChar;
+                found = true;
+            }
             else
             {
                 // Take char by char and see if we can extract anything useful. If not, dump to a string and get out of loop.
@@ -311,6 +319,14 @@ namespace ReportViewer.NET.Parsers
                         found = true;
                         
                         break;
+                    }
+                    else if (split[i].TrimStart('\'').TrimEnd('\'').Length == 1 && char.TryParse(split[i].TrimStart('\'').TrimEnd('\''), out var parsedSplitChar))
+                    {
+                        // We found a double value, we can parse this and get out of the loop.
+                        currentExpression.ResolvedType = typeof(char);
+                        currentExpression.Operator = ExpressionFieldOperator.None;
+                        currentExpression.Value = parsedSplitChar;
+                        found = true;
                     }
                 }
 
@@ -1054,6 +1070,15 @@ namespace ReportViewer.NET.Parsers
                 var cBoolParser = new CBoolParser(currentString, ExpressionFieldOperator.CBool, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
                 cBoolParser.Parse();
                 proposedString = cBoolParser.GetProposedString();
+            }
+
+            if (CCharParser.CCharRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || CCharParser.CCharRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                var cCharParser = new CCharParser(currentString, ExpressionFieldOperator.CChar, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
+                cCharParser.Parse();
+                proposedString = cCharParser.GetProposedString();
             }
 
             if (CIntParser.CIntRegex.IsMatch(currentString) &&
