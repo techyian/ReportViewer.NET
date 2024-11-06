@@ -13,8 +13,8 @@ namespace ReportViewer.NET.Parsers
         public static Regex GenerateMultiParamParserRegex(string parserName)
         {
             // Credit to: https://stackoverflow.com/a/35271017
-            // Ensures correct number of opening/closing braces are respected.
-            var pattern = "(?:\\(*?)(?i:PARSERNAME?)\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)".Replace("PARSERNAME", parserName);
+            // Ensures correct number of opening/closing braces are respected.            
+            var pattern = "(?:)(?i:PARSERNAME?)\\((?>\\((?<c>)|[^()]+|\\)(?<-c>))*(?(c)(?!))\\)".Replace("PARSERNAME", parserName);
             
             return new Regex(pattern, RegexOptions.IgnoreCase);
         }

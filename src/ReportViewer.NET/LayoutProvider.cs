@@ -381,7 +381,14 @@ namespace ReportViewer.NET
                 {
                     using (var conn = new SqlConnection(connString))
                     {
-                        results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
+                        // TODO: Log error.
+                        try
+                        {
+                            results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
+                        }
+                        catch
+                        {
+                        }                            
                     }
                 }
             }
@@ -390,6 +397,7 @@ namespace ReportViewer.NET
                 // We can run the query as no user fields are required.
                 using (var conn = new SqlConnection(connString))
                 {
+                    // TODO: Log error.
                     try
                     {
                         results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);

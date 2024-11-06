@@ -823,6 +823,7 @@ namespace ReportViewer.NET.Parsers
 
             if (DayParser.DayRegex.IsMatch(currentString) &&
                 ((WeekdayParser.WeekdayRegex.IsMatch(currentString) && DayParser.DayRegex.Match(currentString).Index < WeekdayParser.WeekdayRegex.Match(currentString).Index) || !WeekdayParser.WeekdayRegex.IsMatch(currentString)) &&
+                ((TodayParser.TodayRegex.IsMatch(currentString) && TodayParser.TodayRegex.Match(currentString).Index < TodayParser.TodayRegex.Match(currentString).Index) || !TodayParser.TodayRegex.IsMatch(currentString)) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DayParser.DayRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
