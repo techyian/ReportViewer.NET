@@ -1,4 +1,5 @@
 ﻿using ReportViewer.NET.DataObjects;
+using ReportViewer.NET.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,36 +25,52 @@ namespace ReportViewer.NET.Parsers.Aggregate
         {
         }
 
-        public override (Type, object) ExtractExpressionValue(string fieldName, string dataSetName)
+        public override (Type, object) ExtractExpressionValue(string matchValue, string dataSetName)
         {
-            fieldName = fieldName.ToLower();
-            IEnumerable<object> results = null;
+            IEnumerable<IDictionary<string, object>> results = null;
+            DataSet activeDataset = null;
 
-            if (DataSetResults != null)
+            if (!string.IsNullOrEmpty(dataSetName))
             {
-                results = DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);                                
+                var dataSet = DataSets.FirstOrDefault(ds => ds.Name == dataSetName);
+                activeDataset = dataSet;
+                results = dataSet.DataSetResults;
             }
             else
             {
-                var dataSet = DataSets.FirstOrDefault(ds => ds.Name == dataSetName);
-
-                if (dataSet != null && dataSet.DataSetResults != null)
-                {
-                    results = dataSet.DataSetResults.Where(dsr => dsr.ContainsKey(fieldName)).Select(dsr => dsr[fieldName]);                    
-                }
+                activeDataset = this.ActiveDataset;
+                results = DataSetResults;
             }
 
-            if (results.Count() > 0)
+            if (results != null && results.Count() > 0)
             {
-                var first = results.First();
+                var first = this.Report.Parser.ParseReportExpressionString(
+                    matchValue,
+                    results,
+                    results.First(),
+                    this.CurrentRowNumber,
+                    this.DataSets,
+                    activeDataset,
+                    null
+                );
 
                 if (first is decimal)
                 {
                     decimal total = 0;
 
-                    foreach (var res in results)
+                    total += (decimal)first;
+
+                    for (var i = 1; i < results.Count(); i++)
                     {
-                        total += (decimal)res;
+                        total += this.Report.Parser.ParseReportExpressionString(
+                            matchValue,
+                            results,
+                            results.ElementAt(i),
+                            this.CurrentRowNumber,
+                            this.DataSets,
+                            activeDataset,
+                            null
+                        ).ExpressionAsDecimal();
                     }
 
                     return (typeof(decimal), total);
@@ -62,9 +79,19 @@ namespace ReportViewer.NET.Parsers.Aggregate
                 {
                     double total = 0;
 
-                    foreach (var res in results)
+                    total += (double)first;
+
+                    for (var i = 1; i < results.Count(); i++)
                     {
-                        total += (double)res;
+                        total += this.Report.Parser.ParseReportExpressionString(
+                            matchValue,
+                            results,
+                            results.ElementAt(i),
+                            this.CurrentRowNumber,
+                            this.DataSets,
+                            activeDataset,
+                            null
+                        ).ExpressionAsDouble();
                     }
 
                     return (typeof(double), total);
@@ -74,9 +101,19 @@ namespace ReportViewer.NET.Parsers.Aggregate
                     // Fallback and parse on long.
                     long total = 0;
 
-                    foreach (var res in results)
+                    total += first.ExpressionAsLong();
+
+                    for (var i = 1; i < results.Count(); i++)
                     {
-                        total += long.Parse(res.ToString());
+                        total += this.Report.Parser.ParseReportExpressionString(
+                            matchValue,
+                            results,
+                            results.ElementAt(i),
+                            this.CurrentRowNumber,
+                            this.DataSets,
+                            activeDataset,
+                            null
+                        ).ExpressionAsLong();
                     }
 
                     return (typeof(long), total);
@@ -85,39 +122,35 @@ namespace ReportViewer.NET.Parsers.Aggregate
 
             return (typeof(double), 0);
         }
-
+                
         public override void Parse()
-        {
-            // TODO: Handle other sum expressions not using fields??
-            var sumMatch = SumRegex.Match(CurrentString);
-            var sumValue = sumMatch.Value;
+        {            
+            var match = SumRegex.Match(CurrentString);
+            var matchValue = match.Value;
 
-            if (FieldParser.FieldDatasetRegex.IsMatch(sumValue))
+            // Remove the surrounding Sum including open & close brace so we can inspect inner members and see if they too contain program flow expressions. 
+            matchValue = matchValue.MatchValueSubString(4);
+
+            var foundParameters = this.ParseParenthesis(matchValue);
+
+            if (foundParameters.Item2.Count < 1 || foundParameters.Item2.Count > 2)
             {
-                var fieldDataSetMatch = FieldParser.FieldDatasetRegex.Match(sumValue);
-                var fieldDataSetValue = fieldDataSetMatch.Value;
-                var dataSetStart = fieldDataSetValue.IndexOf('"');
-
-                if (dataSetStart > -1)
-                {
-                    var dataSetEnd = fieldDataSetValue.IndexOf('"', dataSetStart + 1); // Add 1 so we don't find the same quote as dataSetStart.
-                    var dataSetName = fieldDataSetValue.Substring(dataSetStart + 1, dataSetEnd - dataSetStart - 1);
-                    CurrentExpression.DataSetName = dataSetName;
-                }
+                // The Sum function expects at least 1 parameters but no more than 2.
+                return;
             }
 
-            if (FieldParser.FieldRegex.IsMatch(sumValue))
+            if (foundParameters.Item2.Count == 1)
             {
-                var match = FieldParser.FieldRegex.Match(CurrentString);
-                var matchString = match.Value;
+                // Use main dataset.
+                (Type, object) extractedValue = ExtractExpressionValue(matchValue, CurrentExpression.DataSetName);
 
-                var fieldsIdx = matchString.IndexOf("Fields!");
-                var fieldEnd = matchString.IndexOf('.', fieldsIdx);
-                var fieldName = matchString.Substring(fieldsIdx + 7, fieldEnd - (fieldsIdx + 7)).ToLower();
-
-                CurrentExpression.Field = fieldName;
-
-                (Type, object) extractedValue = ExtractExpressionValue(fieldName, CurrentExpression.DataSetName);
+                CurrentExpression.ResolvedType = extractedValue.Item1;
+                CurrentExpression.Value = extractedValue.Item2;
+            }
+            else
+            {
+                // Find specific dataset.
+                (Type, object) extractedValue = ExtractExpressionValue(matchValue, foundParameters.Item2[1]);
 
                 CurrentExpression.ResolvedType = extractedValue.Item1;
                 CurrentExpression.Value = extractedValue.Item2;

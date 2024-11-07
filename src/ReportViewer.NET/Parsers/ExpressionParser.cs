@@ -6,6 +6,7 @@ using ReportViewer.NET.Parsers.BuiltInFields;
 using ReportViewer.NET.Parsers.Conversion;
 using ReportViewer.NET.Parsers.DateAndTime;
 using ReportViewer.NET.Parsers.Inspection;
+using ReportViewer.NET.Parsers.Math;
 using ReportViewer.NET.Parsers.Misc;
 using ReportViewer.NET.Parsers.ProgramFlow;
 using ReportViewer.NET.Parsers.Text;
@@ -13,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace ReportViewer.NET.Parsers
@@ -43,7 +45,7 @@ namespace ReportViewer.NET.Parsers
         };
 
         private ReportRDL _report;
-                
+        
         public ExpressionParser(ReportRDL report)
         {
             _report = report;
@@ -96,9 +98,12 @@ namespace ReportViewer.NET.Parsers
                 // As we're processing an expression, clear out newlines and tabs.
                 tablixText = tablixText.Replace("\n", "").Replace("\t", "");
             }
-            
+
+            tablixText = WebUtility.HtmlDecode(tablixText);
+
             string currentString = tablixText.TrimStart('=').TrimStart();
             List<ReportExpression> expressions = new List<ReportExpression>();
+            BaseParser nextParser = null;
 
             // TODO: Parse built in expressions, e.g. Globals.
 
@@ -107,38 +112,50 @@ namespace ReportViewer.NET.Parsers
                 var currentExpression = new ReportExpression();
                 var proposedString = string.Empty;
 
-                this.SearchBuiltInFields(currentString, currentExpression, ref proposedString);
-                this.SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
+                this.SearchBuiltInFields(currentString, currentExpression, ref nextParser);
+                this.SearchAggregateFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
                 this.SearchArithmeticOperators(currentString, currentExpression, expressions, ref proposedString);
                 this.SearchComparisonOperators(currentString, currentExpression, ref proposedString);
-                this.SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
-                this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
+                this.SearchProgramFlowFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
+                this.SearchInspectionFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
                 this.SearchLogicalOperators(currentString, currentExpression, ref proposedString);
-                this.SearchTextFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
-                this.SearchDateTimeFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
-                this.SearchMiscFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
-                this.SearchConversionFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref proposedString);
+                this.SearchTextFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
+                this.SearchDateTimeFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
+                this.SearchMathFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
+                this.SearchMiscFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
+                this.SearchConversionFunctions(currentString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, ref nextParser);
 
                 if (FieldParser.FieldRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == ExpressionFieldOperator.None || FieldParser.FieldRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var fieldParser = new FieldParser(currentString, ExpressionFieldOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                    fieldParser.Parse();
-                    proposedString = fieldParser.GetProposedString();
+                    nextParser = new FieldParser(currentString, ExpressionFieldOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                    
                 }
 
                 if (ParameterParser.ParameterRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == ExpressionFieldOperator.None || ParameterParser.ParameterRegex.Match(currentString).Index < currentExpression.Index)
                 )
                 {
-                    var paramParser = new ParameterParser(currentString, ExpressionFieldOperator.Parameter, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                    paramParser.Parse();
-                    proposedString = paramParser.GetProposedString();
+                    nextParser = new ParameterParser(currentString, ExpressionFieldOperator.Parameter, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                    
+                }
+
+                if (ArithmeticOperators.Contains(currentExpression.Operator) ||
+                    ComparisonOperators.Contains(currentExpression.Operator) ||
+                    ConcatenationOperators.Contains(currentExpression.Operator) ||
+                    LogicalOperators.Contains(currentExpression.Operator))
+                {
+                    nextParser = null;
+                }
+
+                if (nextParser != null)
+                {
+                    nextParser.Parse();
+                    proposedString = nextParser.GetProposedString();
+                    nextParser = null;
                 }
 
                 if ((currentExpression.Operator != ExpressionFieldOperator.None && currentExpression.Index > 0) || currentExpression.Operator == ExpressionFieldOperator.None)
-                {
+                {                    
                     // We've resolved an expression but it isn't at the beginning of our string. Try and extract textual/numeric content at the start.
                     if (currentString.TrimStart().StartsWith('"'))
                     {
@@ -153,53 +170,45 @@ namespace ReportViewer.NET.Parsers
 
                         // Clear up any whitespace not removed by statement above.
                         proposedString = proposedString.TrimStart();
-
-
-                    }
-                    // What we've been left with isn't in a string literal. First try to unwrap any nested parenthesis before attempting parsing.
-                    else if (currentString.StartsWith('('))
-                    {                        
-                        var openingParens = 1;
-                        var openingIndx = currentString.IndexOf("(");
-                        var closingIdx = -1;
-
-                        for (var i = openingIndx + 1; i < currentString.Length; i++)
-                        {
-                            if (currentString[i] == '(')
-                            {
-                                openingParens++;
-                            }
-
-                            if (currentString[i] == ')')
-                            {
-                                openingParens--;
-                            }
-
-                            if (openingParens == 0)
-                            {
-                                closingIdx = i;
-                            }
-                        }
-
-                        if (closingIdx == -1)
-                        {
-                            throw new InvalidOperationException("Expression parenthesis mismatch. Check data.");
-                        }
-
-                        var nestedStr = currentString.Substring(openingIndx + 1, closingIdx - (openingIndx + 1));                       
-                        var nestedExpr = this.ParseReportExpressionString(nestedStr, dataSetResults, values, currentRowNumber, dataSets, activeDataset, null);
-
-                        this.TryExtractExpression(nestedExpr.ExpressionAsString(), currentExpression, expressions, out var ps);
-
-                        currentExpression.NestedParenthesis = true;
-
-                        proposedString = ps;
                     }
                     else
                     {
-                        this.TryExtractExpression(currentString, currentExpression, expressions, out var ps);
+                        // Dump out expression until next resolved function.
+                        //currentExpression.ResolvedType = typeof(string);
 
-                        proposedString = ps;
+                        if (currentExpression.Index > -1)
+                        {
+                            currentExpression.Value = currentString.Substring(0, currentExpression.Index);
+                            proposedString = currentString.Substring(currentExpression.Index, currentString.Length - currentExpression.Index);
+                        }
+                        else
+                        {
+                            currentExpression.Value = currentString;
+                            proposedString = "";
+                        }
+
+                        // See if DynamicExpresso can parse.
+                        object dynFound = null;
+                        var interpreter = new Interpreter();
+                        try
+                        {
+                            dynFound = interpreter.Eval(currentExpression.Value.ToString());
+                        }
+                        catch
+                        {
+                        }
+
+                        if (dynFound == null)
+                        {                            
+                            currentExpression.ResolvedType = typeof(object);                            
+                        }
+                        else
+                        {
+                            currentExpression.ResolvedType = dynFound.GetType();
+                            currentExpression.Value = dynFound;
+                        }
+
+                        currentExpression.Operator = ExpressionFieldOperator.None;
                     }
                 }
 
@@ -210,196 +219,28 @@ namespace ReportViewer.NET.Parsers
             return expressions;
         }
 
-        private bool TryExtractExpression(string currentString, ReportExpression currentExpression, List<ReportExpression> currentExpressions, out string proposedString)
-        {
-            // When looking for remaining numerical expressions, first check for signed integer, then double for floating point and finally dump out to string.
-            // We're only interested in decimal if either we've received a decimal from DB or user has explicitly casted using CDec.
-            var lastExpression = currentExpressions.LastOrDefault();
-            var found = false;
-            proposedString = string.Empty;
-            
-            if (long.TryParse(currentString, out var parsedLong))
-            {
-                // We found an integer value, we can parse this and get out of the loop.
-                currentExpression.ResolvedType = typeof(long);
-                currentExpression.Operator = ExpressionFieldOperator.None;
-
-                if (lastExpression != null && lastExpression.Operator == ExpressionFieldOperator.Negative)
-                {
-                    currentExpression.Value = -parsedLong;
-                    currentExpressions.Remove(lastExpression);
-                }
-                else
-                {
-                    currentExpression.Value = parsedLong;
-                }
-
-                found = true;
-            }            
-            else if (double.TryParse(currentString, CultureInfo.InvariantCulture, out var parsedDouble))
-            {
-                // We found a double value, we can parse this and get out of the loop.
-                currentExpression.ResolvedType = typeof(double);
-                currentExpression.Operator = ExpressionFieldOperator.None;
-
-                if (lastExpression != null && lastExpression.Operator == ExpressionFieldOperator.Negative)
-                {
-                    currentExpression.Value = -parsedDouble;
-                    currentExpressions.Remove(lastExpression);
-                }
-                else
-                {
-                    currentExpression.Value = parsedDouble;
-                }
-
-                found = true;
-            }
-            else if (bool.TryParse(currentString, out var parsedBool))
-            {
-                // We found a boolean value, we can parse this and get out of the loop.
-                currentExpression.ResolvedType = typeof(bool);
-                currentExpression.Operator = ExpressionFieldOperator.None;
-                currentExpression.Value = parsedBool;
-                found = true;
-            }
-            else
-            {
-                // Take char by char and see if we can extract anything useful. If not, dump to a string and get out of loop.
-                var split = currentString.TrimStart().Split(' ');
-                
-                for (var i = 0; i < split.Length; i++)
-                {
-                    // Add in other possibilities? What about boolean expression?
-                    if (long.TryParse(split[i], out var parsedSplitLong))
-                    {
-                        currentExpression.ResolvedType = typeof(long);
-                        currentExpression.Operator = ExpressionFieldOperator.None;
-
-                        if (lastExpression != null && lastExpression.Operator == ExpressionFieldOperator.Negative)
-                        {
-                            currentExpression.Value = -parsedSplitLong;
-                            currentExpressions.Remove(lastExpression);
-                        }
-                        else
-                        {
-                            currentExpression.Value = parsedSplitLong;
-                        }
-
-                        currentExpression.Index = currentString.IndexOf(split[i]);
-                        proposedString = currentString.Substring(currentExpression.Index + parsedSplitLong.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitLong.ToString().Length);
-
-                        // Clear up any whitespace not removed by statement above.
-                        proposedString = proposedString.TrimStart();
-
-                        found = true;
-                    
-                        break;
-                    }                    
-                    else if (double.TryParse(split[i], CultureInfo.InvariantCulture, out var parsedSplitDouble))
-                    {
-                        currentExpression.ResolvedType = typeof(double);
-                        currentExpression.Operator = ExpressionFieldOperator.None;
-
-                        if (lastExpression != null && lastExpression.Operator == ExpressionFieldOperator.Negative)
-                        {
-                            currentExpression.Value = -parsedSplitDouble;
-                            currentExpressions.Remove(lastExpression);
-                        }
-                        else
-                        {
-                            currentExpression.Value = parsedSplitDouble;
-                        }
-
-                        currentExpression.Index = currentString.IndexOf(split[i]);
-                        proposedString = currentString.Substring(currentExpression.Index + parsedSplitDouble.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitDouble.ToString().Length);
-
-                        // Clear up any whitespace not removed by statement above.
-                        proposedString = proposedString.TrimStart();
-
-                        found = true;
-                        
-                        break;
-                    }
-                    else if (bool.TryParse(currentString, out var parsedSplitBool))
-                    {
-                        // We found a boolean value, we can parse this and get out of the loop.
-                        currentExpression.ResolvedType = typeof(bool);
-                        currentExpression.Operator = ExpressionFieldOperator.None;
-                        currentExpression.Value = parsedSplitBool;
-
-                        proposedString = currentString.Substring(currentExpression.Index + parsedSplitBool.ToString().Length, currentString.Length - currentExpression.Index - parsedSplitBool.ToString().Length);
-
-                        // Clear up any whitespace not removed by statement above.
-                        proposedString = proposedString.TrimStart();
-
-                        found = true;
-
-                        break;
-                    }                    
-                }
-
-                if (!found)
-                {
-                    // See if DynamicExpresso can parse.
-                    object dynFound = null;
-                    var interpreter = new Interpreter();
-                    try
-                    {
-                        dynFound = interpreter.Eval(currentString);
-                    }
-                    catch
-                    {
-                    }
-
-                    if (dynFound == null)
-                    {
-                        // Fallback on string.
-                        currentExpression.ResolvedType = typeof(string);
-                        currentExpression.Operator = ExpressionFieldOperator.None;
-                        currentExpression.Value = currentString.TrimStart('"').TrimEnd('"');
-                    }
-                    else
-                    {
-                        currentExpression.ResolvedType = dynFound.GetType();
-                        currentExpression.Operator = ExpressionFieldOperator.None;
-                        currentExpression.Value = dynFound;
-                    }
-
-                    proposedString = "";
-                }
-            }
-
-            return found;
-        }
-
         private void SearchBuiltInFields(
             string currentString,
             ReportExpression currentExpression,
-            ref string proposedString
+            ref BaseParser nextParser
             )
         {
             if (ExecutionTimeParser.ExecutionTimeRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || ExecutionTimeParser.ExecutionTimeRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var executionTimeParser = new ExecutionTimeParser(currentString, ExpressionFieldOperator.ExecutionTime, currentExpression, null, null, 0, null, _report);
-                executionTimeParser.Parse();
-                proposedString = executionTimeParser.GetProposedString();
+                nextParser = new ExecutionTimeParser(currentString, ExpressionFieldOperator.ExecutionTime, currentExpression, null, null, 0, null, _report);                
             }
 
             if (LanguageParser.LanguageRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LanguageParser.LanguageRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var languageParser = new LanguageParser(currentString, ExpressionFieldOperator.Language, currentExpression, null, null, 0, null, _report);
-                languageParser.Parse();
-                proposedString = languageParser.GetProposedString();
+                nextParser = new LanguageParser(currentString, ExpressionFieldOperator.Language, currentExpression, null, null, 0, null, _report);                
             }
 
             if (ReportNameParser.ReportNameRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || ReportNameParser.ReportNameRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var reportNameParser = new ReportNameParser(currentString, ExpressionFieldOperator.ReportName, currentExpression, null, null, 0, null, _report);
-                reportNameParser.Parse();
-                proposedString = reportNameParser.GetProposedString();
+                nextParser = new ReportNameParser(currentString, ExpressionFieldOperator.ReportName, currentExpression, null, null, 0, null, _report);                
             }
         }
 
@@ -425,20 +266,24 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("-") < currentExpression.Index)
             )
             {
-                var idx = currentString.IndexOf("-");                
+                var idx = currentString.IndexOf("-");
                 var lastExpression = currentExpressions.LastOrDefault();
 
-                currentExpression.Index = idx;
-                proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
-
-                if ((lastExpression != null && lastExpression.Value == null) || lastExpression == null)
-                {                    
-                    currentExpression.Operator = ExpressionFieldOperator.Negative;
-                }
-                else
-                {                    
+                if (lastExpression != null && lastExpression.Value != null)
+                {
+                    currentExpression.Index = idx;
+                    proposedString = currentString.Substring(idx + 1, currentString.Length - idx - 1).TrimStart();
                     currentExpression.Operator = ExpressionFieldOperator.Subtract;
                 }
+
+                //if ((lastExpression != null && lastExpression.Value == null) || lastExpression == null)
+                //{                    
+                //    currentExpression.Operator = ExpressionFieldOperator.Negative;
+                //}
+                //else
+                //{                    
+                //    currentExpression.Operator = ExpressionFieldOperator.Subtract;
+                //}
             }
 
             if (currentString.IndexOf("*") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("*")) &&
@@ -526,9 +371,11 @@ namespace ReportViewer.NET.Parsers
             }
 
             if (currentString.IndexOf("=") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("=")) &&
+                ((currentString.IndexOfIgnore("<=") > -1 && currentString.IndexOfIgnore("=") < currentString.IndexOfIgnore("<=")) || currentString.IndexOfIgnore("<=") == -1) &&
+                ((currentString.IndexOfIgnore(">=") > -1 && currentString.IndexOfIgnore("=") < currentString.IndexOfIgnore(">=")) || currentString.IndexOfIgnore(">=") == -1) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("=") < currentExpression.Index)
             )
-            {
+            {               
                 var idx = currentString.IndexOf("=");
                 currentExpression.Index = idx;
                 currentExpression.Operator = ExpressionFieldOperator.Equals;
@@ -539,8 +386,8 @@ namespace ReportViewer.NET.Parsers
             if (currentString.IndexOf("&") > -1 && !WithinStringLiteral(currentString, currentString.IndexOf("&")) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOf("&") < currentExpression.Index)
             )
-            {
-                var idx = currentString.IndexOf("&");
+            {                
+                var idx = currentString.IndexOf("&");                
                 currentExpression.Index = idx;
                 currentExpression.Operator = ExpressionFieldOperator.ConcatAnd;
 
@@ -574,8 +421,8 @@ namespace ReportViewer.NET.Parsers
                 ((currentString.IndexOfIgnore("IsNothing") > -1 && currentString.IndexOfIgnore("Is") < currentString.IndexOfIgnore("IsNothing")) || currentString.IndexOfIgnore("IsNothing") == -1) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || currentString.IndexOfIgnore("Is") < currentExpression.Index)
             )
-            {
-                var idx = currentString.IndexOfIgnore("Is");
+            {                
+                var idx = currentString.IndexOfIgnore("Is");                
                 currentExpression.Index = idx;
                 currentExpression.Operator = ExpressionFieldOperator.Is;
 
@@ -586,7 +433,7 @@ namespace ReportViewer.NET.Parsers
         private void SearchConcatenationOperators(
             string currentString,
             ReportExpression currentExpression,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
         }
@@ -635,115 +482,91 @@ namespace ReportViewer.NET.Parsers
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
             if (AscParser.AscRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || AscParser.AscRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var ascParser = new AscParser(currentString, ExpressionFieldOperator.Asc, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                ascParser.Parse();
-                proposedString = ascParser.GetProposedString();
+                nextParser = new AscParser(currentString, ExpressionFieldOperator.Asc, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
             
             if (AscWParser.AscWRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || AscWParser.AscWRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var ascWParser = new AscWParser(currentString, ExpressionFieldOperator.AscW, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                ascWParser.Parse();
-                proposedString = ascWParser.GetProposedString();
+                nextParser = new AscWParser(currentString, ExpressionFieldOperator.AscW, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (ChrParser.ChrRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || ChrParser.ChrRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var chrParser = new ChrParser(currentString, ExpressionFieldOperator.Chr, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                chrParser.Parse();
-                proposedString = chrParser.GetProposedString();
+                nextParser = new ChrParser(currentString, ExpressionFieldOperator.Chr, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (ChrWParser.ChrWRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || ChrWParser.ChrWRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var chrWParser = new ChrWParser(currentString, ExpressionFieldOperator.ChrW, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                chrWParser.Parse();
-                proposedString = chrWParser.GetProposedString();
+                nextParser = new ChrWParser(currentString, ExpressionFieldOperator.ChrW, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (FormatParser.FormatRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || FormatParser.FormatRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var formatParser = new FormatParser(currentString, ExpressionFieldOperator.Format, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                formatParser.Parse();
-                proposedString = formatParser.GetProposedString();
+                nextParser = new FormatParser(currentString, ExpressionFieldOperator.Format, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (FormatNumberParser.FormatNumberRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || FormatNumberParser.FormatNumberRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var formatNumberParser = new FormatNumberParser(currentString, ExpressionFieldOperator.FormatNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                formatNumberParser.Parse();
-                proposedString = formatNumberParser.GetProposedString();
+                nextParser = new FormatNumberParser(currentString, ExpressionFieldOperator.FormatNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
             }
 
             if (FormatPercentParser.FormatPercentRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || FormatPercentParser.FormatPercentRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var formatPercentParser = new FormatPercentParser(currentString, ExpressionFieldOperator.FormatPercent, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                formatPercentParser.Parse();
-                proposedString = formatPercentParser.GetProposedString();
+                nextParser = new FormatPercentParser(currentString, ExpressionFieldOperator.FormatPercent, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (GetCharParser.GetCharRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || GetCharParser.GetCharRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var getCharParser = new GetCharParser(currentString, ExpressionFieldOperator.GetChar, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                getCharParser.Parse();
-                proposedString = getCharParser.GetProposedString();
+                nextParser = new GetCharParser(currentString, ExpressionFieldOperator.GetChar, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (InStrParser.InStrRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || InStrParser.InStrRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var inStrParser = new InStrParser(currentString, ExpressionFieldOperator.InStr, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                inStrParser.Parse();
-                proposedString = inStrParser.GetProposedString();
+                nextParser = new InStrParser(currentString, ExpressionFieldOperator.InStr, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (InStrRevParser.InStrRevRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || InStrRevParser.InStrRevRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var inStrRevParser = new InStrRevParser(currentString, ExpressionFieldOperator.InStrRev, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                inStrRevParser.Parse();
-                proposedString = inStrRevParser.GetProposedString();
+                nextParser = new InStrRevParser(currentString, ExpressionFieldOperator.InStrRev, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (LeftParser.LeftRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || LeftParser.LeftRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var leftParser = new LeftParser(currentString, ExpressionFieldOperator.Left, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                leftParser.Parse();
-                proposedString = leftParser.GetProposedString();
+                nextParser = new LeftParser(currentString, ExpressionFieldOperator.Left, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (FormatCurrencyParser.FormatCurrencyRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || FormatCurrencyParser.FormatCurrencyRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var fcParser = new FormatCurrencyParser(currentString, ExpressionFieldOperator.FormatCurrency, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                fcParser.Parse();
-                proposedString = fcParser.GetProposedString();
+                nextParser = new FormatCurrencyParser(currentString, ExpressionFieldOperator.FormatCurrency, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
         }
 
@@ -755,70 +578,56 @@ namespace ReportViewer.NET.Parsers
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
             if (CDateParser.CDateRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || CDateParser.CDateRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var cDateParser = new CDateParser(currentString, ExpressionFieldOperator.CDate, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                cDateParser.Parse();
-                proposedString = cDateParser.GetProposedString();
+                nextParser = new CDateParser(currentString, ExpressionFieldOperator.CDate, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
             }
 
             if (MonthNameParser.MonthNameRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || MonthNameParser.MonthNameRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var mnParser = new MonthNameParser(currentString, ExpressionFieldOperator.MonthName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                mnParser.Parse();
-                proposedString = mnParser.GetProposedString();
+                nextParser = new MonthNameParser(currentString, ExpressionFieldOperator.MonthName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (DateAddParser.DateAddRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DateAddParser.DateAddRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dateAddParser = new DateAddParser(currentString, ExpressionFieldOperator.DateAdd, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                dateAddParser.Parse();
-                proposedString = dateAddParser.GetProposedString();
+                nextParser = new DateAddParser(currentString, ExpressionFieldOperator.DateAdd, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (DateDiffParser.DateDiffRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DateDiffParser.DateDiffRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dateDiffParser = new DateDiffParser(currentString, ExpressionFieldOperator.DateDiff, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                dateDiffParser.Parse();
-                proposedString = dateDiffParser.GetProposedString();
+                nextParser = new DateDiffParser(currentString, ExpressionFieldOperator.DateDiff, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (DatePartParser.DatePartRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DatePartParser.DatePartRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var datePartParser = new DatePartParser(currentString, ExpressionFieldOperator.DatePart, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                datePartParser.Parse();
-                proposedString = datePartParser.GetProposedString();
+                nextParser = new DatePartParser(currentString, ExpressionFieldOperator.DatePart, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (DateSerialParser.DateSerialRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DateSerialParser.DateSerialRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dateSerialParser = new DateSerialParser(currentString, ExpressionFieldOperator.DateSerial, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                dateSerialParser.Parse();
-                proposedString = dateSerialParser.GetProposedString();
+                nextParser = new DateSerialParser(currentString, ExpressionFieldOperator.DateSerial, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (DateStringParser.DateStringRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DateStringParser.DateStringRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dateStringParser = new DateStringParser(currentString, ExpressionFieldOperator.DateString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                dateStringParser.Parse();
-                proposedString = dateStringParser.GetProposedString();
+                nextParser = new DateStringParser(currentString, ExpressionFieldOperator.DateString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (DayParser.DayRegex.IsMatch(currentString) &&
@@ -827,159 +636,139 @@ namespace ReportViewer.NET.Parsers
                 (currentExpression.Operator == ExpressionFieldOperator.None || DayParser.DayRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dayParser = new DayParser(currentString, ExpressionFieldOperator.Day, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                dayParser.Parse();
-                proposedString = dayParser.GetProposedString();
+                nextParser = new DayParser(currentString, ExpressionFieldOperator.Day, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (NowParser.NowRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || NowParser.NowRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var nowParser = new NowParser(currentString, ExpressionFieldOperator.Now, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                nowParser.Parse();
-                proposedString = nowParser.GetProposedString();
+                nextParser = new NowParser(currentString, ExpressionFieldOperator.Now, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (DateValueParser.DateValueRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || DateValueParser.DateValueRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dvParser = new DateValueParser(currentString, ExpressionFieldOperator.DateValue, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                dvParser.Parse();
-                proposedString = dvParser.GetProposedString();
+                nextParser = new DateValueParser(currentString, ExpressionFieldOperator.DateValue, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (FormatDateTimeParser.DateFormatRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || FormatDateTimeParser.DateFormatRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var dfParser = new FormatDateTimeParser(currentString, ExpressionFieldOperator.DateFormat, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                dfParser.Parse();
-                proposedString = dfParser.GetProposedString();
+                nextParser = new FormatDateTimeParser(currentString, ExpressionFieldOperator.DateFormat, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (HourParser.HourRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || HourParser.HourRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var hourParser = new HourParser(currentString, ExpressionFieldOperator.Hour, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                hourParser.Parse();
-                proposedString = hourParser.GetProposedString();
+                nextParser = new HourParser(currentString, ExpressionFieldOperator.Hour, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (MinuteParser.MinuteRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || MinuteParser.MinuteRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var minuteParser = new MinuteParser(currentString, ExpressionFieldOperator.Minute, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                minuteParser.Parse();
-                proposedString = minuteParser.GetProposedString();
+                nextParser = new MinuteParser(currentString, ExpressionFieldOperator.Minute, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (MonthParser.MonthRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || MonthParser.MonthRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var monthParser = new MonthParser(currentString, ExpressionFieldOperator.Month, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                monthParser.Parse();
-                proposedString = monthParser.GetProposedString();
+                nextParser = new MonthParser(currentString, ExpressionFieldOperator.Month, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (SecondParser.SecondRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || SecondParser.SecondRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var secondParser = new SecondParser(currentString, ExpressionFieldOperator.Second, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                secondParser.Parse();
-                proposedString = secondParser.GetProposedString();
+                nextParser = new SecondParser(currentString, ExpressionFieldOperator.Second, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (TimeOfDayParser.TimeOfDayRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || TimeOfDayParser.TimeOfDayRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var todParser = new TimeOfDayParser(currentString, ExpressionFieldOperator.TimeOfDay, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                todParser.Parse();
-                proposedString = todParser.GetProposedString();
+                nextParser = new TimeOfDayParser(currentString, ExpressionFieldOperator.TimeOfDay, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (TimerParser.TimerRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || TimerParser.TimerRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var timerParser = new TimerParser(currentString, ExpressionFieldOperator.Timer, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                timerParser.Parse();
-                proposedString = timerParser.GetProposedString();
+                nextParser = new TimerParser(currentString, ExpressionFieldOperator.Timer, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (TimeSerialParser.TimeSerialRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || TimeSerialParser.TimeSerialRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var timeSerialParser = new TimeSerialParser(currentString, ExpressionFieldOperator.TimeSerial, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                timeSerialParser.Parse();
-                proposedString = timeSerialParser.GetProposedString();
+                nextParser = new TimeSerialParser(currentString, ExpressionFieldOperator.TimeSerial, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (TimeStringParser.TimeStringRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || TimeStringParser.TimeStringRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var timeStringParser = new TimeStringParser(currentString, ExpressionFieldOperator.TimeString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                timeStringParser.Parse();
-                proposedString = timeStringParser.GetProposedString();
+                nextParser = new TimeStringParser(currentString, ExpressionFieldOperator.TimeString, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (TimeValueParser.TimeValueRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || TimeValueParser.TimeValueRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var timeValueParser = new TimeValueParser(currentString, ExpressionFieldOperator.TimeValue, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                timeValueParser.Parse();
-                proposedString = timeValueParser.GetProposedString();
+                nextParser = new TimeValueParser(currentString, ExpressionFieldOperator.TimeValue, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (TodayParser.TodayRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || TodayParser.TodayRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var todayParser = new TodayParser(currentString, ExpressionFieldOperator.Today, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                todayParser.Parse();
-                proposedString = todayParser.GetProposedString();
+                nextParser = new TodayParser(currentString, ExpressionFieldOperator.Today, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (WeekdayParser.WeekdayRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || WeekdayParser.WeekdayRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var weekdayParser = new WeekdayParser(currentString, ExpressionFieldOperator.Weekday, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                weekdayParser.Parse();
-                proposedString = weekdayParser.GetProposedString();
+                nextParser = new WeekdayParser(currentString, ExpressionFieldOperator.Weekday, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (WeekdayNameParser.WeekdayNameRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || WeekdayNameParser.WeekdayNameRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var weekdayNameParser = new WeekdayNameParser(currentString, ExpressionFieldOperator.WeekdayName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                weekdayNameParser.Parse();
-                proposedString = weekdayNameParser.GetProposedString();
+                nextParser = new WeekdayNameParser(currentString, ExpressionFieldOperator.WeekdayName, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (YearParser.YearRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || YearParser.YearRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var yearParser = new YearParser(currentString, ExpressionFieldOperator.Year, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                yearParser.Parse();
-                proposedString = yearParser.GetProposedString();
+                nextParser = new YearParser(currentString, ExpressionFieldOperator.Year, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
         }
 
-        private void SearchMathFunctions()
+        private void SearchMathFunctions(
+            string currentString,
+            ReportExpression currentExpression,
+            IEnumerable<IDictionary<string, object>> dataSetResults,
+            IDictionary<string, object> values,
+            int currentRowNumber,
+            IEnumerable<DataSet> dataSets,
+            DataSet activeDataset,
+            ref BaseParser nextParser
+        )
         {
-
+            if (RoundParser.RoundRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || RoundParser.RoundRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                nextParser = new RoundParser(currentString, ExpressionFieldOperator.Round, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
+            }
         }
 
         private void SearchInspectionFunctions(
@@ -990,7 +779,7 @@ namespace ReportViewer.NET.Parsers
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
             // IsArray
@@ -1001,9 +790,7 @@ namespace ReportViewer.NET.Parsers
             if (IsNothingParser.IsNothingRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || IsNothingParser.IsNothingRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var isNothingParser = new IsNothingParser(currentString, ExpressionFieldOperator.IsNothing, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                isNothingParser.Parse();
-                proposedString = isNothingParser.GetProposedString();
+                nextParser = new IsNothingParser(currentString, ExpressionFieldOperator.IsNothing, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
         }
 
@@ -1015,7 +802,7 @@ namespace ReportViewer.NET.Parsers
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
             // IIF
@@ -1025,9 +812,7 @@ namespace ReportViewer.NET.Parsers
             if (IfParser.IfRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || IfParser.IfRegex.Match(currentString).Index < currentExpression.Index))
             {
-                var ifParser = new IfParser(currentString, ExpressionFieldOperator.If, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                ifParser.Parse();
-                proposedString = ifParser.GetProposedString();
+                nextParser = new IfParser(currentString, ExpressionFieldOperator.If, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
         }
 
@@ -1039,43 +824,35 @@ namespace ReportViewer.NET.Parsers
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
             if (CountParser.CountRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == ExpressionFieldOperator.None || CountParser.CountRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var countParser = new CountParser(currentString, ExpressionFieldOperator.Count, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                countParser.Parse();
-                proposedString = countParser.GetProposedString();
+                nextParser = new CountParser(currentString, ExpressionFieldOperator.Count, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (CountDistinctParser.CountDistinctRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == ExpressionFieldOperator.None || CountDistinctParser.CountDistinctRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var countDistinctParser = new CountDistinctParser(currentString, ExpressionFieldOperator.CountDistinct, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                countDistinctParser.Parse();
-                proposedString = countDistinctParser.GetProposedString();
+                nextParser = new CountDistinctParser(currentString, ExpressionFieldOperator.CountDistinct, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (SumParser.SumRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == ExpressionFieldOperator.None || SumParser.SumRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var sumParser = new SumParser(currentString, ExpressionFieldOperator.Sum, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                sumParser.Parse();
-                proposedString = sumParser.GetProposedString();
+                nextParser = new SumParser(currentString, ExpressionFieldOperator.Sum, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (FirstParser.FirstRegex.IsMatch(currentString) &&
                     (currentExpression.Operator == ExpressionFieldOperator.None || FirstParser.FirstRegex.Match(currentString).Index < currentExpression.Index)
                 )
             {
-                var firstParser = new FirstParser(currentString, ExpressionFieldOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                firstParser.Parse();
-                proposedString = firstParser.GetProposedString();
+                nextParser = new FirstParser(currentString, ExpressionFieldOperator.Field, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
         }
 
@@ -1092,34 +869,35 @@ namespace ReportViewer.NET.Parsers
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
             if (CBoolParser.CBoolRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || CBoolParser.CBoolRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var cBoolParser = new CBoolParser(currentString, ExpressionFieldOperator.CBool, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                cBoolParser.Parse();
-                proposedString = cBoolParser.GetProposedString();
+                nextParser = new CBoolParser(currentString, ExpressionFieldOperator.CBool, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (CCharParser.CCharRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || CCharParser.CCharRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var cCharParser = new CCharParser(currentString, ExpressionFieldOperator.CChar, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                cCharParser.Parse();
-                proposedString = cCharParser.GetProposedString();
+                nextParser = new CCharParser(currentString, ExpressionFieldOperator.CChar, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
 
             if (CIntParser.CIntRegex.IsMatch(currentString) &&
                 (currentExpression.Operator == ExpressionFieldOperator.None || CIntParser.CIntRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var cIntParser = new CIntParser(currentString, ExpressionFieldOperator.CInt, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                cIntParser.Parse();
-                proposedString = cIntParser.GetProposedString();
+                nextParser = new CIntParser(currentString, ExpressionFieldOperator.CInt, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
+            }
+
+            if (CDecParser.CDecRegex.IsMatch(currentString) &&
+                (currentExpression.Operator == ExpressionFieldOperator.None || CDecParser.CDecRegex.Match(currentString).Index < currentExpression.Index)
+            )
+            {
+                nextParser = new CDecParser(currentString, ExpressionFieldOperator.CDec, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
         }
 
@@ -1131,16 +909,14 @@ namespace ReportViewer.NET.Parsers
             int currentRowNumber,
             IEnumerable<DataSet> dataSets,
             DataSet activeDataset,
-            ref string proposedString
+            ref BaseParser nextParser
         )
         {
             if (RowNumberParser.RowNumberRegex.IsMatch(currentString) &&
                (currentExpression.Operator == ExpressionFieldOperator.None || RowNumberParser.RowNumberRegex.Match(currentString).Index < currentExpression.Index)
             )
             {
-                var rnParser = new RowNumberParser(currentString, ExpressionFieldOperator.RowNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);
-                rnParser.Parse();
-                proposedString = rnParser.GetProposedString();
+                nextParser = new RowNumberParser(currentString, ExpressionFieldOperator.RowNumber, currentExpression, dataSetResults, values, currentRowNumber, dataSets, activeDataset, _report);                
             }
         }
 
@@ -1151,6 +927,7 @@ namespace ReportViewer.NET.Parsers
                 var finalExpr = new StringBuilder();
                 var interpreterParams = new List<Parameter>();
                 var indx = 0;
+                var forceString = expressions.Any(ex => ex.Value != null && ex.ResolvedType == typeof(string));
 
                 foreach (var exp in expressions)
                 {
@@ -1159,15 +936,48 @@ namespace ReportViewer.NET.Parsers
                         continue;
                     }
 
+                    if (exp.Value == null &&
+                        !ArithmeticOperators.Contains(exp.Operator) &&
+                        !ComparisonOperators.Contains(exp.Operator) &&
+                        !LogicalOperators.Contains(exp.Operator) &&
+                        !ConcatenationOperators.Contains(exp.Operator))
+                    {
+                        finalExpr.Clear();
+                        break;
+                    }
+
                     if (exp.Value != null && 
                         !ArithmeticOperators.Contains(exp.Operator) &&
                         !ComparisonOperators.Contains(exp.Operator) && 
                         !LogicalOperators.Contains(exp.Operator) && 
                         !ConcatenationOperators.Contains(exp.Operator))
-                    {                        
-                        var param =  $"exp{indx}";                        
-                        interpreterParams.Add(new Parameter(param, exp.ResolvedType, exp.Value));
-                        finalExpr.Append(param + " ");
+                    {
+                        var param = $"exp{indx}";
+
+                        if (finalExpr.Length > 0)
+                        {
+                            finalExpr.Append(" ");
+                        }
+
+                        if (exp.Value.ToString() == "True" || exp.Value.ToString() == "False")
+                        {
+                            interpreterParams.Add(new Parameter(param, typeof(bool), exp.Value.ToString() == "True"));
+                            finalExpr.Append(param);
+                        }
+                        else if (forceString)
+                        {                                                        
+                            interpreterParams.Add(new Parameter(param, typeof(string), exp.Value.ToString()));
+                            finalExpr.Append(param);
+                        }
+                        else if (exp.ResolvedType == typeof(object))
+                        {                            
+                            finalExpr.Append(exp.Value.ToString());                                                        
+                        }
+                        else
+                        {                            
+                            interpreterParams.Add(new Parameter(param, exp.ResolvedType, exp.Value));
+                            finalExpr.Append(param);
+                        }                                                                        
                     }
 
                     finalExpr.Append(this.ParseArithmeticOperator(exp));
@@ -1176,6 +986,11 @@ namespace ReportViewer.NET.Parsers
                     finalExpr.Append(this.ParseConcatenationOperator(exp));
 
                     indx++;
+                }
+
+                if (finalExpr.Length == 0)
+                {
+                    return null;
                 }
 
                 try
@@ -1304,42 +1119,7 @@ namespace ReportViewer.NET.Parsers
 
             return finalExpr;
         }
-
-        public static (Type, object) ExtractTypeFromValue(object value)
-        {
-            if (value == null)
-            {
-                return (typeof(object), null);
-            }
-                        
-            if (bool.TryParse(value.ToString(), out var bValue))
-            {
-                return (typeof(bool), bValue);
-            }
-
-            if (long.TryParse(value.ToString(), out var lValue))
-            {
-                return (typeof(long), lValue);
-            }
-
-            if (decimal.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var decValue))
-            {
-                return (typeof(decimal), decValue);
-            }
-
-            if (double.TryParse(value.ToString(), CultureInfo.InvariantCulture, out var dValue))
-            {
-                return (typeof(double), dValue);
-            }
-                        
-            if (DateTime.TryParse(value.ToString(), out var dttValue))
-            {
-                return (typeof(DateTime), dttValue);
-            }
-
-            return (typeof(string), value);
-        }
-
+               
         public static bool WithinStringLiteral(string currentString, int idx)
         {
             var inQuotes = false;

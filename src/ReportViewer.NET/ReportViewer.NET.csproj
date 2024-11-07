@@ -29,10 +29,6 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Parsers\Math\" />
-  </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy /Y &quot;$(SolutionDir)src\ReportViewer.NET.Web\wwwroot\css\site.css&quot; &quot;$(SolutionDir)assets\reportviewer.net.css&quot;&#xD;&#xA;copy /Y &quot;$(SolutionDir)src\ReportViewer.NET.Web\wwwroot\js\site.js&quot; &quot;$(SolutionDir)assets\reportviewer.net.js&quot;" />
   </Target>

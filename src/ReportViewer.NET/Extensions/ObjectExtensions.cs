@@ -20,6 +20,11 @@ namespace ReportViewer.NET.Extensions
             return DateTime.MinValue;
         }
 
+        public static bool IsInteger(this object obj)
+        {
+            return obj is int || obj is short || obj is long;
+        }
+
         public static int ExpressionAsInt(this object obj) 
         {
             return int.Parse(obj.ExpressionAsString());

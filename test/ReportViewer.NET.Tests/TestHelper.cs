@@ -11,7 +11,31 @@ namespace ReportViewer.NET.Tests
             var rdlXml = GetRdl("Format text.rdl");
             reportHandler.RegisterDataSource("TextDataSource", "");
             reportHandler.RegisterRdlFromString("Format text", rdlXml);
-            return reportHandler.LoadReport("Format text", new ReportParameters());                        
+
+            var report = reportHandler.LoadReport("Format text", new ReportParameters());
+            report.DataSets[0].DataSetResults = new List<IDictionary<string, object>> {
+                CreateReportDataSetRecord(),
+                CreateReportDataSetRecord(),
+                CreateReportDataSetRecord()
+            };
+
+            return report;
+        }
+
+        private static Dictionary<string, object> CreateReportDataSetRecord()
+        {
+            return new Dictionary<string, object>()
+            {
+                { "SalesDate", DateTime.Now },
+                { "FullName", "Brian Adams" },
+                { "Territory", "North America" },
+                { "Subcategory", "Fruit" },
+                { "Product", "Apples" },
+                { "Sales", 15.3 },
+                { "Quantity", 500 },
+                { "LinkText", "Test" },
+                { "URL", "Test" }
+            };
         }
 
         private static string GetRdl(string filename)

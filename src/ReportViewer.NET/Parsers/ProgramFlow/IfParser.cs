@@ -76,8 +76,8 @@ namespace ReportViewer.NET.Parsers.ProgramFlow
             );
 
             this.CurrentExpression.Index = match.Index;
-            this.CurrentExpression.ResolvedType = typeof(string);
-            this.CurrentExpression.Value = (bool)booleanExpression ? thenExpression : elseExpression;
+            this.CurrentExpression.ResolvedType = thenExpression.GetType();
+            this.CurrentExpression.Value = booleanExpression != null && (bool)booleanExpression ? thenExpression : elseExpression;
         }
     }
 }

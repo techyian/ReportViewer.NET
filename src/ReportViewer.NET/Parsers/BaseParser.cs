@@ -75,7 +75,7 @@ namespace ReportViewer.NET.Parsers
         /// <returns>Remaining text following the expression we intend to parse</returns>
         public string GetProposedString()
         {            
-            return _endIndx == this.CurrentString.Length ? "" : this.CurrentString.Substring(_endIndx, this.CurrentString.Length - _endIndx).TrimStart().TrimStart(')');
+            return _endIndx == this.CurrentString.Length ? "" : this.CurrentString.Substring(_endIndx, this.CurrentString.Length - _endIndx).TrimStart();
         }
 
         public (int, List<string>) ParseParenthesis(string matchValue)

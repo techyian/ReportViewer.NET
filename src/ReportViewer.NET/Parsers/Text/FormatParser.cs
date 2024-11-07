@@ -106,7 +106,7 @@ namespace ReportViewer.NET.Parsers.Text
 
                 this.CurrentExpression.Value = parsedExpression.ExpressionAsDateTime().ToString(format, CultureInfo.CurrentCulture);
             }
-            else if (parsedExpression is long)
+            else if (parsedExpression.IsInteger())
             {                
                 format = this.ConvertVBFormatToCSharpForNumeric(format);
                 
@@ -124,7 +124,7 @@ namespace ReportViewer.NET.Parsers.Text
                 }
                 else
                 {
-                    this.CurrentExpression.Value = parsedExpression.ExpressionAsInt().ToString(format, CultureInfo.CurrentCulture);
+                    this.CurrentExpression.Value = parsedExpression.ExpressionAsLong().ToString(format, CultureInfo.CurrentCulture);
                 }
             }
             else if (parsedExpression is decimal)

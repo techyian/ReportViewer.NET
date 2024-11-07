@@ -92,6 +92,8 @@ namespace ReportViewer.NET.Parsers
         RowNumber,
         CBool,
         CChar,
-        CInt
+        CDec,
+        CInt,        
+        Round
     }
 }
