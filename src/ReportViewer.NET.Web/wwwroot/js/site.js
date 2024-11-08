@@ -65,6 +65,25 @@
         return dtoArr;
     }
 
+    self.selectCheckbox = function (element) {
+        var id = $(element).attr('id');
+        var list = id.indexOf('-') > -1;
+
+        var multivalue = $(element).data('multivalue');
+        var checked = $(element).is(':checked');
+
+        if (list) {
+            var idSplit = id.split('-')[0];
+            var eles = $('input[id*="' + idSplit + '"]');
+
+            if (!multivalue || multivalue === 'false') {
+                $(eles).prop('checked', false);
+            }
+        }
+
+        $(element).prop('checked', !checked);
+    }
+
     self.postReportParameters = function () {
         var dtoArr = constructReportParameters();
         var dto = {
@@ -79,35 +98,60 @@
         }).done(function (data, textStatus, jqXHR) {
             $('.report-viewer').html(data.value);
 
-            $('.report-viewer input:not(.custom-control-input)').on("focusout", function () {
-                if ($(this).data('requiredparam')) {
-                    self.postReportParameters();
+            let paramLists = $('.report-viewer .reportparam-list');
+
+            $('.report-viewer .reportparameters-container').on("click", function (e) {                
+                let load = false;
+
+                $.each(paramLists, function (idx, list) {                    
+                    let dropdownContainers = $(list).find('.reportparam-list-dropdown[class*="open"]');
+                    
+                    $.each(dropdownContainers, function (idx, ele) {
+                        if (!list.contains(e.target)) {
+                            $(ele).removeClass('open');
+                            $(ele).css('display', 'none');
+                            load = true;
+                        }                        
+                    });  
+                });
+                                
+                if (load) {
+                    self.postReportParameters(); 
                 }
             });
 
-            $('.report-viewer .custom-control-input').on("click", function () {
+            $('.report-viewer .reportparam-list-select .over-select').on("click", function () {
+                let dropdownContainer = $(this).closest('.reportparam-list').find('.reportparam-list-dropdown');
+
+                if (!$(dropdownContainer).is(':empty')) {
+                    if ($(dropdownContainer).css('display') === 'none') {
+                        $(dropdownContainer).addClass('open');
+                        $(dropdownContainer).css('display', 'block');
+                    }
+                    else {
+                        $(dropdownContainer).removeClass('open');
+                        $(dropdownContainer).css('display', 'none');
+                    }
+                }                                
+            });
+
+            $('.report-viewer .reportparam-list-dropdown .reportparam-list-selectall').on("click", function () {
+                let dropdownContainer = $(this).closest('.reportparam-list').find('.reportparam-list-dropdown');
+                let checkboxes = $(dropdownContainer).find('input[type="checkbox"]');
+
+                $.each(checkboxes, function (idx, ele) {
+                    self.selectCheckbox($(ele));
+                });
+            });
+
+            $('.report-viewer .custom-control-input[data-datatype="boolean"]').on("click", function () {
                 if ($(this).data('requiredparam')) {
                     self.postReportParameters();
                 }
             });
 
             $('.report-viewer input[type="checkbox"]').on("change", function (event) {
-                var id = $(this).attr('id');
-                var list = id.indexOf('-') > -1;
-
-                var multivalue = $(this).data('multivalue');
-                var checked = this.checked;
-
-                if (list) {
-                    var idSplit = id.split('-')[0];
-                    var eles = $('input[id*="' + idSplit + '"]');
-
-                    if (!multivalue || multivalue === 'false') {
-                        $(eles).prop('checked', false);
-                    }
-                }
-
-                $(this).prop('checked', checked);
+                self.selectCheckbox($(this));
             });
 
             $('.report-viewer #RunReportBtn').on('click', function () {

@@ -33,9 +33,26 @@ namespace ReportViewer.NET.DataObjects
                     var multiValue = this.MultiValue ? "true" : "false";
                     
                     var sb = new StringBuilder();
+                    var selectedItems = new StringBuilder();
+                    var selectList = new StringBuilder();
+                    var dropdownContainer = new StringBuilder();
+
                     sb.AppendLine("<div class=\"reportparam reportparam-list\">");
                     sb.AppendLine("<label>" + this.Prompt + @"</label>");
-                    
+
+                    dropdownContainer.AppendLine("<div class=\"reportparam-list-dropdown\">");
+
+                    if (this.DataSetReference.DataSet.DataSetResults.Count > 0 && this.MultiValue)
+                    {
+                        var elementId = $"{this.Name}-{idx}";
+
+                        dropdownContainer.AppendLine(@"                                
+                                <button id=""" + elementId + @""" class=""reportparam-list-selectall"">Select all</button>
+                            ");
+
+                        idx++;
+                    }
+
                     foreach (IDictionary<string, object> res in this.DataSetReference.DataSet.DataSetResults)
                     {                        
                         //var name = this.MultiValue ? this.Name + "[]" : this.Name;
@@ -48,7 +65,9 @@ namespace ReportViewer.NET.DataObjects
                             ) 
                         )
                         {
-                            sb.AppendLine(@"                                
+                            selectedItems.Append(res[this.DataSetReference.LabelField.ToLower()] + ";");
+
+                            dropdownContainer.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
                                     <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""" checked>
                                     <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField.ToLower()] + @"</label>
@@ -57,7 +76,7 @@ namespace ReportViewer.NET.DataObjects
                         }
                         else
                         {
-                            sb.AppendLine(@"                                
+                            dropdownContainer.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
                                     <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + res[this.DataSetReference.ValueField.ToLower()] + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""">
                                     <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + res[this.DataSetReference.LabelField.ToLower()] + @"</label>
@@ -67,6 +86,16 @@ namespace ReportViewer.NET.DataObjects
                         
                         idx++;
                     }
+
+                    dropdownContainer.AppendLine("</div>");
+
+                    selectList.AppendLine("<div class=\"reportparam-list-select\">");
+                    selectList.AppendLine($"<select><option>{selectedItems.ToString()}</option></select>");
+                    selectList.AppendLine("<div class=\"over-select\"></div>");
+                    selectList.AppendLine("</div>");
+
+                    sb.AppendLine(selectList.ToString());
+                    sb.AppendLine(dropdownContainer.ToString());
 
                     sb.AppendLine("</div>");
 
@@ -79,8 +108,25 @@ namespace ReportViewer.NET.DataObjects
                     var multiValue = this.MultiValue ? "true" : "false";
 
                     var sb = new StringBuilder();
+                    var selectedItems = new StringBuilder();
+                    var selectList = new StringBuilder();
+                    var dropdownContainer = new StringBuilder();
+
                     sb.AppendLine("<div class=\"reportparam reportparam-list\">");
                     sb.AppendLine("<label>" + this.Prompt + @"</label>");
+
+                    dropdownContainer.AppendLine("<div class=\"reportparam-list-dropdown\">");
+                    
+                    if (this.ParameterValues.Count > 0 && this.MultiValue)
+                    {
+                        var elementId = $"{this.Name}-{idx}";
+
+                        dropdownContainer.AppendLine(@"                                
+                                <button id=""" + elementId + @""" class=""reportparam-list-selectall"">Select all</button>
+                            ");
+
+                        idx++;
+                    }
 
                     foreach (var pv in ParameterValues)
                     {
@@ -94,7 +140,9 @@ namespace ReportViewer.NET.DataObjects
                             )
                         )
                         {
-                            sb.AppendLine(@"                                
+                            selectedItems.Append(pv.Value + ";");
+
+                            dropdownContainer.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
                                     <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + pv.Value + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""" checked>
                                     <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + pv.Value + @"</label>
@@ -103,7 +151,7 @@ namespace ReportViewer.NET.DataObjects
                         }
                         else
                         {
-                            sb.AppendLine(@"                                
+                            dropdownContainer.AppendLine(@"                                
                                 <div class=""custom-control custom-checkbox"">
                                     <input type=""checkbox"" class=""custom-control-input"" id=""" + elementId + @""" name=""" + this.Name + @""" value=""" + pv.Value + @""" data-multivalue=""" + multiValue + @""" data-requiredparam=""" + requiredParam + @""">
                                     <label class=""custom-control-label pl-3"" for=""" + elementId + @""">" + pv.Value + @"</label>
@@ -114,6 +162,16 @@ namespace ReportViewer.NET.DataObjects
                         idx++;
                     }
 
+                    dropdownContainer.AppendLine("</div>");
+
+                    selectList.AppendLine("<div class=\"reportparam-list-select\">");
+                    selectList.AppendLine($"<select><option>{selectedItems.ToString()}</option></select>");
+                    selectList.AppendLine("<div class=\"over-select\"></div>");
+                    selectList.AppendLine("</div>");
+
+                    sb.AppendLine(selectList.ToString());
+                    sb.AppendLine(dropdownContainer.ToString());
+                                        
                     sb.AppendLine("</div>");
 
                     return sb.ToString();

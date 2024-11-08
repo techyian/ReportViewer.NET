@@ -11,10 +11,9 @@
 
 .reportparam-list {
     min-width: 300px;
-    max-width: 300px;
-    max-height: 200px;
-    overflow: auto;
+    max-width: 300px;      
     margin-left: 0.5rem;
+    overflow: hidden;
 }
 
 .reportparam-date, .reportparam-string, .reportparam-boolean {
@@ -26,6 +25,42 @@
 .reportparam-date input, .reportparam-string input {
     width: auto;
     margin-left: 0.5rem;
+}
+
+.reportparam-list-select {
+    position: relative;
+}
+
+.reportparam-list-select select {
+    width: 100%;
+}
+
+.reportparam-list-select .over-select {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.reportparam-list-dropdown {
+    display: none;
+    overflow-y: auto;
+    height: 150px;
+}
+
+.reportparam-list-selectall {
+    background-color: transparent;
+    border: none;
+    padding-left: 0;
+    color: #007bff;
+}
+
+.reportparam-list-selectall:hover {
+    color: #0056b3;
+    text-decoration: underline;
+    background-color: transparent;
+    border-color: transparent;
 }
 
 .report-viewer {
