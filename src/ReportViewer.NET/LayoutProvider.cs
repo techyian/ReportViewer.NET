@@ -384,7 +384,7 @@ namespace ReportViewer.NET
                         // TODO: Log error.
                         try
                         {
-                            results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
+                            results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : CommandType.Text);
                         }
                         catch
                         {
@@ -400,7 +400,7 @@ namespace ReportViewer.NET
                     // TODO: Log error.
                     try
                     {
-                        results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : null);
+                        results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : CommandType.Text);
                     }
                     catch (Exception e)
                     {                        

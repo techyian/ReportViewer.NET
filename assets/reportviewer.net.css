@@ -49,6 +49,20 @@
     height: 150px;
 }
 
+.reportparam-list-selectall {
+    background-color: transparent;
+    border: none;
+    padding-left: 0;
+    color: #007bff;
+}
+
+.reportparam-list-selectall:hover {
+    color: #0056b3;
+    text-decoration: underline;
+    background-color: transparent;
+    border-color: transparent;
+}
+
 .report-viewer {
     position: relative;
 }

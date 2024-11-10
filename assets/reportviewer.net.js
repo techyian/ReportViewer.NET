@@ -65,6 +65,25 @@
         return dtoArr;
     }
 
+    self.selectCheckbox = function (element) {
+        var id = $(element).attr('id');
+        var list = id.indexOf('-') > -1;
+
+        var multivalue = $(element).data('multivalue');
+        var checked = $(element).is(':checked');
+
+        if (list) {
+            var idSplit = id.split('-')[0];
+            var eles = $('input[id*="' + idSplit + '"]');
+
+            if (!multivalue || multivalue === 'false') {
+                $(eles).prop('checked', false);
+            }
+        }
+
+        $(element).prop('checked', !checked);
+    }
+
     self.postReportParameters = function () {
         var dtoArr = constructReportParameters();
         var dto = {
@@ -116,6 +135,15 @@
                 }                                
             });
 
+            $('.report-viewer .reportparam-list-dropdown .reportparam-list-selectall').on("click", function () {
+                let dropdownContainer = $(this).closest('.reportparam-list').find('.reportparam-list-dropdown');
+                let checkboxes = $(dropdownContainer).find('input[type="checkbox"]');
+
+                $.each(checkboxes, function (idx, ele) {
+                    self.selectCheckbox($(ele));
+                });
+            });
+
             $('.report-viewer .custom-control-input[data-datatype="boolean"]').on("click", function () {
                 if ($(this).data('requiredparam')) {
                     self.postReportParameters();
@@ -123,22 +151,7 @@
             });
 
             $('.report-viewer input[type="checkbox"]').on("change", function (event) {
-                var id = $(this).attr('id');
-                var list = id.indexOf('-') > -1;
-
-                var multivalue = $(this).data('multivalue');
-                var checked = this.checked;
-
-                if (list) {
-                    var idSplit = id.split('-')[0];
-                    var eles = $('input[id*="' + idSplit + '"]');
-
-                    if (!multivalue || multivalue === 'false') {
-                        $(eles).prop('checked', false);
-                    }
-                }
-
-                $(this).prop('checked', checked);
+                self.selectCheckbox($(this));
             });
 
             $('.report-viewer #RunReportBtn').on('click', function () {
