@@ -65,7 +65,7 @@
         return dtoArr;
     }
 
-    self.selectCheckbox = function (element) {
+    self.selectCheckbox = function (element, selectAll) {
         var id = $(element).attr('id');
         var list = id.indexOf('-') > -1;
 
@@ -81,7 +81,12 @@
             }
         }
 
-        $(element).prop('checked', !checked);
+        if (selectAll) {
+            $(element).prop('checked', true);
+        }
+        else {
+            $(element).prop('checked', checked);
+        }        
     }
 
     self.postReportParameters = function () {
@@ -140,7 +145,7 @@
                 let checkboxes = $(dropdownContainer).find('input[type="checkbox"]');
 
                 $.each(checkboxes, function (idx, ele) {
-                    self.selectCheckbox($(ele));
+                    self.selectCheckbox($(ele), true);
                 });
             });
 
@@ -151,7 +156,7 @@
             });
 
             $('.report-viewer input[type="checkbox"]').on("change", function (event) {
-                self.selectCheckbox($(this));
+                self.selectCheckbox($(this), false);
             });
 
             $('.report-viewer #RunReportBtn').on('click', function () {
