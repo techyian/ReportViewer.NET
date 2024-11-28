@@ -131,7 +131,7 @@ namespace ReportViewer.NET
 
             var layoutProvider = new LayoutProvider();
 
-            return layoutProvider.PublishReportOutput(rdl, parameters.Parameters, parameters.ToggleItemRequests ?? Enumerable.Empty<string>(), parameters.Metadata);
+            return layoutProvider.PublishReportOutput(rdl, parameters.Parameters, parameters.ToggleItemRequests ?? Enumerable.Empty<string>(), parameters.Metadata ?? Enumerable.Empty<ReportMetadata>());
         }
 
         private ReportRDL ParseXml(XDocument xml, string name, ReportParameters userProvidedParameters)
