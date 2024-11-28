@@ -108,6 +108,10 @@
             $('.report-viewer .reportparameters-container').on("click", function (e) {                
                 let load = false;
 
+                if (e.target !== e.currentTarget) {
+                    return;
+                }
+
                 $.each(paramLists, function (idx, list) {                    
                     let dropdownContainers = $(list).find('.reportparam-list-dropdown[class*="open"]');
                     
@@ -119,8 +123,8 @@
                         }                        
                     });  
                 });
-                                
-                if (load) {
+
+                if (load || paramLists.length === 0) {
                     self.postReportParameters(); 
                 }
             });

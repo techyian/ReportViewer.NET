@@ -32,6 +32,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
 
             if (!string.IsNullOrEmpty(dataSetName))
             {
+                dataSetName = dataSetName.Replace("\"", "").Trim();
                 var dataSet = DataSets.FirstOrDefault(ds => ds.Name == dataSetName);
                 activeDataset = dataSet;
                 results = dataSet.DataSetResults;
@@ -150,7 +151,7 @@ namespace ReportViewer.NET.Parsers.Aggregate
             else
             {
                 // Find specific dataset.
-                (Type, object) extractedValue = ExtractExpressionValue(matchValue, foundParameters.Item2[1]);
+                (Type, object) extractedValue = ExtractExpressionValue(foundParameters.Item2[0], foundParameters.Item2[1]);
 
                 CurrentExpression.ResolvedType = extractedValue.Item1;
                 CurrentExpression.Value = extractedValue.Item2;

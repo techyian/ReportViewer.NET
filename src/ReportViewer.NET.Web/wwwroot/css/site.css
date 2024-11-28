@@ -16,15 +16,20 @@
     overflow: hidden;
 }
 
-.reportparam-date, .reportparam-string, .reportparam-boolean {
-    display: inline-flex;
-    max-height: 35px;
+.reportparam-date, .reportparam-string, .reportparam-boolean {        
     margin-left: 0.5rem;
 }
 
+.reportparam-boolean {
+    display: flex;
+}
+
+.reportparam-boolean .custom-checkbox {
+    align-content: end;
+}
+
 .reportparam-date input, .reportparam-string input {
-    width: auto;
-    margin-left: 0.5rem;
+    width: auto;    
 }
 
 .reportparam-list-select {
@@ -47,6 +52,19 @@
     display: none;
     overflow-y: auto;
     height: 150px;
+}
+
+.reportparam-list-dropdown.open {
+    position: absolute;
+    border-color: darkgray;
+    border-width: 1px;
+    border-style: solid;
+    background-color: #ffffff;
+    z-index: 1;
+}
+
+.reportparam-list-dropdown.open .custom-checkbox {
+    margin-left: 0.25rem;
 }
 
 .reportparam-list-selectall {
