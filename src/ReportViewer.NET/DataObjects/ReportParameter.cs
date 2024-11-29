@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ReportViewer.NET.Parsers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,7 +21,7 @@ namespace ReportViewer.NET.DataObjects
         public bool RequiredParam => !this.Nullable && string.IsNullOrEmpty(this.DefaultValue);
         public List<ParameterValue> ParameterValues { get; set; }
 
-        public string Build(ReportParameter userProvidedParameter)
+        public string Build(ReportRDL report, ReportParameter userProvidedParameter)
         {
             if (!string.IsNullOrEmpty(this.DataType))
             {
@@ -178,6 +179,13 @@ namespace ReportViewer.NET.DataObjects
                 }
                 else
                 {
+                    var expressionParser = new ExpressionParser(report);
+
+                    if (userProvidedParameter != null && !string.IsNullOrEmpty(userProvidedParameter.Value) && userProvidedParameter.Value.StartsWith("="))
+                    {
+                        userProvidedParameter.Value = expressionParser.ParseReportExpressionString(userProvidedParameter.Value, null, null, 1, report.DataSets, null, null).ToString();
+                    }
+
                     var value = userProvidedParameter != null && !string.IsNullOrEmpty(userProvidedParameter.Value) ? userProvidedParameter.Value : "";
                     var check = userProvidedParameter != null && 
                                 !string.IsNullOrEmpty(userProvidedParameter.Value) && 

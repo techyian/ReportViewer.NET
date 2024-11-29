@@ -25,14 +25,14 @@ namespace ReportViewer.NET
             var reportParams = report.ReportParameters;
             var sb = new StringBuilder();
             var invalidParameter = false;
-
+            
             sb.AppendLine("<div class=\"reportparameters-container\">");
 
             foreach (var reportParam in reportParams.DistinctBy(rp => rp.Name))
-            {
+            {                
                 if (reportParam.DataSetReference == null)
                 {
-                    sb.AppendLine(reportParam.Build(userProvidedParameters?.FirstOrDefault(p => p.Name == reportParam.Name)));
+                    sb.AppendLine(reportParam.Build(report, userProvidedParameters?.FirstOrDefault(p => p.Name == reportParam.Name)));
                 }
                 else
                 {
@@ -43,7 +43,7 @@ namespace ReportViewer.NET
 
                     reportParam.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(report, reportParam.DataSetReference.DataSet, reportParams, userProvidedParameters)).ToList();
 
-                    sb.AppendLine(reportParam.Build(userProvidedParameters?.FirstOrDefault(p => p.Name == reportParam.Name)));
+                    sb.AppendLine(reportParam.Build(report, userProvidedParameters?.FirstOrDefault(p => p.Name == reportParam.Name)));
                 }
 
                 if (!reportParam.Nullable && 
