@@ -65,7 +65,7 @@
         return dtoArr;
     }
 
-    self.selectCheckbox = function (element, selectAll) {
+    self.selectCheckbox = function (element, selectAll, deselectAll) {
         var id = $(element).attr('id');
         var list = id.indexOf('-') > -1;
 
@@ -84,12 +84,15 @@
         if (selectAll) {
             $(element).prop('checked', true);
         }
+        else if (deselectAll) {
+            $(element).prop('checked', false);
+        }
         else {
             $(element).prop('checked', checked);
         }        
     }
-
-    self.postReportParameters = function () {
+        
+    self.postReportParameters = function (callback) {
         var dtoArr = constructReportParameters();
         var dto = {
             Parameters: dtoArr            
@@ -105,43 +108,31 @@
 
             let paramLists = $('.report-viewer .reportparam-list');
 
-            $('.report-viewer .reportparameters-container').on("click", function (e) {                
-                let load = false;
+            if (callback) {
+                callback();
+            }
 
+            $('.report-viewer .reportparameters-container').on("click", function (e) {                
                 if (e.target !== e.currentTarget) {
                     return;
                 }
 
-                $.each(paramLists, function (idx, list) {                    
-                    let dropdownContainers = $(list).find('.reportparam-list-dropdown[class*="open"]');
-                    
-                    $.each(dropdownContainers, function (idx, ele) {
-                        if (!list.contains(e.target)) {
-                            $(ele).removeClass('open');
-                            $(ele).css('display', 'none');
-                            load = true;
-                        }                        
-                    });  
-                });
-
-                if (load || paramLists.length === 0) {
-                    self.postReportParameters(); 
-                }
+                self.processUserAction();
             });
 
-            $('.report-viewer .reportparam-list-select .over-select').on("click", function () {
-                let dropdownContainer = $(this).closest('.reportparam-list').find('.reportparam-list-dropdown');
+            $('.report-viewer .reportparam-list-select .over-select').on("click", function (e) {
+                e.preventDefault();
 
-                if (!$(dropdownContainer).is(':empty')) {
-                    if ($(dropdownContainer).css('display') === 'none') {
+                self.processUserAction(function () {
+                    let currentTarget = e.currentTarget;
+                    let dropdownContainer = $(currentTarget).closest('.reportparam-list').find('.reportparam-list-dropdown');
+                    let dropdownOptions = $(dropdownContainer).find('.custom-checkbox');
+
+                    if ($(dropdownContainer).css('display') === 'none' && dropdownOptions.length > 0) {
                         $(dropdownContainer).addClass('open');
                         $(dropdownContainer).css('display', 'block');
                     }
-                    else {
-                        $(dropdownContainer).removeClass('open');
-                        $(dropdownContainer).css('display', 'none');
-                    }
-                }                                
+                });                       
             });
 
             $('.report-viewer .reportparam-list-dropdown .reportparam-list-selectall').on("click", function () {
@@ -149,7 +140,16 @@
                 let checkboxes = $(dropdownContainer).find('input[type="checkbox"]');
 
                 $.each(checkboxes, function (idx, ele) {
-                    self.selectCheckbox($(ele), true);
+                    self.selectCheckbox($(ele), true, false);
+                });
+            });
+
+            $('.report-viewer .reportparam-list-dropdown .reportparam-list-deselectall').on("click", function () {
+                let dropdownContainer = $(this).closest('.reportparam-list').find('.reportparam-list-dropdown');
+                let checkboxes = $(dropdownContainer).find('input[type="checkbox"]');
+
+                $.each(checkboxes, function (idx, ele) {
+                    self.selectCheckbox($(ele), false, true);
                 });
             });
 
@@ -159,8 +159,12 @@
                 }
             });
 
+            $('.report-viewer input[type="text"]').on("focus", function (event) {
+                self.processUserAction();
+            });
+
             $('.report-viewer input[type="checkbox"]').on("change", function (event) {
-                self.selectCheckbox($(this), false);
+                self.selectCheckbox($(this), false, false);
             });
 
             $('.report-viewer #RunReportBtn').on('click', function () {
@@ -170,6 +174,27 @@
             console.error(errorThrown);
         });
     }
+
+    self.processUserAction = function (callback) {
+        let paramLists = $('.report-viewer .reportparam-list');
+        let load = false;
+
+        $.each(paramLists, function (idx, list) {
+            let dropdownContainers = $(list).find('.reportparam-list-dropdown[class*="open"]');
+
+            $.each(dropdownContainers, function (idx, ele) {
+                $(ele).removeClass('open');
+                $(ele).css('display', 'none');
+                load = true;
+            });
+        });
+
+        if (load || paramLists.length === 0) {
+            self.postReportParameters(callback);
+        } else if (callback) {
+            callback();
+        }
+    };
 
     self.renderReport = function() {
         var dtoArr = constructReportParameters();

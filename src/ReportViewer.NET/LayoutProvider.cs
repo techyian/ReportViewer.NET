@@ -359,7 +359,7 @@ namespace ReportViewer.NET
                         (queryParam.Value.StartsWith("=Parameters!") && p.Name == this.ExtractParameterNameFromDataSetQueryParameter(queryParam.Value))
                     );
 
-                    if (invalidParameter || (!nullableOrDefault && string.IsNullOrEmpty(userParam.Value) && !userParam.Values.Any()))
+                    if (invalidParameter || (!nullableOrDefault && string.IsNullOrEmpty(userParam.Value) && (userParam.Values == null || !userParam.Values.Any())))
                     {
                         break;
                     }

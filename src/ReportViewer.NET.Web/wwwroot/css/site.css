@@ -67,18 +67,24 @@
     margin-left: 0.25rem;
 }
 
-.reportparam-list-selectall {
+.reportparam-list-selectall,
+.reportparam-list-deselectall {
     background-color: transparent;
     border: none;
     padding-left: 0;
     color: #007bff;
 }
 
-.reportparam-list-selectall:hover {
+.reportparam-list-selectall:hover,
+.reportparam-list-deselectall:hover {
     color: #0056b3;
     text-decoration: underline;
     background-color: transparent;
     border-color: transparent;
+}
+
+.reportparam-list-deselectall {
+    margin-right: 5px;
 }
 
 .report-viewer {

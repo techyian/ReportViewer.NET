@@ -14,6 +14,10 @@ The library works by parsing RDL files which you must register, along with DataS
 
 ReportViewer.NET is currently designed to target .NET 8.
 
+## Dependencies
+
+1. jQuery for the client side script bundled with this library. The script is not currently available as a module for importing, but I will eventually do this.
+
 ## How to use
 
 1. Include the provided CSS in `assets/reportviewer.net.css` in your project.

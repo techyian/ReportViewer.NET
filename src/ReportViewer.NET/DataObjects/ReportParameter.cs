@@ -48,7 +48,15 @@ namespace ReportViewer.NET.DataObjects
                         var elementId = $"{this.Name}-{idx}";
 
                         dropdownContainer.AppendLine(@"                                
-                                <button id=""" + elementId + @""" class=""reportparam-list-selectall"">Select all</button>
+                                <button id=""" + elementId + @""" class=""reportparam-list-selectall"">Select all</button>                                
+                            ");
+
+                        idx++;
+
+                        elementId = $"{this.Name}-{idx}";
+
+                        dropdownContainer.AppendLine(@"                                                        
+                                <button id=""" + elementId + @""" class=""reportparam-list-deselectall"">Deselect all</button>
                             ");
 
                         idx++;
@@ -124,6 +132,14 @@ namespace ReportViewer.NET.DataObjects
 
                         dropdownContainer.AppendLine(@"                                
                                 <button id=""" + elementId + @""" class=""reportparam-list-selectall"">Select all</button>
+                            ");
+
+                        idx++;
+
+                        elementId = $"{this.Name}-{idx}";
+
+                        dropdownContainer.AppendLine(@"                                                        
+                                <button id=""" + elementId + @""" class=""reportparam-list-deselectall"">Deselect all</button>
                             ");
 
                         idx++;
