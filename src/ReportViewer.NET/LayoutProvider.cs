@@ -41,7 +41,7 @@ namespace ReportViewer.NET
                     if (reportParam.DataSetReference.DataSet == null)
                         continue;
 
-                    reportParam.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(report, reportParam.DataSetReference.DataSet, reportParams, userProvidedParameters)).ToList();
+                    reportParam.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(report, reportParam.DataSetReference.DataSet, reportParams, userProvidedParameters).ConfigureAwait(false)).ToList();
 
                     sb.AppendLine(reportParam.Build(report, userProvidedParameters?.FirstOrDefault(p => p.Name == reportParam.Name)));
                 }
@@ -105,19 +105,19 @@ namespace ReportViewer.NET
             // Build rows for header items.
             foreach (var reportItem in reportHeaderItems)
             {
-                await this.BuildReportRows(report, headerReportRows, reportItem, userProvidedParameters);
+                await this.BuildReportRows(report, headerReportRows, reportItem, userProvidedParameters).ConfigureAwait(false);
             }
 
             // Build rows for body items.
             foreach (var reportItem in reportBodyItems)
             {
-                await this.BuildReportRows(report, bodyReportRows, reportItem, userProvidedParameters);
+                await this.BuildReportRows(report, bodyReportRows, reportItem, userProvidedParameters).ConfigureAwait(false);
             }
 
             // Build rows for footer items.
             foreach (var reportItem in reportFooterItems)
             {
-                await this.BuildReportRows(report, footerReportRows, reportItem, userProvidedParameters);
+                await this.BuildReportRows(report, footerReportRows, reportItem, userProvidedParameters).ConfigureAwait(false);
             }
 
             // Process rows into HTML.
@@ -146,7 +146,7 @@ namespace ReportViewer.NET
                         // The subreport should be registered before the parent.
                         var sr = (SubReport)reportItem;
                         sb.AppendLine("<div class=\"sub-report-start\">");
-                        sb.AppendLine((await this.PublishReportOutput(sr.GetSubReportRDL(), userProvidedParameters, toggleItemRequests, metadata)).ToString());
+                        sb.AppendLine((await this.PublishReportOutput(sr.GetSubReportRDL(), userProvidedParameters, toggleItemRequests, metadata).ConfigureAwait(false)).ToString());
                         sb.AppendLine("</div>");
                     }
                     else
@@ -236,7 +236,7 @@ namespace ReportViewer.NET
                 }
             }
 
-            await this.ProcessDataSetResultsForRows(report, reportItem, userProvidedParameters);                        
+            await this.ProcessDataSetResultsForRows(report, reportItem, userProvidedParameters).ConfigureAwait(false);                        
         }
 
         private async Task ProcessDataSetResultsForRows(ReportRDL report, ReportItem reportItem, IEnumerable<ReportParameter> userProvidedParameters)
@@ -248,7 +248,7 @@ namespace ReportViewer.NET
                 if (tablix.DataSetReference != null)
                 {
                     // We potentially have calculated text which needs resolving from the Data Set.
-                    tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(report, tablix.DataSetReference?.DataSet, report.ReportParameters, userProvidedParameters)).ToList();
+                    tablix.DataSetReference.DataSet.DataSetResults = (await this.RunDataSetQuery(report, tablix.DataSetReference?.DataSet, report.ReportParameters, userProvidedParameters).ConfigureAwait(false)).ToList();
                 }
             }
 
@@ -265,7 +265,7 @@ namespace ReportViewer.NET
 
                     if (!string.IsNullOrEmpty(dsName) && ds != null && ds.DataSetResults == null)
                     {
-                        ds.DataSetResults = (await this.RunDataSetQuery(report, ds, report.ReportParameters, userProvidedParameters)).ToList();
+                        ds.DataSetResults = (await this.RunDataSetQuery(report, ds, report.ReportParameters, userProvidedParameters).ConfigureAwait(false)).ToList();
                     }
                 }
             }
@@ -276,7 +276,7 @@ namespace ReportViewer.NET
 
                 foreach (var child in rect.ReportItems)
                 {
-                    await this.ProcessDataSetResultsForRows(report, child, userProvidedParameters);
+                    await this.ProcessDataSetResultsForRows(report, child, userProvidedParameters).ConfigureAwait(false);
                 }
             }
         }
@@ -384,7 +384,7 @@ namespace ReportViewer.NET
                         // TODO: Log error.
                         try
                         {
-                            results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : CommandType.Text);
+                            results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, dynamicParams, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : CommandType.Text).ConfigureAwait(false);
                         }
                         catch
                         {
@@ -400,7 +400,7 @@ namespace ReportViewer.NET
                     // TODO: Log error.
                     try
                     {
-                        results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : CommandType.Text);
+                        results = await conn.QueryAsync<dynamic>(dsQuery.CommandText, null, commandType: dsQuery.CommandType == "StoredProcedure" ? CommandType.StoredProcedure : CommandType.Text).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {                        

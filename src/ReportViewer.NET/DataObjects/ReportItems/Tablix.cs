@@ -1546,7 +1546,7 @@ namespace ReportViewer.NET.DataObjects.ReportItems
                         continue;
                     }
 
-                    sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Report.ToggleItemRequests, this.Report.Metadata).GetAwaiter().GetResult().Value);
+                    sb.AppendLine(layoutProvider.PublishReportOutput(srRdl, finalUserParamsForSubReport, this.Report.ToggleItemRequests, this.Report.Metadata).ConfigureAwait(false).GetAwaiter().GetResult().Value);
                 }
                 else
                 {
